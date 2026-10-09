@@ -21,20 +21,20 @@ class AppEnv {
   /// رابط مشروع Supabase
   ///
   /// مثال: 'https://abcdefgh.supabase.co'
-  static const String supabaseUrl = 'YOUR_SUPABASE_URL';
+   static const String supabaseUrl = 'https://skhssmwzdrubgkoykavo.supabase.co';
 
   /// مفتاح Supabase العام (anon key)
   ///
   /// ⚠️ آمن للاستخدام في التطبيق (public)
   /// لكن لا ترفعه على GitHub
-  static const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
+     static const String supabasePublishableKey = 'sb_publishable_Xpex2k09D6RaW0bmCpkoMg_DeH3V2BE';
 
   /// مفتاح Service Role (للسيرفر فقط)
   ///
   /// ⚠️ خطر جداً — لا تحطه في التطبيق أبداً
   /// (يُستخدم فقط في Edge Functions)
   static const String supabaseServiceRoleKey = 'YOUR_SERVICE_ROLE_KEY';
-
+  /// (يُستخدم فقط في Edge Functions)
   // ═══════════════════════════════════════════════════════════
   // 2) اسم المشروع
   // ═══════════════════════════════════════════════════════════
@@ -85,11 +85,11 @@ class AppEnv {
   /// هل Supabase متظبط؟
   ///
   /// ترجع false لو المفاتيح لسه placeholders
-  static bool get isSupabaseConfigured {
+    static bool get isSupabaseConfigured {
     return supabaseUrl != 'YOUR_SUPABASE_URL' &&
-        supabaseAnonKey != 'YOUR_SUPABASE_ANON_KEY' &&
         supabaseUrl.isNotEmpty &&
-        supabaseAnonKey.isNotEmpty;
+        supabasePublishableKey != 'YOUR_PUBLISHABLE_KEY' &&
+        supabasePublishableKey.isNotEmpty;
   }
 
   /// هل Firebase متظبط؟

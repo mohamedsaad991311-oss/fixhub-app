@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/config/app_env.dart';
 import 'core/localization/locale_provider.dart';
 import 'core/providers/prefs_provider.dart';
 import 'core/router/app_router.dart';
@@ -23,22 +25,31 @@ Future<void> main() async {
   // ─── 3. تهيئة SharedPreferences ───
   final prefs = await SharedPreferences.getInstance();
 
-  // ─── 4. تهيئة التواريخ (للغة العربية) ───
+  // ─── 4. تهيئة التواريخ ───
   await initializeDateFormatting('ar');
   await initializeDateFormatting('en');
 
-  // ─── 5. تشغيل التطبيق ───
+  // ─── 5. تهيئة Supabase ───
+  if (AppEnv.isSupabaseConfigured) {
+            await Supabase.initialize(
+      url: AppEnv.supabaseUrl,
+      publishableKey: AppEnv.supabasePublishableKey,
+    );
+    debugPrint('✅ Supabase initialized');
+  } else {
+    debugPrint('⚠️ Supabase NOT configured — running offline');
+  }
+
+  // ─── 6. تشغيل التطبيق ───
   runApp(
     ProviderScope(
       overrides: [
-        // override للـ SharedPreferences
         sharedPrefsProvider.overrideWithValue(prefs),
       ],
       child: const FixHubApp(),
     ),
   );
 }
-
 class FixHubApp extends ConsumerWidget {
   const FixHubApp({super.key});
 
