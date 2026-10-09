@@ -1,0 +1,58 @@
+name: fixhub_app
+description: FixHub - Repair Shop Management System
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: any
+  flutter_riverpod: any
+  go_router: any
+  supabase_flutter: any
+  hive: any
+  hive_flutter: any
+  shared_preferences: any
+  flutter_secure_storage: any
+  dio: any
+  connectivity_plus: any
+  google_fonts: any
+  flutter_svg: any
+  lottie: any
+  shimmer: any
+  fl_chart: any
+  cached_network_image: any
+  intl: any
+  reactive_forms: any
+  image_picker: any
+  printing: any
+  pdf: any
+  flutter_local_notifications: any
+  local_auth: any
+  crypto: any
+  qr_flutter: any
+  share_plus: any
+  url_launcher: any
+  path_provider: any
+  permission_handler: any
+  package_info_plus: any
+  device_info_plus: any
+  universal_platform: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: any
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/lottie/
