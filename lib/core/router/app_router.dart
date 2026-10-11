@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
 import 'route_names.dart';
@@ -58,7 +59,7 @@ class AppRouter {
     GoRoute(
       path: RouteNames.login,
       name: 'login',
-      builder: (context, state) => const LoginPlaceholderPage(),
+      builder: (context, state) => const LoginPage(),
     ),
     GoRoute(
       path: RouteNames.signup,
@@ -187,8 +188,7 @@ class AppRouter {
                 GoRoute(
                   path: 'shop-info',
                   name: 'shopInfo',
-                  builder: (context, state) =>
-                      const ShopInfoPlaceholderPage(),
+                  builder: (context, state) => const ShopInfoPlaceholderPage(),
                 ),
                 GoRoute(
                   path: 'whatsapp',
