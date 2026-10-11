@@ -9,6 +9,11 @@ import '../../../../core/services/settings_service.dart';
 import '../../../../core/services/supabase_service.dart';
 import '../../data/models/app_user.dart';
 import '../../data/models/tenant.dart';
+import '../services/session_manager.dart';
+
+// ═══════════════════════════════════════════════════════════════
+//  AUTH STATUS
+// ═══════════════════════════════════════════════════════════════
 
 enum AuthStatus {
   /// لسه بنتحقق من الجلسة
@@ -25,6 +30,43 @@ enum AuthStatus {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  DEVICE BLOCKED INFO
+// ═══════════════════════════════════════════════════════════════
+
+/// معلومات الجهاز المحجوب (للعرض في الـ UI)
+class DeviceBlockedInfo {
+  const DeviceBlockedInfo({
+    this.blockedByName,
+    this.blockedByPlatform,
+    this.blockedByLastSeen,
+  });
+
+  factory DeviceBlockedInfo.fromCheck(DeviceCheckResult check) {
+    return DeviceBlockedInfo(
+      blockedByName: check.blockedByName,
+      blockedByPlatform: check.blockedByPlatform,
+      blockedByLastSeen: check.blockedByLastSeen,
+    );
+  }
+
+  final String? blockedByName;
+  final String? blockedByPlatform;
+  final DateTime? blockedByLastSeen;
+
+  /// نص وصفي للـ UI
+  String get description {
+    final buffer = StringBuffer('الحساب نشط على جهاز آخر');
+    if (blockedByName != null && blockedByName!.isNotEmpty) {
+      buffer.write(': $blockedByName');
+    }
+    if (blockedByPlatform != null) {
+      buffer.write(' (${blockedByPlatform!.toUpperCase()})');
+    }
+    return buffer.toString();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  AUTH STATE — الحالة الكاملة
 // ═══════════════════════════════════════════════════════════════
 
@@ -35,6 +77,7 @@ class AuthState {
     this.tenant,
     this.errorMessage,
     this.lastSyncAt,
+    this.deviceBlockedInfo,
   });
 
   final AuthStatus status;
@@ -43,12 +86,18 @@ class AuthState {
   final String? errorMessage;
   final DateTime? lastSyncAt;
 
+  /// نتيجة فحص الجهاز (لو ممنوع)
+  final DeviceBlockedInfo? deviceBlockedInfo;
+
   // ─── Getters ───
 
   bool get isAuthenticated => status == AuthStatus.authenticated;
   bool get isLoading => status == AuthStatus.loading;
   bool get isUnknown => status == AuthStatus.unknown;
   bool get hasError => errorMessage != null && errorMessage!.isNotEmpty;
+
+  /// هل الجهاز ممنوع؟
+  bool get isDeviceBlocked => deviceBlockedInfo != null;
 
   /// هل المستخدم owner؟
   bool get isOwner => user?.role == UserRole.owner;
@@ -87,6 +136,8 @@ class AuthState {
     String? errorMessage,
     bool clearError = false,
     DateTime? lastSyncAt,
+    DeviceBlockedInfo? deviceBlockedInfo,
+    bool clearDeviceBlocked = false,
   }) {
     return AuthState(
       status: status ?? this.status,
@@ -94,6 +145,9 @@ class AuthState {
       tenant: clearTenant ? null : (tenant ?? this.tenant),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      deviceBlockedInfo: clearDeviceBlocked
+          ? null
+          : (deviceBlockedInfo ?? this.deviceBlockedInfo),
     );
   }
 
@@ -109,11 +163,13 @@ class AuthState {
         other.status == status &&
         other.user == user &&
         other.tenant == tenant &&
-        other.errorMessage == errorMessage;
+        other.errorMessage == errorMessage &&
+        other.deviceBlockedInfo == deviceBlockedInfo;
   }
 
   @override
-  int get hashCode => Object.hash(status, user, tenant, errorMessage);
+  int get hashCode =>
+      Object.hash(status, user, tenant, errorMessage, deviceBlockedInfo);
 
   @override
   String toString() =>
@@ -224,7 +280,44 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = const AsyncData(AuthState.loading);
     try {
       await _auth.signIn(email: email, password: password);
+
+      // ═══ فحص الجهاز ═══
+      final userId = _auth.currentUser?.id;
+      if (userId != null) {
+        final manager = ref.read(sessionManagerProvider);
+        final deviceCheck = await manager.checkDeviceAllowed(userId: userId);
+
+        if (!deviceCheck.isAllowed) {
+          // 🚫 الجهاز ممنوع → sign out فوراً
+          await _auth.signOut();
+          state = AsyncData(
+            AuthState(
+              status: AuthStatus.unauthenticated,
+              errorMessage:
+                  'الحساب مرتبط بجهاز آخر. تواصل مع مدير الورشة لإعادة التعيين.',
+              deviceBlockedInfo: DeviceBlockedInfo.fromCheck(deviceCheck),
+            ),
+          );
+          return false;
+        }
+      }
+
+      // ═══ تحميل البيانات ═══
       final fresh = await _loadCurrentSession();
+
+      // ═══ سجّل الجهاز ═══
+      if (fresh.isAuthenticated && fresh.user != null && fresh.tenant != null) {
+        try {
+          final manager = ref.read(sessionManagerProvider);
+          await manager.registerDevice(
+            userId: fresh.user!.id,
+            tenantId: fresh.tenant!.id,
+          );
+        } catch (_) {
+          // silent fail — ما نمنعش تسجيل الدخول بسبب مشكلة تسجيل
+        }
+      }
+
       state = AsyncData(fresh);
       return fresh.isAuthenticated;
     } on AuthException catch (e) {
@@ -311,6 +404,20 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       }
 
       final fresh = await _loadCurrentSession();
+
+      // ═══ سجّل الجهاز (أول جهاز) ═══
+      if (fresh.isAuthenticated && fresh.user != null && fresh.tenant != null) {
+        try {
+          final manager = ref.read(sessionManagerProvider);
+          await manager.registerDevice(
+            userId: fresh.user!.id,
+            tenantId: fresh.tenant!.id,
+          );
+        } catch (_) {
+          // silent fail
+        }
+      }
+
       state = AsyncData(fresh);
       return fresh.isAuthenticated;
     } on AuthException catch (e) {
@@ -453,7 +560,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   void clearError() {
     final current = state.valueOrNull;
     if (current == null) return;
-    state = AsyncData(current.copyWith(clearError: true));
+    state =
+        AsyncData(current.copyWith(clearError: true, clearDeviceBlocked: true));
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -631,4 +739,14 @@ final isOwnerProvider = Provider<bool>((ref) {
 /// هل مدير أو owner؟
 final isManagerOrOwnerProvider = Provider<bool>((ref) {
   return ref.watch(authProvider).valueOrNull?.isManagerOrOwner ?? false;
+});
+
+/// هل الجهاز محجوب؟
+final isDeviceBlockedProvider = Provider<bool>((ref) {
+  return ref.watch(authProvider).valueOrNull?.isDeviceBlocked ?? false;
+});
+
+/// معلومات الجهاز المحجوب
+final deviceBlockedInfoProvider = Provider<DeviceBlockedInfo?>((ref) {
+  return ref.watch(authProvider).valueOrNull?.deviceBlockedInfo;
 });
