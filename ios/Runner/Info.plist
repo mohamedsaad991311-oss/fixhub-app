@@ -66,5 +66,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+		<key>NSFaceIDUsageDescription</key>
+	<string>نحتاج Face ID لتسجيل دخول آمن إلى FixHub</string>
 </dict>
 </plist>
