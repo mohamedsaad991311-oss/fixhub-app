@@ -279,7 +279,10 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }) async {
     state = const AsyncData(AuthState.loading);
     try {
-      await _auth.signIn(email: email, password: password);
+      await _auth.signInWithIdentifier(
+        identifier: email, // يدعم إيميل أو تليفون
+        password: password,
+      );
 
       // ═══ فحص الجهاز ═══
       final userId = _auth.currentUser?.id;

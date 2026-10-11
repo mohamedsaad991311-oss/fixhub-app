@@ -45,6 +45,78 @@ class AuthService {
 
   /// Stream لتغييرات Auth
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
+  // ═══════════════════════════════════════════════════════════
+  // Identifier Resolution — إيميل أو تليفون
+  // ═══════════════════════════════════════════════════════════
+
+  /// هل النص إيميل؟
+  bool isEmail(String input) => input.contains('@');
+
+  /// هل النص رقم تليفون؟
+  bool isPhone(String input) {
+    if (isEmail(input)) return false;
+    final cleaned = input.replaceAll(RegExp(r'[\s\-()]'), '');
+    return RegExp(r'^[\+]?\d{8,15}$').hasMatch(cleaned);
+  }
+
+  /// تطبيع رقم التليفون (شيل المسافات + إضافة كود الدولة للمصري)
+  String normalizePhone(String phone) {
+    var cleaned = phone.replaceAll(RegExp(r'[\s\-()]'), '');
+    // مصري بدون كود الدولة: 01012345678 → +201012345678
+    if (cleaned.startsWith('0') && cleaned.length == 11) {
+      cleaned = '+20${cleaned.substring(1)}';
+    } else if (!cleaned.startsWith('+') && cleaned.length == 10) {
+      cleaned = '+20$cleaned';
+    }
+    return cleaned;
+  }
+
+  /// تحويل identifier (إيميل أو تليفون) إلى email للـ Supabase Auth
+  ///
+  /// - لو إيميل → يرجّعه
+  /// - لو تليفون → يبحث في جدول staff ويجيب الـ email
+  /// - لو مش موجود → يرمي AuthException
+  Future<String> resolveIdentifier(String identifier) async {
+    final trimmed = identifier.trim();
+
+    // 1. إيميل → يرجّعه
+    if (isEmail(trimmed)) {
+      return trimmed.toLowerCase();
+    }
+
+    // 2. تليفون → ابحث في staff
+    if (isPhone(trimmed)) {
+      final normalized = normalizePhone(trimmed);
+      try {
+        final data = await _supabase.client
+            .from('staff')
+            .select('email, phone')
+            .or('phone.eq.$trimmed,phone.eq.$normalized')
+            .limit(1);
+
+        if ((data as List).isEmpty) {
+          throw const AuthException(
+            'رقم التليفون غير مسجّل. جرب الإيميل أو سجّل حساب جديد.',
+          );
+        }
+
+        final email = data.first['email'] as String?;
+        if (email == null || email.isEmpty) {
+          throw const AuthException('لا يوجد إيميل مرتبط بهذا الرقم.');
+        }
+
+        return email.toLowerCase();
+      } catch (e) {
+        if (e is AuthException) rethrow;
+        throw const AuthException(
+          'تعذّر البحث برقم التليفون. جرب الإيميل.',
+        );
+      }
+    }
+
+    // 3. غير معروف
+    throw const AuthException('أدخل بريد إلكتروني صحيح أو رقم تليفون.');
+  }
 
   // ═══════════════════════════════════════════════════════════
   // Sign Up
@@ -88,6 +160,17 @@ class AuthService {
     );
   }
 
+  /// تسجيل دخول بـ identifier (إيميل أو تليفون)
+  ///
+  /// - لو إيميل → يستخدمه مباشرة
+  /// - لو تليفون → يجيب الإيميل من جدول staff
+  Future<AuthResponse> signInWithIdentifier({
+    required String identifier,
+    required String password,
+  }) async {
+    final email = await resolveIdentifier(identifier);
+    return await signIn(email: email, password: password);
+  }
   // ═══════════════════════════════════════════════════════════
   // Sign Out
   // ═══════════════════════════════════════════════════════════
