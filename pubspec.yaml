@@ -41,6 +41,7 @@ dependencies:
   path_provider: any
   permission_handler: any
   package_info_plus: any
+  uuid: any
   device_info_plus: any
   universal_platform: any
 
