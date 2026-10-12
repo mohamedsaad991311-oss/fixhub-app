@@ -10,6 +10,7 @@ import '../../features/auth/presentation/pages/pin_lock_page.dart';
 import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../../features/home/presentation/pages/home_dashboard_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
 import '../providers/onboarding_provider.dart';
@@ -162,7 +163,7 @@ class AppRouter {
             GoRoute(
               path: RouteNames.home,
               name: 'home',
-              builder: (context, state) => const _HomePlaceholder(),
+              builder: (context, state) => const HomeDashboardPage(),
             ),
           ],
         ),
@@ -467,60 +468,6 @@ class _RouterRefresh extends ChangeNotifier {
 // ═══════════════════════════════════════════════════════════
 
 /// Provider للـ GoRouter — يُبنى مرة واحدة ويُخزَّن
-///
-/// الاستخدام من أي ConsumerWidget/ConsumerState:
-/// ```dart
-/// final router = ref.watch(routerProvider);
-/// ```
 final routerProvider = Provider<GoRouter>((ref) {
   return AppRouter.create(ref: ref);
 });
-
-// ═══════════════════════════════════════════════════════════
-// Home Placeholder (مؤقت — هنستبدله في المرحلة 9)
-// ═══════════════════════════════════════════════════════════
-
-class _HomePlaceholder extends StatelessWidget {
-  const _HomePlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('الرئيسية'),
-        backgroundColor: scheme.surfaceContainer,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.dashboard,
-                size: 80,
-                color: scheme.primary,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'الصفحة الرئيسية',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'قيد التطوير — المرحلة 9',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
