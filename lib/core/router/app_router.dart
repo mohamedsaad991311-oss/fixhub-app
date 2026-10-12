@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/reset_password_page.dart';
+import '../../features/auth/presentation/pages/pin_lock_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
@@ -82,7 +83,7 @@ class AppRouter {
     GoRoute(
       path: RouteNames.pinLock,
       name: 'pinLock',
-      builder: (context, state) => const PinLockPlaceholderPage(),
+      builder: (context, state) => const PinLockPage(),
     ),
 
     // ═══════════════════════════════════════════════════════
