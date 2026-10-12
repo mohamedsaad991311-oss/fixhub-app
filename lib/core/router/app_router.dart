@@ -3,9 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
-import '../../features/auth/presentation/pages/login_page.dart';
+//
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
 import 'route_names.dart';
@@ -56,6 +58,7 @@ class AppRouter {
     ),
 
     // ─── Auth (بدون Shell) ───
+    // ─── Auth (بدون Shell) ───
     GoRoute(
       path: RouteNames.login,
       name: 'login',
@@ -64,7 +67,7 @@ class AppRouter {
     GoRoute(
       path: RouteNames.signup,
       name: 'signup',
-      builder: (context, state) => const SignupPlaceholderPage(),
+      builder: (context, state) => const SignupPage(),
     ),
     GoRoute(
       path: RouteNames.forgotPassword,
