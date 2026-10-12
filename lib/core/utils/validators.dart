@@ -1,6 +1,7 @@
 // lib/core/utils/validators.dart
 
 import '../constants/app_constants.dart';
+import '../constants/country_codes.dart';
 
 /// ═══════════════════════════════════════════════════════════
 /// Validators — مدققات الحقول (للـ Forms)
@@ -27,9 +28,7 @@ class Validators {
   /// التحقق من إن الحقل مش فاضي
   static String? required(String? value, {String? fieldName}) {
     if (value == null || value.trim().isEmpty) {
-      return fieldName != null
-          ? 'حقل $fieldName مطلوب'
-          : 'هذا الحقل مطلوب';
+      return fieldName != null ? 'حقل $fieldName مطلوب' : 'هذا الحقل مطلوب';
     }
     return null;
   }
@@ -55,11 +54,53 @@ class Validators {
     return null;
   }
 
+  /// هل النص ده إيميل؟
+  static bool isEmail(String value) {
+    final regex = RegExp(AppConstants.emailPattern);
+    return regex.hasMatch(value.trim());
+  }
+
   // ═══════════════════════════════════════════════════════════
   // 3) PHONE — رقم الموبايل
   // ═══════════════════════════════════════════════════════════
 
-  /// التحقق من رقم موبايل مصري
+  /// ⭐ الجديد: التحقق من رقم موبايل حسب الدولة المختارة
+  /// بيتوقع الرقم بدون كود الدولة (يعني محلي)
+  /// مثال: phoneWithCountry('01038084846', egypt) -> null
+  static String? phoneWithCountry(String? value, CountryCode country) {
+    if (value == null || value.trim().isEmpty) {
+      return 'رقم الموبايل مطلوب';
+    }
+
+    // نظّف الرقم من أي حاجة مش أرقام
+    var cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+
+    // شيل الصفر اللي في الأول لو موجود
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+
+    // تحقق من الطول
+    if (cleaned.length != country.phoneLength - 1 &&
+        cleaned.length != country.phoneLength) {
+      return 'رقم الموبايل يجب أن يكون ${country.phoneLength} رقم';
+    }
+
+    // تحقق من الـ regex الخاص بالدولة
+    if (!country.localRegex.hasMatch(cleaned)) {
+      return 'رقم الموبايل غير صحيح لـ ${country.nameAr}';
+    }
+
+    return null;
+  }
+
+  /// ⭐ الجديد: تحويل الرقم لصيغة E.164
+  /// مثال: normalizePhone('01038084846', egypt) -> '+201038084846'
+  static String normalizePhone(String value, CountryCode country) {
+    return country.toE164(value);
+  }
+
+  /// التحقق من رقم موبايل مصري (الطريقة القديمة — لسه شغالة)
   static String? egyptPhone(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'رقم الموبايل مطلوب';
@@ -85,12 +126,18 @@ class Validators {
     return null;
   }
 
-  /// التحقق من رقم موبايل (مصري أو دولي)
+  /// التحقق من رقم موبايل (مصري أو دولي) — ذكي
   static String? phone(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'رقم الموبايل مطلوب';
     }
-    return egyptPhone(value) ?? intlPhone(value);
+    final trimmed = value.trim();
+    // لو بيبدأ بـ + يبقى دولي
+    if (trimmed.startsWith('+')) {
+      return intlPhone(trimmed);
+    }
+    // غير كده يبقى محلي مصري (بس لو الطول مناسب)
+    return egyptPhone(trimmed);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -352,14 +399,6 @@ class Validators {
   // ═══════════════════════════════════════════════════════════
 
   /// دمج عدة مدققات مع بعض
-  ///
-  /// مثال:
-  /// ```dart
-  /// validator: Validators.compose([
-  ///   Validators.required,
-  ///   Validators.email,
-  /// ]),
-  /// ```
   static String? Function(String?) compose(
     List<String? Function(String?)> validators,
   ) {

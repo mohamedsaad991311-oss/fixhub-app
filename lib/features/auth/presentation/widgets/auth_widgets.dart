@@ -8,10 +8,6 @@ import '../../../../core/constants/app_sizes.dart';
 //  AUTH SCAFFOLD — غلاف موحّد لكل صفحات Auth
 // ═══════════════════════════════════════════════════════════════
 
-/// Scaffold موحّد لصفحات المصادقة:
-/// - خلفية gradient ناعمة
-/// - SafeArea + scrollable
-/// - max width للـ form على الشاشات الكبيرة
 class AuthScaffold extends StatelessWidget {
   const AuthScaffold({
     required this.child,
@@ -137,12 +133,8 @@ class AuthHeader extends StatelessWidget {
 
     return Column(
       children: [
-        // ─── Logo ───
         _buildLogo(context, scheme),
-
         const SizedBox(height: AppSizes.spaceLg),
-
-        // ─── Title ───
         Text(
           title,
           textAlign: TextAlign.center,
@@ -151,8 +143,6 @@ class AuthHeader extends StatelessWidget {
             color: scheme.onSurface,
           ),
         ),
-
-        // ─── Subtitle ───
         if (subtitle != null) ...[
           const SizedBox(height: AppSizes.spaceSm),
           Text(
@@ -163,7 +153,6 @@ class AuthHeader extends StatelessWidget {
             ),
           ),
         ],
-
         const SizedBox(height: AppSizes.spaceXl),
       ],
     );
@@ -235,6 +224,7 @@ class AuthTextField extends StatelessWidget {
     this.obscureText = false,
     this.validator,
     this.onSubmitted,
+    this.onChanged,
     this.enabled = true,
     this.autofillHints,
     this.maxLength,
@@ -252,6 +242,7 @@ class AuthTextField extends StatelessWidget {
   final bool obscureText;
   final String? Function(String?)? validator;
   final void Function(String)? onSubmitted;
+  final void Function(String)? onChanged;
   final bool enabled;
   final Iterable<String>? autofillHints;
   final int? maxLength;
@@ -266,6 +257,7 @@ class AuthTextField extends StatelessWidget {
       obscureText: obscureText,
       validator: validator,
       onFieldSubmitted: onSubmitted,
+      onChanged: onChanged,
       enabled: enabled,
       autofillHints: autofillHints,
       maxLength: maxLength,
@@ -398,7 +390,6 @@ class AuthButton extends StatelessWidget {
       );
     }
 
-    // Outlined
     return SizedBox(
       width: width ?? double.infinity,
       height: height,
@@ -421,7 +412,7 @@ class AuthButton extends StatelessWidget {
 enum AuthButtonVariant { filled, outlined }
 
 // ═══════════════════════════════════════════════════════════════
-//  AUTH DIVIDER — "أو"
+//  AUTH DIVIDER
 // ═══════════════════════════════════════════════════════════════
 
 class AuthDivider extends StatelessWidget {
@@ -568,7 +559,7 @@ class AuthFooterLink extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  AUTH SOCIAL BUTTON (Biometric / PIN)
+//  AUTH ICON BUTTON (Biometric / PIN)
 // ═══════════════════════════════════════════════════════════════
 
 class AuthIconButton extends StatelessWidget {

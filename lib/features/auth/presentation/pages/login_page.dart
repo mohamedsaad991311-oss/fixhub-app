@@ -9,9 +9,9 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/services/biometric_service.dart';
 import '../../../../core/services/pin_lock_service.dart';
 import '../../../../core/services/settings_service.dart';
-import '../../../../core/utils/validators.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_widgets.dart';
+import '../widgets/identifier_field.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  LOGIN PAGE
@@ -37,6 +37,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _pinAvailable = false;
   bool _isBiometricLoading = false;
   bool _isPinLoading = false;
+
+  /// آخر قيمة identifier (إيميل أو تليفون E.164)
+  IdentifierValue? _identifier;
 
   @override
   void initState() {
@@ -84,12 +87,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    final identifier = _identifierController.text.trim();
     final password = _passwordController.text;
 
-    // ملاحظة: signIn بيدعم إيميل أو تليفون
+    // نستخدم القيمة المحسوبة من IdentifierField
+    // لو مش موجودة → ناخد من الـ controller مباشرة
+    final identifier = _identifier?.value ?? _identifierController.text.trim();
+
+    if (identifier.isEmpty) return;
+
+    // ⭐ signIn بقى يستقبل `identifier` (إيميل أو تليفون)
     final success = await ref.read(authProvider.notifier).signIn(
-          email: identifier,
+          identifier: identifier,
           password: password,
         );
 
@@ -121,7 +129,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         if (current?.isAuthenticated ?? false) {
           context.go(RouteNames.home);
         } else {
-          _showError('انتهت الجلسة. الرجاء تسجيل الدخول بالإيميل أو التليفون.');
+          _showError(
+            'انتهت الجلسة. الرجاء تسجيل الدخول بالإيميل أو التليفون.',
+          );
         }
       } else if (result != BiometricResult.cancelled) {
         _showError(result.messageAr);
@@ -162,7 +172,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   // ─────────────────────────────────────────────────────────────
   //  BUILD
-  //─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -210,21 +220,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               const SizedBox(height: AppSizes.spaceMd),
             ],
 
-            // ─── Identifier (Email or Phone) ───
-            AuthTextField(
+            // ─── Identifier (Email OR Phone Toggle) ⭐ ───
+            IdentifierField(
               controller: _identifierController,
-              label: 'البريد الإلكتروني أو رقم التليفون',
-              hint: 'example@mail.com أو 01012345678',
-              prefixIcon: Icons.person_outline,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              textDirection: TextDirection.ltr,
+              initialType: IdentifierType.phone, // ← الرقم هو الأساسي دلوقتي
               enabled: !isLoading,
-              autofillHints: const [
-                AutofillHints.email,
-                AutofillHints.telephoneNumber,
-              ],
-              validator: _validateIdentifier,
+              onChanged: (v) => setState(() => _identifier = v),
             ),
             const SizedBox(height: AppSizes.spaceMd),
 
@@ -370,32 +371,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ),
     );
   }
-
-  /// Validation للـ identifier (إيميل أو تليفون)
-  String? _validateIdentifier(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'أدخل البريد الإلكتروني أو رقم التليفون';
-    }
-
-    final trimmed = value.trim();
-
-    // إيميل
-    if (trimmed.contains('@')) {
-      return Validators.email(trimmed);
-    }
-
-    // تليفون
-    final cleaned = trimmed.replaceAll(RegExp(r'[\s\-()]'), '');
-    if (!RegExp(r'^[\+]?\d{8,15}$').hasMatch(cleaned)) {
-      return 'أدخل بريد إلكتروني أو رقم تليفون صحيح';
-    }
-
-    return null;
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  DEVICE BLOCKED PAGE — شاشة الجهاز المحجوب
+//  DEVICE BLOCKED PAGE
 // ═══════════════════════════════════════════════════════════════
 
 class _DeviceBlockedPage extends StatelessWidget {
@@ -417,7 +396,6 @@ class _DeviceBlockedPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ─── Icon ───
           Center(
             child: Container(
               width: 100,
@@ -434,8 +412,6 @@ class _DeviceBlockedPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSizes.spaceLg),
-
-          // ─── Title ───
           Text(
             'الحساب مرتبط بجهاز آخر',
             textAlign: TextAlign.center,
@@ -445,8 +421,6 @@ class _DeviceBlockedPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSizes.spaceMd),
-
-          // ─── Description ───
           Text(
             'هذا الحساب نشط على جهاز آخر. لحماية حسابك، يُسمح بالدخول من جهاز واحد فقط.',
             textAlign: TextAlign.center,
@@ -455,10 +429,7 @@ class _DeviceBlockedPage extends StatelessWidget {
               height: 1.5,
             ),
           ),
-
           const SizedBox(height: AppSizes.spaceXl),
-
-          // ─── Device Info Card ───
           Container(
             padding: const EdgeInsets.all(AppSizes.spaceMd),
             decoration: BoxDecoration(
@@ -506,10 +477,7 @@ class _DeviceBlockedPage extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(height: AppSizes.spaceXl),
-
-          // ─── Tip ───
           Container(
             padding: const EdgeInsets.all(AppSizes.spaceSmMd),
             decoration: BoxDecoration(
@@ -537,10 +505,7 @@ class _DeviceBlockedPage extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(height: AppSizes.spaceXl),
-
-          // ─── Contact Admin Button ───
           AuthButton(
             label: 'تواصل مع المدير',
             icon: Icons.chat_outlined,
@@ -548,8 +513,6 @@ class _DeviceBlockedPage extends StatelessWidget {
             onPressed: () => _contactAdmin(context),
           ),
           const SizedBox(height: AppSizes.spaceSmMd),
-
-          // ─── Try Again Button ───
           AuthButton(
             label: 'محاولة الدخول مرة أخرى',
             icon: Icons.refresh,

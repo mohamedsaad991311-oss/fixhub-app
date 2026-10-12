@@ -15,25 +15,12 @@ import '../services/session_manager.dart';
 //  AUTH STATUS
 // ═══════════════════════════════════════════════════════════════
 
-enum AuthStatus {
-  /// لسه بنتحقق من الجلسة
-  unknown,
-
-  /// جاري عملية (sign in/up/out)
-  loading,
-
-  /// مسجّل دخول بنجاح
-  authenticated,
-
-  /// غير مسجّل
-  unauthenticated,
-}
+enum AuthStatus { unknown, loading, authenticated, unauthenticated }
 
 // ═══════════════════════════════════════════════════════════════
 //  DEVICE BLOCKED INFO
 // ═══════════════════════════════════════════════════════════════
 
-/// معلومات الجهاز المحجوب (للعرض في الـ UI)
 class DeviceBlockedInfo {
   const DeviceBlockedInfo({
     this.blockedByName,
@@ -53,7 +40,6 @@ class DeviceBlockedInfo {
   final String? blockedByPlatform;
   final DateTime? blockedByLastSeen;
 
-  /// نص وصفي للـ UI
   String get description {
     final buffer = StringBuffer('الحساب نشط على جهاز آخر');
     if (blockedByName != null && blockedByName!.isNotEmpty) {
@@ -67,7 +53,7 @@ class DeviceBlockedInfo {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  AUTH STATE — الحالة الكاملة
+//  AUTH STATE
 // ═══════════════════════════════════════════════════════════════
 
 class AuthState {
@@ -85,41 +71,25 @@ class AuthState {
   final Tenant? tenant;
   final String? errorMessage;
   final DateTime? lastSyncAt;
-
-  /// نتيجة فحص الجهاز (لو ممنوع)
   final DeviceBlockedInfo? deviceBlockedInfo;
-
-  // ─── Getters ───
 
   bool get isAuthenticated => status == AuthStatus.authenticated;
   bool get isLoading => status == AuthStatus.loading;
   bool get isUnknown => status == AuthStatus.unknown;
   bool get hasError => errorMessage != null && errorMessage!.isNotEmpty;
-
-  /// هل الجهاز ممنوع؟
   bool get isDeviceBlocked => deviceBlockedInfo != null;
-
-  /// هل المستخدم owner؟
   bool get isOwner => user?.role == UserRole.owner;
-
-  /// هل مدير أو مالك؟
   bool get isManagerOrOwner =>
       user?.role == UserRole.owner || user?.role == UserRole.manager;
-
-  /// هل فني؟
   bool get isTechnician => user?.role == UserRole.technician;
-
-  /// هل الورشة فعّالة؟
   bool get isTenantActive => tenant?.isActive ?? false;
 
-  /// هل الاشتراك منتهي؟
   bool get isSubscriptionExpired {
     final expires = tenant?.subscriptionExpiresAt;
     if (expires == null) return false;
     return DateTime.now().isAfter(expires);
   }
 
-  /// رقم أيام الاشتراك المتبقية
   int? get subscriptionDaysLeft {
     final expires = tenant?.subscriptionExpiresAt;
     if (expires == null) return null;
@@ -177,7 +147,7 @@ class AuthState {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  AUTH NOTIFIER — إدارة الحالة
+//  AUTH NOTIFIER
 // ═══════════════════════════════════════════════════════════════
 
 class AuthNotifier extends AsyncNotifier<AuthState> {
@@ -185,13 +155,10 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
   @override
   Future<AuthState> build() async {
-    // مراقبة authStateChanges
     final sub = _auth.authStateChanges.listen((event) {
       _handleAuthEvent(event);
     });
     ref.onDispose(sub.cancel);
-
-    // حالة أولية
     return await _loadCurrentSession();
   }
 
@@ -199,16 +166,12 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   //  LOAD
   // ─────────────────────────────────────────────────────────────
 
-  /// تحميل الجلسة الحالية (user + tenant)
   Future<AuthState> _loadCurrentSession() async {
     try {
-      if (!_auth.isLoggedIn) {
-        return AuthState.unauthenticated;
-      }
+      if (!_auth.isLoggedIn) return AuthState.unauthenticated;
 
       final user = await _fetchAppUser();
       if (user == null) {
-        // موجود في auth بس مش في staff → أنشئه
         final created = await _ensureStaffRecord();
         if (created == null) return AuthState.unauthenticated;
         return await _loadCurrentSession();
@@ -231,15 +194,12 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
   }
 
-  /// معالج تغييرات auth من Supabase
   void _handleAuthEvent(dynamic event) {
     try {
-      // event من نوع AuthState (Supabase) — بنوصلها كـ dynamic
       final session = event.session as Session?;
       final eventType = event.event;
 
       if (session == null) {
-        // تسجيل خروج
         final oldState = state.valueOrNull;
         if (oldState?.isAuthenticated ?? false) {
           state = const AsyncData(AuthState.unauthenticated);
@@ -247,10 +207,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         return;
       }
 
-      // تغيير في التوكن (auto-refresh) — ما نعملش حاجة
       if (eventType == AuthChangeEvent.tokenRefreshed) return;
 
-      // sign in جديد
       if (eventType == AuthChangeEvent.signedIn ||
           eventType == AuthChangeEvent.initialSession) {
         _reload();
@@ -263,7 +221,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
   }
 
-  /// إعادة تحميل الحالة
   Future<void> _reload() async {
     final fresh = await _loadCurrentSession();
     state = AsyncData(fresh);
@@ -273,14 +230,18 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   //  SIGN IN
   // ─────────────────────────────────────────────────────────────
 
+  /// تسجيل دخول بـ identifier (إيميل أو تليفون)
+  ///
+  /// - لو إيميل → signIn عادي
+  /// - لو تليفون → `signInWithIdentifier` هيبحث في `staff` ويجيب الإيميل المرتبط
   Future<bool> signIn({
-    required String email,
+    required String identifier,
     required String password,
   }) async {
     state = const AsyncData(AuthState.loading);
     try {
       await _auth.signInWithIdentifier(
-        identifier: email, // يدعم إيميل أو تليفون
+        identifier: identifier,
         password: password,
       );
 
@@ -291,7 +252,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         final deviceCheck = await manager.checkDeviceAllowed(userId: userId);
 
         if (!deviceCheck.isAllowed) {
-          // 🚫 الجهاز ممنوع → sign out فوراً
           await _auth.signOut();
           state = AsyncData(
             AuthState(
@@ -316,9 +276,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
             userId: fresh.user!.id,
             tenantId: fresh.tenant!.id,
           );
-        } catch (_) {
-          // silent fail — ما نمنعش تسجيل الدخول بسبب مشكلة تسجيل
-        }
+        } catch (_) {}
       }
 
       state = AsyncData(fresh);
@@ -352,47 +310,50 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
   /// إنشاء حساب جديد
   ///
-  /// - لو [createTenant] == true → ينشئ tenant + staff (owner)
-  /// - لو false → ينشئ staff فقط (بانتظار دعوة من مالك)
+  /// - [phone] **مطلوب** — هو الـ identifier الأساسي
+  /// - [email] **اختياري** — لو موجود يتخزن في `staff.email`
+  /// - [createTenant] == true → ينشئ tenant + staff (owner)
+  /// - [createTenant] == false → ينشئ staff فقط (بانتظار دعوة)
   Future<bool> signUp({
-    required String email,
+    required String phone,
     required String password,
     required String fullName,
-    String? phone,
+    String? email,
     String? tenantName,
     bool createTenant = false,
   }) async {
     state = const AsyncData(AuthState.loading);
     try {
-      await _auth.signUp(
-        email: email,
+      // ⭐ Sign up بالرقم (يحوّله لإيميل داخلي `{digits}@fixhub.local`)
+      await _auth.signUpWithPhone(
+        phone: phone,
         password: password,
         fullName: fullName,
-        phone: phone,
+        realEmail: email,
         metadata: {
           if (createTenant) 'create_tenant': true,
           if (tenantName != null) 'tenant_name': tenantName,
         },
       );
 
-      // بعد signUp، Supabase بيعمل session تلقائي (لو Email confirmation معطّل)
+      // لو Email confirmation مفعّل → محتاج تأكيد
       if (!_auth.isLoggedIn) {
-        // محتاج تأكيد إيميل
         state = const AsyncData(
           AuthState(
             status: AuthStatus.unauthenticated,
-            errorMessage: 'تم إنشاء الحساب. راجع إيميلك للتأكيد.',
+            errorMessage: 'تم إنشاء الحساب. راجع بياناتك لتأكيد الدخول.',
           ),
         );
         return false;
       }
 
-      // أنشئ staff record (والـ tenant لو مطلوب)
+      // أنشئ staff record (+ tenant لو مطلوب)
       final staffCreated = await _ensureStaffRecord(
         createTenant: createTenant,
         tenantName: tenantName,
         fullName: fullName,
         phone: phone,
+        realEmail: email,
         role: createTenant ? UserRole.owner : UserRole.technician,
       );
 
@@ -416,9 +377,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
             userId: fresh.user!.id,
             tenantId: fresh.tenant!.id,
           );
-        } catch (_) {
-          // silent fail
-        }
+        } catch (_) {}
       }
 
       state = AsyncData(fresh);
@@ -454,7 +413,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = const AsyncData(AuthState.loading);
     try {
       await _auth.signOut();
-      // امسح cache الإعدادات
       ref.read(settingsServiceProvider).clearCache();
       state = const AsyncData(AuthState.unauthenticated);
     } catch (e) {
@@ -500,28 +458,28 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   //  PROFILE
   // ─────────────────────────────────────────────────────────────
 
-  /// تحديث بيانات المستخدم (fullName, phone, avatar)
   Future<bool> updateProfile({
     String? fullName,
     String? phone,
+    String? email,
     String? avatarUrl,
   }) async {
     final current = state.valueOrNull;
     if (current?.user == null) return false;
 
     try {
-      // 1. حدّث Supabase Auth
       await _auth.updateProfile(
         fullName: fullName,
         phone: phone,
+        email: email,
         avatarUrl: avatarUrl,
       );
 
-      // 2. حدّث جدول staff
       final client = ref.read(supabaseClientProvider);
       final updates = <String, dynamic>{};
       if (fullName != null) updates['full_name'] = fullName;
       if (phone != null) updates['phone'] = phone;
+      if (email != null) updates['email'] = email;
       if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
 
       if (updates.isNotEmpty) {
@@ -531,7 +489,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
             .eq('user_id', current!.user!.id);
       }
 
-      // 3. حدّث الحالة
       final updatedUser = current!.user!.copyWith(
         fullName: fullName,
         phone: phone,
@@ -552,14 +509,12 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   //  REFRESH
   // ─────────────────────────────────────────────────────────────
 
-  /// إعادة تحميل الحالة من Supabase
   Future<void> refresh() async {
     state = const AsyncData(AuthState.loading);
     final fresh = await _loadCurrentSession();
     state = AsyncData(fresh);
   }
 
-  /// مسح الخطأ
   void clearError() {
     final current = state.valueOrNull;
     if (current == null) return;
@@ -568,10 +523,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }
 
   // ─────────────────────────────────────────────────────────────
-  //  INTERNAL — fetch & ensure
+  //  INTERNAL
   // ─────────────────────────────────────────────────────────────
 
-  /// جلب بيانات المستخدم من جدول staff
   Future<AppUser?> _fetchAppUser() async {
     try {
       final client = ref.read(supabaseClientProvider);
@@ -591,7 +545,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
   }
 
-  /// جلب بيانات الورشة
   Future<Tenant?> _fetchTenant(String? tenantId) async {
     if (tenantId == null || tenantId.isEmpty) return null;
     try {
@@ -612,18 +565,29 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
   }
 
-  /// إنشاء tenant + staff record (لو مش موجود)
+  /// إنشاء tenant + staff record
+  ///
+  /// - [phone] **مطلوب**
+  /// - [realEmail] **اختياري** — لو مش موجود، نخزّن الإيميل المولّد في `staff.email`
   Future<AppUser?> _ensureStaffRecord({
     bool createTenant = false,
     String? tenantName,
     String? fullName,
     String? phone,
+    String? realEmail,
     UserRole role = UserRole.technician,
   }) async {
     try {
       final client = ref.read(supabaseClientProvider);
       final userId = _auth.userId!;
-      final userEmail = _auth.userEmail ?? '';
+      final authEmail = _auth.userEmail ?? '';
+
+      // الإيميل اللي هيتخزن في staff:
+      // - الإيميل الحقيقي لو المستخدم كتبه
+      // - أو الإيميل المولّد من الرقم
+      final staffEmail = (realEmail != null && realEmail.isNotEmpty)
+          ? realEmail.trim().toLowerCase()
+          : authEmail;
 
       String? tenantId;
 
@@ -648,7 +612,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       // 2. أنشئ staff record
       final staffPayload = {
         'user_id': userId,
-        'email': userEmail,
+        'email': staffEmail,
         if (fullName != null) 'full_name': fullName,
         if (phone != null) 'phone': phone,
         'role': role.name,
@@ -669,19 +633,18 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
   }
 
-  /// ترجمة أخطاء Supabase Auth للعربي
   String _translateAuthError(String? message) {
     if (message == null) return 'حدث خطأ غير متوقع';
     final msg = message.toLowerCase();
     if (msg.contains('invalid login')) {
-      return 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+      return 'الرقم/الإيميل أو كلمة المرور غير صحيحة';
     }
     if (msg.contains('email not confirmed')) {
-      return 'البريد الإلكتروني غير مؤكد. راجع إيميلك.';
+      return 'الحساب غير مؤكد. تواصل مع الدعم.';
     }
     if (msg.contains('user already registered') ||
         msg.contains('already been registered')) {
-      return 'البريد الإلكتروني مسجّل بالفعل';
+      return 'الحساب مسجّل بالفعل';
     }
     if (msg.contains('password should be')) {
       return 'كلمة المرور ضعيفة (6 أحرف على الأقل)';
@@ -703,53 +666,41 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 //  RIVERPOD PROVIDERS
 // ═══════════════════════════════════════════════════════════════
 
-/// الـ provider الرئيسي لحالة المصادقة
 final authProvider =
     AsyncNotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
 
-// ─── Convenience providers (اختصارات) ───
-
-/// المستخدم الحالي (AppUser)
 final currentAppUserProvider = Provider<AppUser?>((ref) {
   return ref.watch(authProvider).valueOrNull?.user;
 });
 
-/// الورشة الحالية (Tenant)
 final currentTenantProvider = Provider<Tenant?>((ref) {
   return ref.watch(authProvider).valueOrNull?.tenant;
 });
 
-/// هل مسجّل دخول؟
 final isAuthenticatedProvider = Provider<bool>((ref) {
   return ref.watch(authProvider).valueOrNull?.isAuthenticated ?? false;
 });
 
-/// دور المستخدم
 final userRoleProvider = Provider<UserRole?>((ref) {
   return ref.watch(authProvider).valueOrNull?.user?.role;
 });
 
-/// حالة التحميل
 final authLoadingProvider = Provider<bool>((ref) {
   return ref.watch(authProvider).valueOrNull?.isLoading ?? false;
 });
 
-/// هل المستخدم owner؟
 final isOwnerProvider = Provider<bool>((ref) {
   return ref.watch(authProvider).valueOrNull?.isOwner ?? false;
 });
 
-/// هل مدير أو owner؟
 final isManagerOrOwnerProvider = Provider<bool>((ref) {
   return ref.watch(authProvider).valueOrNull?.isManagerOrOwner ?? false;
 });
 
-/// هل الجهاز محجوب؟
 final isDeviceBlockedProvider = Provider<bool>((ref) {
   return ref.watch(authProvider).valueOrNull?.isDeviceBlocked ?? false;
 });
 
-/// معلومات الجهاز المحجوب
 final deviceBlockedInfoProvider = Provider<DeviceBlockedInfo?>((ref) {
   return ref.watch(authProvider).valueOrNull?.deviceBlockedInfo;
 });

@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/country_codes.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_widgets.dart';
+import '../widgets/phone_field.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  SIGNUP PAGE
@@ -27,8 +29,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   final _formKey = GlobalKey<FormState>();
   final _shopNameController = TextEditingController();
   final _fullNameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -37,12 +39,15 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   bool _obscureConfirm = true;
   bool _agreeToTerms = false;
 
+  /// الدولة المختارة للرقم
+  CountryCode _country = countryCodes.first;
+
   @override
   void dispose() {
     _shopNameController.dispose();
     _fullNameController.dispose();
-    _emailController.dispose();
     _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -62,23 +67,31 @@ class _SignupPageState extends ConsumerState<SignupPage> {
       return;
     }
 
+    // ⭐ تحويل الرقم لصيغة E.164
+    final normalizedPhone = Validators.normalizePhone(
+      _phoneController.text,
+      _country,
+    );
+
+    // الإيميل اختياري — لو فاضي نمرر null
+    final emailInput = _emailController.text.trim();
+    final email = emailInput.isEmpty ? null : emailInput;
+
     final success = await ref.read(authProvider.notifier).signUp(
-          email: _emailController.text.trim(),
+          phone: normalizedPhone,
+          email: email,
           password: _passwordController.text,
           fullName: _fullNameController.text.trim(),
-          phone: _phoneController.text.trim(),
           tenantName: _shopNameController.text.trim(),
-          createTenant: true, // دايماً ورشة جديدة
+          createTenant: true,
         );
 
     if (!mounted) return;
 
     if (success) {
-      // امسح cache الإعدادات عشان يقرأ من Supabase
       ref.read(settingsServiceProvider).clearCache();
       context.go(RouteNames.home);
     }
-    // لو فشل → الخطأ في الـ state
   }
 
   void _handleLogin() {
@@ -155,10 +168,24 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             ),
             const SizedBox(height: AppSizes.spaceMd),
 
-            // ─── Email ───
+            // ─── Phone (مطلوب) ⭐ ───
+            PhoneField(
+              controller: _phoneController,
+              initialCountry: _country,
+              onCountryChanged: (c) => setState(() => _country = c),
+              labelText: 'رقم التليفون',
+              hintText: '1X XXXX XXXX',
+              isRequired: true,
+              prefixIcon: Icons.phone_outlined,
+              enabled: !isLoading,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: AppSizes.spaceMd),
+
+            // ─── Email (اختياري) ───
             AuthTextField(
               controller: _emailController,
-              label: 'البريد الإلكتروني',
+              label: 'البريد الإلكتروني (اختياري)',
               hint: 'example@mail.com',
               prefixIcon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
@@ -166,22 +193,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
               textDirection: TextDirection.ltr,
               enabled: !isLoading,
               autofillHints: const [AutofillHints.email],
-              validator: Validators.email,
-            ),
-            const SizedBox(height: AppSizes.spaceMd),
-
-            // ─── Phone ───
-            AuthTextField(
-              controller: _phoneController,
-              label: 'رقم التليفون',
-              hint: '01012345678',
-              prefixIcon: Icons.phone_outlined,
-              keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.next,
-              textDirection: TextDirection.ltr,
-              enabled: !isLoading,
-              autofillHints: const [AutofillHints.telephoneNumber],
-              validator: Validators.phone,
+              validator: _validateOptionalEmail,
             ),
             const SizedBox(height: AppSizes.spaceMd),
 
@@ -296,5 +308,13 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         ),
       ),
     );
+  }
+
+  /// Validator للإيميل الاختياري:
+  /// - فاضي → null (صالح)
+  /// - مش فاضي → لازم إيميل صحيح
+  String? _validateOptionalEmail(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    return Validators.email(value);
   }
 }

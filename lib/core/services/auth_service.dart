@@ -10,43 +10,27 @@ import 'supabase_service.dart';
 /// ═══════════════════════════════════════════════════════════
 /// AuthService — إدارة المصادقة
 /// ═══════════════════════════════════════════════════════════
-///
-/// بيعتمد على SupabaseService للوصول لـ Supabase Auth.
-///
-/// المميزات:
-/// - Sign Up / Sign In / Sign Out
-/// - Reset Password
-/// - Update Profile
-/// - Stream لتغييرات Auth
-///
 class AuthService {
   AuthService(this._supabase);
 
   final SupabaseService _supabase;
 
+  /// دومين داخلي للإيميلات المولّدة من الأرقام
+  static const String _phoneEmailDomain = 'fixhub.app';
+
   // ═══════════════════════════════════════════════════════════
   // Getters
   // ═══════════════════════════════════════════════════════════
 
-  /// المستخدم الحالي
   User? get currentUser => _supabase.currentUser;
-
-  /// الجلسة الحالية
   Session? get currentSession => _supabase.auth.currentSession;
-
-  /// هل مسجّل دخول؟
   bool get isLoggedIn => _supabase.isLoggedIn;
-
-  /// ID المستخدم
   String? get userId => _supabase.currentUserId;
-
-  /// الإيميل
   String? get userEmail => _supabase.currentUserEmail;
-
-  /// Stream لتغييرات Auth
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
+
   // ═══════════════════════════════════════════════════════════
-  // Identifier Resolution — إيميل أو تليفون
+  // Identifier Detection
   // ═══════════════════════════════════════════════════════════
 
   /// هل النص إيميل؟
@@ -59,22 +43,55 @@ class AuthService {
     return RegExp(r'^[\+]?\d{8,15}$').hasMatch(cleaned);
   }
 
-  /// تطبيع رقم التليفون (شيل المسافات + إضافة كود الدولة للمصري)
+  /// تطبيع رقم التليفون (إزالة المسافات + توحيد الصيغة)
+  ///
+  /// - `01012345678` → `+201012345678`
+  /// - `+201012345678` → `+201012345678`
+  /// - `201012345678` → `+201012345678`
   String normalizePhone(String phone) {
     var cleaned = phone.replaceAll(RegExp(r'[\s\-()]'), '');
-    // مصري بدون كود الدولة: 01012345678 → +201012345678
+
+    // لو بدأ بـ + → نرجّعه كما هو
+    if (cleaned.startsWith('+')) return cleaned;
+
+    // لو بدأ بـ 00 → نحولها لـ +
+    if (cleaned.startsWith('00')) return '+${cleaned.substring(2)}';
+
+    // مصري بدون كود: 01012345678 → +201012345678
     if (cleaned.startsWith('0') && cleaned.length == 11) {
-      cleaned = '+20${cleaned.substring(1)}';
-    } else if (!cleaned.startsWith('+') && cleaned.length == 10) {
-      cleaned = '+20$cleaned';
+      return '+20${cleaned.substring(1)}';
     }
-    return cleaned;
+
+    // مصري بدون صفر: 1012345678 → +201012345678
+    if (cleaned.length == 10 && cleaned.startsWith('1')) {
+      return '+20$cleaned';
+    }
+
+    // fallback: نضيف + لو مش موجودة
+    return '+$cleaned';
   }
+
+  /// تحويل رقم التليفون لإيميل داخلي (للـ Supabase Auth)
+  ///
+  /// `+201012345678` → `201012345678@fixhub.local`
+  String phoneToAuthEmail(String phone) {
+    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    return '$digits@$_phoneEmailDomain';
+  }
+
+  /// هل الإيميل ده مولّد من رقم؟
+  bool isPhoneAuthEmail(String email) {
+    return email.endsWith('@$_phoneEmailDomain');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // Identifier Resolution — إيميل أو تليفون
+  // ═══════════════════════════════════════════════════════════
 
   /// تحويل identifier (إيميل أو تليفون) إلى email للـ Supabase Auth
   ///
-  /// - لو إيميل → يرجّعه
-  /// - لو تليفون → يبحث في جدول staff ويجيب الـ email
+  /// - لو إيميل حقيقي → يرجّعه lowercase
+  /// - لو تليفون → يبحث في `staff` عن الإيميل المرتبط
   /// - لو مش موجود → يرمي AuthException
   Future<String> resolveIdentifier(String identifier) async {
     final trimmed = identifier.trim();
@@ -87,11 +104,15 @@ class AuthService {
     // 2. تليفون → ابحث في staff
     if (isPhone(trimmed)) {
       final normalized = normalizePhone(trimmed);
+
       try {
         final data = await _supabase.client
             .from('staff')
             .select('email, phone')
-            .or('phone.eq.$trimmed,phone.eq.$normalized')
+            .or(
+              'phone.eq.$trimmed,'
+              'phone.eq.$normalized',
+            )
             .limit(1);
 
         if ((data as List).isEmpty) {
@@ -100,9 +121,12 @@ class AuthService {
           );
         }
 
-        final email = data.first['email'] as String?;
+        final row = data.first;
+        final email = row['email'] as String?;
+
+        // لو مفيش إيميل مخزّن → نولّد واحد من الرقم
         if (email == null || email.isEmpty) {
-          throw const AuthException('لا يوجد إيميل مرتبط بهذا الرقم.');
+          return phoneToAuthEmail(normalized);
         }
 
         return email.toLowerCase();
@@ -122,9 +146,8 @@ class AuthService {
   // Sign Up
   // ═══════════════════════════════════════════════════════════
 
-  /// إنشاء حساب جديد
+  /// إنشاء حساب جديد بالإيميل (الطريقة التقليدية)
   ///
-  /// Returns: `AuthResponse` لو نجح
   /// Throws: `AuthException` لو فشل
   Future<AuthResponse> signUp({
     required String email,
@@ -139,6 +162,34 @@ class AuthService {
       data: {
         if (fullName != null) 'full_name': fullName,
         if (phone != null) 'phone': phone,
+        ...?metadata,
+      },
+    );
+    return response;
+  }
+
+  /// إنشاء حساب جديد برقم التليفون
+  ///
+  /// - بيولّد إيميل داخلي `{digits}@fixhub.local`
+  /// - بيستخدم Email provider في Supabase
+  /// - الرقم الحقيقي بيتخزن في `staff.phone` (عبر الـ signup flow)
+  Future<AuthResponse> signUpWithPhone({
+    required String phone,
+    required String password,
+    String? fullName,
+    String? realEmail,
+    Map<String, dynamic>? metadata,
+  }) async {
+    final normalized = normalizePhone(phone);
+    final authEmail = phoneToAuthEmail(normalized);
+
+    final response = await _supabase.auth.signUp(
+      email: authEmail,
+      password: password,
+      data: {
+        'phone': normalized,
+        if (fullName != null) 'full_name': fullName,
+        if (realEmail != null) 'real_email': realEmail,
         ...?metadata,
       },
     );
@@ -160,10 +211,19 @@ class AuthService {
     );
   }
 
-  /// تسجيل دخول بـ identifier (إيميل أو تليفون)
+  /// تسجيل دخول برقم التليفون مباشرة
   ///
-  /// - لو إيميل → يستخدمه مباشرة
-  /// - لو تليفون → يجيب الإيميل من جدول staff
+  /// - لو الرقم له إيميل حقيقي في `staff` → يستخدمه
+  /// - لو لأ → يستخدم الإيميل المولّد `{digits}@fixhub.local`
+  Future<AuthResponse> signInWithPhone({
+    required String phone,
+    required String password,
+  }) async {
+    final email = await resolveIdentifier(phone);
+    return await signIn(email: email, password: password);
+  }
+
+  /// تسجيل دخول بـ identifier (إيميل أو تليفون)
   Future<AuthResponse> signInWithIdentifier({
     required String identifier,
     required String password,
@@ -171,21 +231,19 @@ class AuthService {
     final email = await resolveIdentifier(identifier);
     return await signIn(email: email, password: password);
   }
+
   // ═══════════════════════════════════════════════════════════
   // Sign Out
   // ═══════════════════════════════════════════════════════════
 
-  /// تسجيل خروج
   Future<void> signOut() async {
     await _supabase.auth.signOut();
   }
 
-  /// تسجيل خروج من كل الأجهزة
   Future<void> signOutAll() async {
     await _supabase.auth.signOut(scope: SignOutScope.global);
   }
 
-  /// تسجيل خروج من الأجهزة التانية (ما عدا الحالي)
   Future<void> signOutOthers() async {
     await _supabase.auth.signOut(scope: SignOutScope.others);
   }
@@ -194,7 +252,6 @@ class AuthService {
   // Password Reset
   // ═══════════════════════════════════════════════════════════
 
-  /// إرسال إيميل لإعادة تعيين كلمة المرور
   Future<void> resetPassword(String email) async {
     await _supabase.auth.resetPasswordForEmail(
       email.trim(),
@@ -202,7 +259,6 @@ class AuthService {
     );
   }
 
-  /// تغيير كلمة المرور (للمستخدم الحالي)
   Future<UserResponse> updatePassword(String newPassword) async {
     return await _supabase.auth.updateUser(
       UserAttributes(password: newPassword),
@@ -213,7 +269,6 @@ class AuthService {
   // User Management
   // ═══════════════════════════════════════════════════════════
 
-  /// تحديث بيانات المستخدم
   Future<UserResponse> updateProfile({
     String? email,
     String? phone,
@@ -234,7 +289,6 @@ class AuthService {
     );
   }
 
-  /// إرسال تحقق الإيميل
   Future<void> sendEmailVerification() async {
     final email = userEmail;
     if (email == null) {
@@ -246,12 +300,10 @@ class AuthService {
     );
   }
 
-  /// إرسال OTP للتليفون
   Future<void> sendPhoneOtp(String phone) async {
     await _supabase.auth.signInWithOtp(phone: phone);
   }
 
-  /// تحقق OTP للتليفون
   Future<AuthResponse> verifyPhoneOtp({
     required String phone,
     required String token,
@@ -267,18 +319,13 @@ class AuthService {
   // Session Management
   // ═══════════════════════════════════════════════════════════
 
-  /// تحديث الجلسة الحالية
   Future<AuthResponse> refreshSession() async {
     return await _supabase.auth.refreshSession();
   }
 
-  /// إرجاع Access Token
   String? get accessToken => currentSession?.accessToken;
-
-  /// إرجاع Refresh Token
   String? get refreshToken => currentSession?.refreshToken;
 
-  /// هل الجلسة منتهية؟
   bool get isSessionExpired {
     final session = currentSession;
     if (session == null) return true;
@@ -288,7 +335,6 @@ class AuthService {
         .isBefore(DateTime.now());
   }
 
-  /// التأكد من إن الجلسة صالحة
   Future<bool> ensureValidSession() async {
     if (!isLoggedIn) return false;
     if (!isSessionExpired) return true;
@@ -305,7 +351,6 @@ class AuthService {
   // Helpers
   // ═══════════════════════════════════════════════════════════
 
-  /// هل الإيميل مسجّل؟
   Future<bool> isEmailRegistered(String email) async {
     try {
       final data = await _supabase.client
@@ -319,7 +364,21 @@ class AuthService {
     }
   }
 
-  /// إرجاع بيانات المستخدم من staff
+  /// هل الرقم مسجّل؟
+  Future<bool> isPhoneRegistered(String phone) async {
+    try {
+      final normalized = normalizePhone(phone);
+      final data = await _supabase.client
+          .from('staff')
+          .select('id')
+          .or('phone.eq.$phone,phone.eq.$normalized')
+          .limit(1);
+      return (data as List).isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> getUserProfile() async {
     if (!isLoggedIn) return null;
     try {
@@ -333,7 +392,6 @@ class AuthService {
     }
   }
 
-  /// إرجاع tenant_id للمستخدم الحالي
   Future<String?> getUserTenantId() async {
     if (!isLoggedIn) return null;
     try {
@@ -348,10 +406,7 @@ class AuthService {
     }
   }
 
-  /// هل الإيميل موثّق؟
   bool get isEmailVerified => currentUser?.emailConfirmedAt != null;
-
-  /// هل التليفون موثّق؟
   bool get isPhoneVerified => currentUser?.phoneConfirmedAt != null;
 }
 
@@ -359,35 +414,21 @@ class AuthService {
 // Riverpod Providers
 // ═══════════════════════════════════════════════════════════
 
-/// Provider للـ AuthService
 final authServiceProvider = Provider<AuthService>((ref) {
   final supabase = ref.watch(supabaseServiceProvider);
   return AuthService(supabase);
 });
 
-/// Provider لحالة المصادقة (Stream)
-///
-/// الاستخدام:
-/// ```dart
-/// final authState = ref.watch(authStateProvider);
-/// authState.when(
-///   data: (state) => ...,
-///   loading: () => ...,
-///   error: (e, st) => ...,
-/// )
-/// ```
 final authStateProvider = StreamProvider<AuthState>((ref) {
   final auth = ref.watch(authServiceProvider);
   return auth.authStateChanges;
 });
 
-/// Provider للمستخدم الحالي (Stream)
 final currentUserStreamProvider = StreamProvider<User?>((ref) {
   final auth = ref.watch(authServiceProvider);
   return auth.authStateChanges.map((state) => state.session?.user);
 });
 
-/// Provider لحالة تسجيل الدخول (bool)
 final isLoggedInProvider = Provider<bool>((ref) {
   final auth = ref.watch(authServiceProvider);
   return auth.isLoggedIn;
