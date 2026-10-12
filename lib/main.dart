@@ -14,6 +14,7 @@ import 'core/providers/prefs_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/theme_provider.dart';
 import 'l10n/app_localizations.dart';
+import 'features/auth/presentation/services/session_manager.dart';
 
 Future<void> main() async {
   // ─── 1. تهيئة Flutter ───
@@ -31,7 +32,7 @@ Future<void> main() async {
 
   // ─── 5. تهيئة Supabase ───
   if (AppEnv.isSupabaseConfigured) {
-            await Supabase.initialize(
+    await Supabase.initialize(
       url: AppEnv.supabaseUrl,
       publishableKey: AppEnv.supabasePublishableKey,
     );
@@ -46,10 +47,13 @@ Future<void> main() async {
       overrides: [
         sharedPrefsProvider.overrideWithValue(prefs),
       ],
-      child: const FixHubApp(),
+      child: const SessionManagerWidget(
+        child: FixHubApp(),
+      ),
     ),
   );
 }
+
 class FixHubApp extends ConsumerWidget {
   const FixHubApp({super.key});
 
