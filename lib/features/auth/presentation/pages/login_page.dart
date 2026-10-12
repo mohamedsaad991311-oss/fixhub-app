@@ -45,6 +45,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).clearError();
       _checkAuthOptions();
     });
   }
@@ -106,6 +107,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (success) {
       final pin = ref.read(pinLockServiceProvider);
       await pin.resetAttempts();
+
+      // ⭐ استنى شوية عشان authProvider يحدّث الـ state قبل redirect
+      await Future.delayed(const Duration(milliseconds: 500));
+
       if (mounted) context.go(RouteNames.home);
     }
   }
@@ -223,7 +228,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             // ─── Identifier (Email OR Phone Toggle) ⭐ ───
             IdentifierField(
               controller: _identifierController,
-              initialType: IdentifierType.phone, // ← الرقم هو الأساسي دلوقتي
+              initialType: IdentifierType.phone,
               enabled: !isLoading,
               onChanged: (v) => setState(() => _identifier = v),
             ),

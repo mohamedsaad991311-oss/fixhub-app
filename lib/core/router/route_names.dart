@@ -65,6 +65,9 @@ class RouteNames {
   /// إنشاء إيصال (استلام جهاز)
   static const String receiptCreate = '/receipts/create';
 
+  /// معالج استلام جهاز جديد (Wizard 3 خطوات)
+  static const String receivingWizard = '/receipts/receiving';
+
   /// تعديل إيصال
   static const String receiptEdit = '/receipts/:id/edit';
 

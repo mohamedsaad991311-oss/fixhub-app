@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -43,18 +44,11 @@ class AuthService {
     return RegExp(r'^[\+]?\d{8,15}$').hasMatch(cleaned);
   }
 
-  /// تطبيع رقم التليفون (إزالة المسافات + توحيد الصيغة)
-  ///
-  /// - `01012345678` → `+201012345678`
-  /// - `+201012345678` → `+201012345678`
-  /// - `201012345678` → `+201012345678`
+  /// تطبيع رقم التليفون
   String normalizePhone(String phone) {
     var cleaned = phone.replaceAll(RegExp(r'[\s\-()]'), '');
 
-    // لو بدأ بـ + → نرجّعه كما هو
     if (cleaned.startsWith('+')) return cleaned;
-
-    // لو بدأ بـ 00 → نحولها لـ +
     if (cleaned.startsWith('00')) return '+${cleaned.substring(2)}';
 
     // مصري بدون كود: 01012345678 → +201012345678
@@ -67,13 +61,10 @@ class AuthService {
       return '+20$cleaned';
     }
 
-    // fallback: نضيف + لو مش موجودة
     return '+$cleaned';
   }
 
-  /// تحويل رقم التليفون لإيميل داخلي (للـ Supabase Auth)
-  ///
-  /// `+201012345678` → `201012345678@fixhub.local`
+  /// تحويل رقم التليفون لإيميل داخلي
   String phoneToAuthEmail(String phone) {
     final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
     return '$digits@$_phoneEmailDomain';
@@ -89,10 +80,6 @@ class AuthService {
   // ═══════════════════════════════════════════════════════════
 
   /// تحويل identifier (إيميل أو تليفون) إلى email للـ Supabase Auth
-  ///
-  /// - لو إيميل حقيقي → يرجّعه lowercase
-  /// - لو تليفون → يبحث في `staff` عن الإيميل المرتبط
-  /// - لو مش موجود → يرمي AuthException
   Future<String> resolveIdentifier(String identifier) async {
     final trimmed = identifier.trim();
 
@@ -101,30 +88,31 @@ class AuthService {
       return trimmed.toLowerCase();
     }
 
-    // 2. تليفون → ابحث في staff
+    // 2. تليفون → ابحث في staff عبر RPC (آمن + بيتخطى RLS)
     if (isPhone(trimmed)) {
       final normalized = normalizePhone(trimmed);
+      debugPrint(
+          '🔍 [resolveIdentifier] trimmed="$trimmed" normalized="$normalized"');
 
       try {
-        final data = await _supabase.client
-            .from('staff')
-            .select('email, phone')
-            .or(
-              'phone.eq.$trimmed,'
-              'phone.eq.$normalized',
-            )
-            .limit(1);
+        final data = await _supabase.client.rpc(
+          'lookup_staff_by_phone',
+          params: {'p_phone': normalized},
+        );
+
+        debugPrint(
+            '🔍 [resolveIdentifier] RPC returned ${(data as List).length} rows');
 
         if ((data as List).isEmpty) {
+          debugPrint('🔴 [resolveIdentifier] NO ROW FOUND');
           throw const AuthException(
             'رقم التليفون غير مسجّل. جرب الإيميل أو سجّل حساب جديد.',
           );
         }
 
-        final row = data.first;
+        final row = data.first as Map<String, dynamic>;
         final email = row['email'] as String?;
 
-        // لو مفيش إيميل مخزّن → نولّد واحد من الرقم
         if (email == null || email.isEmpty) {
           return phoneToAuthEmail(normalized);
         }
@@ -132,6 +120,7 @@ class AuthService {
         return email.toLowerCase();
       } catch (e) {
         if (e is AuthException) rethrow;
+        debugPrint('🔴 [resolveIdentifier] RPC error: $e');
         throw const AuthException(
           'تعذّر البحث برقم التليفون. جرب الإيميل.',
         );
@@ -146,9 +135,6 @@ class AuthService {
   // Sign Up
   // ═══════════════════════════════════════════════════════════
 
-  /// إنشاء حساب جديد بالإيميل (الطريقة التقليدية)
-  ///
-  /// Throws: `AuthException` لو فشل
   Future<AuthResponse> signUp({
     required String email,
     required String password,
@@ -156,7 +142,7 @@ class AuthService {
     String? phone,
     Map<String, dynamic>? metadata,
   }) async {
-    final response = await _supabase.auth.signUp(
+    return await _supabase.auth.signUp(
       email: email.trim(),
       password: password,
       data: {
@@ -165,14 +151,8 @@ class AuthService {
         ...?metadata,
       },
     );
-    return response;
   }
 
-  /// إنشاء حساب جديد برقم التليفون
-  ///
-  /// - بيولّد إيميل داخلي `{digits}@fixhub.local`
-  /// - بيستخدم Email provider في Supabase
-  /// - الرقم الحقيقي بيتخزن في `staff.phone` (عبر الـ signup flow)
   Future<AuthResponse> signUpWithPhone({
     required String phone,
     required String password,
@@ -183,7 +163,7 @@ class AuthService {
     final normalized = normalizePhone(phone);
     final authEmail = phoneToAuthEmail(normalized);
 
-    final response = await _supabase.auth.signUp(
+    return await _supabase.auth.signUp(
       email: authEmail,
       password: password,
       data: {
@@ -193,14 +173,12 @@ class AuthService {
         ...?metadata,
       },
     );
-    return response;
   }
 
   // ═══════════════════════════════════════════════════════════
   // Sign In
   // ═══════════════════════════════════════════════════════════
 
-  /// تسجيل دخول بالإيميل وكلمة المرور
   Future<AuthResponse> signIn({
     required String email,
     required String password,
@@ -211,10 +189,6 @@ class AuthService {
     );
   }
 
-  /// تسجيل دخول برقم التليفون مباشرة
-  ///
-  /// - لو الرقم له إيميل حقيقي في `staff` → يستخدمه
-  /// - لو لأ → يستخدم الإيميل المولّد `{digits}@fixhub.local`
   Future<AuthResponse> signInWithPhone({
     required String phone,
     required String password,
@@ -223,7 +197,6 @@ class AuthService {
     return await signIn(email: email, password: password);
   }
 
-  /// تسجيل دخول بـ identifier (إيميل أو تليفون)
   Future<AuthResponse> signInWithIdentifier({
     required String identifier,
     required String password,
@@ -364,15 +337,14 @@ class AuthService {
     }
   }
 
-  /// هل الرقم مسجّل؟
+  /// هل الرقم مسجّل؟ (عبر RPC)
   Future<bool> isPhoneRegistered(String phone) async {
     try {
       final normalized = normalizePhone(phone);
-      final data = await _supabase.client
-          .from('staff')
-          .select('id')
-          .or('phone.eq.$phone,phone.eq.$normalized')
-          .limit(1);
+      final data = await _supabase.client.rpc(
+        'lookup_staff_by_phone',
+        params: {'p_phone': normalized},
+      );
       return (data as List).isNotEmpty;
     } catch (_) {
       return false;

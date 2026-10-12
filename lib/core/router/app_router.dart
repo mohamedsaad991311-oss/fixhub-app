@@ -12,6 +12,7 @@ import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/home/presentation/pages/home_dashboard_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
+import '../../features/receiving/presentation/pages/receiving_wizard_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
 import '../providers/onboarding_provider.dart';
 import 'app_placeholder_pages.dart';
@@ -73,6 +74,12 @@ class AppRouter {
         // ─── 4) أثناء تحميل الـ auth → ما نعملش redirect ───
         if (isAuthLoading) return null;
 
+        // ─── 4.b) لو رايح home والـ auth state لسه unknown → نسيبه يتحمّل ───
+        if (location == RouteNames.home &&
+            (authState.valueOrNull == null ||
+                authState.valueOrNull?.status == AuthStatus.unknown)) {
+          return null;
+        }
         // ─── 5) Auth pages ───
         const authRoutes = <String>{
           RouteNames.login,
@@ -181,6 +188,12 @@ class AppRouter {
                   name: 'receiptCreate',
                   builder: (context, state) =>
                       const ReceiptCreatePlaceholderPage(),
+                ),
+                // ⭐ جديد: Receiving Wizard
+                GoRoute(
+                  path: 'receiving',
+                  name: 'receivingWizard',
+                  builder: (context, state) => const ReceivingWizardPage(),
                 ),
                 GoRoute(
                   path: ':id',

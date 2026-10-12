@@ -168,16 +168,28 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
   Future<AuthState> _loadCurrentSession() async {
     try {
-      if (!_auth.isLoggedIn) return AuthState.unauthenticated;
+      if (!_auth.isLoggedIn) {
+        debugPrint('⚪ [_loadCurrentSession] not logged in');
+        return AuthState.unauthenticated;
+      }
+
+      debugPrint('🔵 [_loadCurrentSession] userId=${_auth.userId}');
 
       final user = await _fetchAppUser();
       if (user == null) {
+        debugPrint('🟡 [_loadCurrentSession] user not found, ensuring staff');
         final created = await _ensureStaffRecord();
-        if (created == null) return AuthState.unauthenticated;
+        if (created == null) {
+          debugPrint('🔴 [_loadCurrentSession] staff creation failed');
+          return AuthState.unauthenticated;
+        }
         return await _loadCurrentSession();
       }
 
       final tenant = await _fetchTenant(user.tenantId);
+
+      debugPrint(
+          '🟢 [_loadCurrentSession] OK user=${user.email} tenant=${tenant?.name}');
 
       return AuthState(
         status: AuthStatus.authenticated,
@@ -186,10 +198,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         lastSyncAt: DateTime.now(),
       );
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('AuthNotifier._loadCurrentSession error: $e');
-      }
+      debugPrint('🔴 [_loadCurrentSession] error: $e');
       return AuthState.unauthenticated;
     }
   }
@@ -198,6 +207,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     try {
       final session = event.session as Session?;
       final eventType = event.event;
+
+      debugPrint(
+          '📡 [_handleAuthEvent] type=$eventType hasSession=${session != null}');
 
       if (session == null) {
         final oldState = state.valueOrNull;
@@ -214,10 +226,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         _reload();
       }
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('_handleAuthEvent error: $e');
-      }
+      debugPrint('_handleAuthEvent error: $e');
     }
   }
 
@@ -230,20 +239,20 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   //  SIGN IN
   // ─────────────────────────────────────────────────────────────
 
-  /// تسجيل دخول بـ identifier (إيميل أو تليفون)
-  ///
-  /// - لو إيميل → signIn عادي
-  /// - لو تليفون → `signInWithIdentifier` هيبحث في `staff` ويجيب الإيميل المرتبط
   Future<bool> signIn({
     required String identifier,
     required String password,
   }) async {
+    debugPrint('🔵 [signIn] START identifier=$identifier');
     state = const AsyncData(AuthState.loading);
+
     try {
       await _auth.signInWithIdentifier(
         identifier: identifier,
         password: password,
       );
+
+      debugPrint('🟢 [signIn] Supabase returned success');
 
       // ═══ فحص الجهاز ═══
       final userId = _auth.currentUser?.id;
@@ -268,6 +277,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       // ═══ تحميل البيانات ═══
       final fresh = await _loadCurrentSession();
 
+      debugPrint('🟢 [signIn] fresh.isAuthenticated=${fresh.isAuthenticated}');
+
       // ═══ سجّل الجهاز ═══
       if (fresh.isAuthenticated && fresh.user != null && fresh.tenant != null) {
         try {
@@ -282,6 +293,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       state = AsyncData(fresh);
       return fresh.isAuthenticated;
     } on AuthException catch (e) {
+      debugPrint('🔴 [signIn] AuthException: ${e.message}');
       state = AsyncData(
         AuthState(
           status: AuthStatus.unauthenticated,
@@ -290,10 +302,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       );
       return false;
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('signIn error: $e');
-      }
+      debugPrint('🔴 [signIn] Generic error: $e');
       state = const AsyncData(
         AuthState(
           status: AuthStatus.unauthenticated,
@@ -308,12 +317,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   //  SIGN UP
   // ─────────────────────────────────────────────────────────────
 
-  /// إنشاء حساب جديد
-  ///
-  /// - [phone] **مطلوب** — هو الـ identifier الأساسي
-  /// - [email] **اختياري** — لو موجود يتخزن في `staff.email`
-  /// - [createTenant] == true → ينشئ tenant + staff (owner)
-  /// - [createTenant] == false → ينشئ staff فقط (بانتظار دعوة)
   Future<bool> signUp({
     required String phone,
     required String password,
@@ -322,9 +325,10 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     String? tenantName,
     bool createTenant = false,
   }) async {
+    debugPrint('🔵 [signUp] START phone=$phone');
     state = const AsyncData(AuthState.loading);
+
     try {
-      // ⭐ Sign up بالرقم (يحوّله لإيميل داخلي `{digits}@fixhub.local`)
       await _auth.signUpWithPhone(
         phone: phone,
         password: password,
@@ -336,7 +340,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         },
       );
 
-      // لو Email confirmation مفعّل → محتاج تأكيد
+      debugPrint(
+          '🟢 [signUp] Supabase signUp done, isLoggedIn=${_auth.isLoggedIn}');
+
       if (!_auth.isLoggedIn) {
         state = const AsyncData(
           AuthState(
@@ -347,7 +353,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         return false;
       }
 
-      // أنشئ staff record (+ tenant لو مطلوب)
       final staffCreated = await _ensureStaffRecord(
         createTenant: createTenant,
         tenantName: tenantName,
@@ -369,7 +374,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
       final fresh = await _loadCurrentSession();
 
-      // ═══ سجّل الجهاز (أول جهاز) ═══
       if (fresh.isAuthenticated && fresh.user != null && fresh.tenant != null) {
         try {
           final manager = ref.read(sessionManagerProvider);
@@ -383,6 +387,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       state = AsyncData(fresh);
       return fresh.isAuthenticated;
     } on AuthException catch (e) {
+      debugPrint('🔴 [signUp] AuthException: ${e.message}');
       state = AsyncData(
         AuthState(
           status: AuthStatus.unauthenticated,
@@ -391,10 +396,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       );
       return false;
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('signUp error: $e');
-      }
+      debugPrint('🔴 [signUp] Generic error: $e');
       state = const AsyncData(
         AuthState(
           status: AuthStatus.unauthenticated,
@@ -416,10 +418,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       ref.read(settingsServiceProvider).clearCache();
       state = const AsyncData(AuthState.unauthenticated);
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('signOut error: $e');
-      }
+      debugPrint('signOut error: $e');
       state = const AsyncData(AuthState.unauthenticated);
     }
   }
@@ -433,10 +432,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       await _auth.resetPassword(email);
       return true;
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('resetPassword error: $e');
-      }
+      debugPrint('resetPassword error: $e');
       return false;
     }
   }
@@ -446,10 +442,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       await _auth.updatePassword(newPassword);
       return true;
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('updatePassword error: $e');
-      }
+      debugPrint('updatePassword error: $e');
       return false;
     }
   }
@@ -497,10 +490,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       state = AsyncData(current.copyWith(user: updatedUser));
       return true;
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('updateProfile error: $e');
-      }
+      debugPrint('updateProfile error: $e');
       return false;
     }
   }
@@ -537,10 +527,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       if (data == null) return null;
       return AppUser.fromJson(Map<String, dynamic>.from(data));
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('_fetchAppUser error: $e');
-      }
+      debugPrint('_fetchAppUser error: $e');
       return null;
     }
   }
@@ -557,18 +544,11 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       if (data == null) return null;
       return Tenant.fromJson(Map<String, dynamic>.from(data));
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('_fetchTenant error: $e');
-      }
+      debugPrint('_fetchTenant error: $e');
       return null;
     }
   }
 
-  /// إنشاء tenant + staff record
-  ///
-  /// - [phone] **مطلوب**
-  /// - [realEmail] **اختياري** — لو مش موجود، نخزّن الإيميل المولّد في `staff.email`
   Future<AppUser?> _ensureStaffRecord({
     bool createTenant = false,
     String? tenantName,
@@ -582,16 +562,12 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       final userId = _auth.userId!;
       final authEmail = _auth.userEmail ?? '';
 
-      // الإيميل اللي هيتخزن في staff:
-      // - الإيميل الحقيقي لو المستخدم كتبه
-      // - أو الإيميل المولّد من الرقم
       final staffEmail = (realEmail != null && realEmail.isNotEmpty)
           ? realEmail.trim().toLowerCase()
           : authEmail;
 
       String? tenantId;
 
-      // 1. أنشئ tenant لو مطلوب
       if (createTenant) {
         final tenantPayload = {
           'name': (tenantName ?? 'ورشتك').trim(),
@@ -609,7 +585,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         tenantId = tenantData['id'] as String?;
       }
 
-      // 2. أنشئ staff record
       final staffPayload = {
         'user_id': userId,
         'email': staffEmail,
@@ -625,10 +600,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
       return AppUser.fromJson(Map<String, dynamic>.from(staffData));
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('_ensureStaffRecord error: $e');
-      }
+      debugPrint('_ensureStaffRecord error: $e');
       return null;
     }
   }

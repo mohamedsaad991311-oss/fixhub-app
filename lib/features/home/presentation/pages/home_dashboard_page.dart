@@ -138,9 +138,7 @@ class HomeDashboardPage extends ConsumerWidget {
   // ═══════════════════════════════════════════════════════════
 
   void _goToNewReceipt(BuildContext context) {
-    // TODO: افتح Receiving Wizard
-    // context.push(RouteNames.receivingWizard);
-    context.push(RouteNames.receipts);
+    context.push(RouteNames.receivingWizard);
   }
 
   void _goToReceipts(
