@@ -284,7 +284,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         try {
           final manager = ref.read(sessionManagerProvider);
           await manager.registerDevice(
-            userId: fresh.user!.id,
+            userId: fresh.user!.userId,
             tenantId: fresh.tenant!.id,
           );
         } catch (_) {}
@@ -378,7 +378,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         try {
           final manager = ref.read(sessionManagerProvider);
           await manager.registerDevice(
-            userId: fresh.user!.id,
+            userId: fresh.user!.userId,
             tenantId: fresh.tenant!.id,
           );
         } catch (_) {}

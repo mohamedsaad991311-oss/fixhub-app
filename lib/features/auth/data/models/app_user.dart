@@ -75,7 +75,12 @@ extension UserRoleX on UserRole {
 
 class AppUser {
   // ─── معلومات أساسية ───
-  final String id; // UUID من auth.users
+  /// staff.id (row id)
+  final String id;
+
+  /// auth.users.id (= staff.user_id) — للـ FK
+  final String userId;
+
   final String email;
   final String? phone;
   final String fullName;
@@ -102,6 +107,7 @@ class AppUser {
 
   const AppUser({
     required this.id,
+    required this.userId,
     required this.email,
     this.phone,
     required this.fullName,
@@ -122,6 +128,7 @@ class AppUser {
   /// نسخة افتراضية
   static const AppUser empty = AppUser(
     id: '',
+    userId: '',
     email: '',
     fullName: '',
   );
@@ -132,6 +139,7 @@ class AppUser {
 
   AppUser copyWith({
     String? id,
+    String? userId,
     String? email,
     String? phone,
     String? fullName,
@@ -150,6 +158,7 @@ class AppUser {
   }) {
     return AppUser(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       fullName: fullName ?? this.fullName,
@@ -175,6 +184,7 @@ class AppUser {
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
       id: json['id'] as String? ?? '',
+      userId: json['user_id'] as String? ?? '',
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String?,
       fullName: json['full_name'] as String? ?? '',
@@ -200,6 +210,7 @@ class AppUser {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'user_id': userId,
       'email': email,
       'phone': phone,
       'full_name': fullName,
@@ -293,6 +304,7 @@ class AppUser {
     if (identical(this, other)) return true;
     return other is AppUser &&
         other.id == id &&
+        other.userId == userId &&
         other.email == email &&
         other.phone == phone &&
         other.fullName == fullName &&
@@ -309,6 +321,7 @@ class AppUser {
   @override
   int get hashCode => Object.hash(
         id,
+        userId,
         email,
         phone,
         fullName,
