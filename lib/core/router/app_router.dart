@@ -2,12 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
-//
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
 import 'route_names.dart';
@@ -49,20 +50,14 @@ class AppRouter {
       name: 'splash',
       builder: (context, state) => const SplashPage(),
     ),
+
     // ─── Onboarding ───
     GoRoute(
       path: RouteNames.onboarding,
       name: 'onboarding',
       builder: (context, state) => const OnboardingPage(),
     ),
-    // ─── Onboarding ───
-    GoRoute(
-      path: RouteNames.forgotPassword,
-      name: 'forgotPassword',
-      builder: (context, state) => const ForgotPasswordPage(),
-    ),
 
-    // ─── Auth (بدون Shell) ───
     // ─── Auth (بدون Shell) ───
     GoRoute(
       path: RouteNames.login,
@@ -82,7 +77,7 @@ class AppRouter {
     GoRoute(
       path: RouteNames.resetPassword,
       name: 'resetPassword',
-      builder: (context, state) => const ResetPasswordPlaceholderPage(),
+      builder: (context, state) => const ResetPasswordPage(),
     ),
     GoRoute(
       path: RouteNames.pinLock,
