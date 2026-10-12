@@ -66,7 +66,7 @@ class FixHubApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
 
     // ─── GoRouter (يتبني مرة واحدة) ───
-    final router = AppRouter.create();
+    final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
       title: 'FixHub',

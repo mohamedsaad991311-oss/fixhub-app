@@ -1,15 +1,18 @@
 // lib/core/router/app_router.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
-import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/pin_lock_page.dart';
+import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
+import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
+import '../providers/onboarding_provider.dart';
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
 import 'route_names.dart';
@@ -19,6 +22,7 @@ import 'route_names.dart';
 /// ═══════════════════════════════════════════════════════════
 ///
 /// يستخدم StatefulShellRoute.indexedStack للحفاظ على حالة كل تاب.
+/// + redirect للتحقق من auth + onboarding
 ///
 class AppRouter {
   AppRouter._();
@@ -27,8 +31,9 @@ class AppRouter {
   static final GlobalKey<NavigatorState> rootNavigatorKey =
       GlobalKey<NavigatorState>(debugLabel: 'root');
 
-  /// إنشاء الـ GoRouter
+  /// إنشاء الـ GoRouter (يحتاج ref من ProviderScope)
   static GoRouter create({
+    required Ref ref,
     String initialLocation = RouteNames.splash,
   }) {
     return GoRouter(
@@ -37,6 +42,62 @@ class AppRouter {
       debugLogDiagnostics: true,
       routes: _routes,
       errorBuilder: (context, state) => const NotFoundPlaceholderPage(),
+      refreshListenable: _RouterRefresh(ref),
+      redirect: (context, state) {
+        final location = state.matchedLocation;
+
+        // ─── 1) Splash → ما نعملش حاجة (الصفحة نفسها بتقرر) ───
+        if (location == RouteNames.splash) return null;
+
+        // ─── 2) قراءة الحالة ───
+        final onboardingDone = ref.read(onboardingProvider);
+        final authState = ref.read(authProvider);
+        final isLoggedIn = authState.valueOrNull?.isAuthenticated ?? false;
+        final isAuthLoading =
+            authState.isLoading || (authState.valueOrNull?.isLoading ?? false);
+
+        // ─── 3) Onboarding ───
+        if (!onboardingDone) {
+          if (location != RouteNames.onboarding) {
+            return RouteNames.onboarding;
+          }
+          return null;
+        }
+
+        // لو خلّص onboarding وبيحاول يدخل onboarding تاني
+        if (location == RouteNames.onboarding) {
+          return isLoggedIn ? RouteNames.home : RouteNames.login;
+        }
+
+        // ─── 4) أثناء تحميل الـ auth → ما نعملش redirect ───
+        if (isAuthLoading) return null;
+
+        // ─── 5) Auth pages ───
+        const authRoutes = <String>{
+          RouteNames.login,
+          RouteNames.signup,
+          RouteNames.forgotPassword,
+          RouteNames.resetPassword,
+        };
+        final isAuthRoute = authRoutes.contains(location);
+        final isPinLock = location == RouteNames.pinLock;
+
+        // ─── 6) Not logged in ───
+        if (!isLoggedIn) {
+          // PIN lock صفحة مش محتاجة login (بتستخدم PIN محلي)
+          if (isPinLock) return null;
+          // أي صفحة تانية غير auth → روح login
+          if (!isAuthRoute) return RouteNames.login;
+          return null;
+        }
+
+        // ─── 7) Logged in + في auth page → روح home ───
+        if (isLoggedIn && isAuthRoute) {
+          return RouteNames.home;
+        }
+
+        return null;
+      },
     );
   }
 
@@ -380,6 +441,40 @@ class AppRouter {
     ),
   ];
 }
+
+// ═══════════════════════════════════════════════════════════
+// Router Refresh — لربط Riverpod بـ GoRouter
+// ═══════════════════════════════════════════════════════════
+
+/// يُخبر GoRouter إنه يعيد تقييم الـ redirect لما الـ providers تتغير
+class _RouterRefresh extends ChangeNotifier {
+  _RouterRefresh(Ref ref) {
+    // راقب authProvider
+    ref.listen(
+      authProvider,
+      (_, __) => notifyListeners(),
+    );
+    // راقب onboardingProvider
+    ref.listen(
+      onboardingProvider,
+      (_, __) => notifyListeners(),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Router Provider — يُبنى مرة واحدة
+// ═══════════════════════════════════════════════════════════
+
+/// Provider للـ GoRouter — يُبنى مرة واحدة ويُخزَّن
+///
+/// الاستخدام من أي ConsumerWidget/ConsumerState:
+/// ```dart
+/// final router = ref.watch(routerProvider);
+/// ```
+final routerProvider = Provider<GoRouter>((ref) {
+  return AppRouter.create(ref: ref);
+});
 
 // ═══════════════════════════════════════════════════════════
 // Home Placeholder (مؤقت — هنستبدله في المرحلة 9)
