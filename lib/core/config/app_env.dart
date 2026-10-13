@@ -21,19 +21,25 @@ class AppEnv {
   /// رابط مشروع Supabase
   ///
   /// مثال: 'https://abcdefgh.supabase.co'
-   static const String supabaseUrl = 'https://skhssmwzdrubgkoykavo.supabase.co';
+  static const String supabaseUrl = 'https://skhssmwzdrubgkoykavo.supabase.co';
 
   /// مفتاح Supabase العام (anon key)
   ///
   /// ⚠️ آمن للاستخدام في التطبيق (public)
   /// لكن لا ترفعه على GitHub
-     static const String supabasePublishableKey = 'sb_publishable_Xpex2k09D6RaW0bmCpkoMg_DeH3V2BE';
+  static const String supabasePublishableKey =
+      'sb_publishable_Xpex2k09D6RaW0bmCpkoMg_DeH3V2BE';
+
+  /// anon key (JWT) — للاستخدام في Supabase SDK
+  static const String supabaseAnonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNraHNzbXd6ZHJ1Ymdrb3lrYXZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE1MTI2NDksImV4cCI6MjEwNzA4ODY0OX0.z83lKNKmG15EnlyyWweAVHOtufbYfAoAM4xprbk3za0';
 
   /// مفتاح Service Role (للسيرفر فقط)
   ///
   /// ⚠️ خطر جداً — لا تحطه في التطبيق أبداً
   /// (يُستخدم فقط في Edge Functions)
   static const String supabaseServiceRoleKey = 'YOUR_SERVICE_ROLE_KEY';
+
   /// (يُستخدم فقط في Edge Functions)
   // ═══════════════════════════════════════════════════════════
   // 2) اسم المشروع
@@ -85,7 +91,7 @@ class AppEnv {
   /// هل Supabase متظبط؟
   ///
   /// ترجع false لو المفاتيح لسه placeholders
-    static bool get isSupabaseConfigured {
+  static bool get isSupabaseConfigured {
     return supabaseUrl != 'YOUR_SUPABASE_URL' &&
         supabaseUrl.isNotEmpty &&
         supabasePublishableKey != 'YOUR_PUBLISHABLE_KEY' &&

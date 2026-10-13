@@ -34,9 +34,21 @@ Future<void> main() async {
   if (AppEnv.isSupabaseConfigured) {
     await Supabase.initialize(
       url: AppEnv.supabaseUrl,
-      publishableKey: AppEnv.supabasePublishableKey,
+      publishableKey: AppEnv.supabaseAnonKey, // ← JWT (الـ anon key)
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+        autoRefreshToken: true,
+        detectSessionInUri: false,
+      ),
     );
     debugPrint('✅ Supabase initialized');
+    debugPrint('🔑 Supabase URL: ${AppEnv.supabaseUrl}');
+    debugPrint(
+        '🔑 Supabase Key (first 30): ${AppEnv.supabaseAnonKey.substring(0, 30)}...');
+    debugPrint(
+        '🔑 Supabase isLoggedIn: ${Supabase.instance.client.auth.currentSession != null}');
+    debugPrint(
+        '🔑 Supabase currentUser: ${Supabase.instance.client.auth.currentUser?.id}');
   } else {
     debugPrint('⚠️ Supabase NOT configured — running offline');
   }

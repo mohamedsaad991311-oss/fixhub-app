@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  DEVICE INFO — بيانات الجهاز
@@ -24,31 +25,15 @@ class DeviceInfo {
     required this.appBuildNumber,
   });
 
-  /// معرّف فريد للجهاز (UUID hex ثابت)
   final String deviceId;
-
-  /// اسم مقروء للجهاز (Samsung A52, iPhone 13...)
   final String deviceName;
-
-  /// الموديل الفني (SM-A525F, iPhone14,5...)
   final String deviceModel;
-
-  /// المنصة: android / ios / windows / web / linux / macos
   final String platform;
-
-  /// نسخة النظام (Android 13, iOS 16.4...)
   final String osVersion;
-
-  /// نسخة التطبيق (1.0.0)
   final String appVersion;
-
-  /// رقم البناء (42)
   final String appBuildNumber;
 
-  /// للعرض المختصر
   String get displayName => deviceName.isNotEmpty ? deviceName : deviceModel;
-
-  /// للعرض الكامل
   String get fullDescription => '$deviceName • $osVersion';
 
   Map<String, dynamic> toJson() => {
@@ -82,10 +67,8 @@ class DeviceInfoService {
 
   static const String _deviceIdKey = 'fixhub_device_id';
 
-  // ─── Cache ───
   DeviceInfo? _cached;
 
-  /// جلب معلومات الجهاز (مع cache)
   Future<DeviceInfo> getInfo({bool forceRefresh = false}) async {
     if (!forceRefresh && _cached != null) return _cached!;
 
@@ -135,10 +118,7 @@ class DeviceInfoService {
         osVersion = info.version ?? 'Linux';
       }
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('DeviceInfoService.getInfo error: $e');
-      }
+      debugPrint('DeviceInfoService.getInfo error: $e');
     }
 
     final info = DeviceInfo(
@@ -155,16 +135,19 @@ class DeviceInfoService {
     return info;
   }
 
-  /// جلب معرّف الجهاز فقط (بدون معلومات إضافية)
   Future<String> getDeviceId() async {
     if (_cached != null) return _cached!.deviceId;
     return _getOrCreateDeviceId();
   }
 
-  /// حذف الـ device_id (نادراً — للاختبار)
   Future<void> clearDeviceId() async {
     try {
-      await _storage.delete(key: _deviceIdKey);
+      if (kIsWeb) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_deviceIdKey);
+      } else {
+        await _storage.delete(key: _deviceIdKey);
+      }
       _cached = null;
     } catch (_) {}
   }
@@ -173,37 +156,42 @@ class DeviceInfoService {
   //  INTERNAL
   // ─────────────────────────────────────────────────────────────
 
-  /// جلب أو توليد device_id ثابت
   Future<String> _getOrCreateDeviceId() async {
     try {
-      // 1. حاول اقرأ من secure storage
-      final existing = await _storage.read(key: _deviceIdKey);
-      if (existing != null && existing.isNotEmpty) {
-        return existing;
-      }
+      if (kIsWeb) {
+        final prefs = await SharedPreferences.getInstance();
+        final existing = prefs.getString(_deviceIdKey);
+        if (existing != null && existing.isNotEmpty) {
+          debugPrint('📱 [device_id] (web) found: $existing');
+          return existing;
+        }
 
-      // 2. ما لقيناش → ولّد جديد
-      final newId = _generateDeviceId();
-      await _storage.write(key: _deviceIdKey, value: newId);
-      return newId;
-    } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('_getOrCreateDeviceId error: $e');
+        final newId = _generateDeviceId();
+        await prefs.setString(_deviceIdKey, newId);
+        debugPrint('📱 [device_id] (web) generated: $newId');
+        return newId;
+      } else {
+        final existing = await _storage.read(key: _deviceIdKey);
+        if (existing != null && existing.isNotEmpty) {
+          return existing;
+        }
+
+        final newId = _generateDeviceId();
+        await _storage.write(key: _deviceIdKey, value: newId);
+        return newId;
       }
-      // fallback: ولّد في الذاكرة بس (مش ثابت)
+    } catch (e) {
+      debugPrint('_getOrCreateDeviceId error: $e');
       return _generateDeviceId();
     }
   }
 
-  /// توليد 32-char hex ID (يشبه UUID v4)
   String _generateDeviceId() {
     final rand = Random.secure();
     final bytes = List<int>.generate(16, (_) => rand.nextInt(256));
 
-    // اضبط بتات UUID v4 (اختياري — للتوافق مع قواعد UUID)
-    bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
-    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
 
     return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
@@ -217,13 +205,11 @@ final deviceInfoServiceProvider = Provider<DeviceInfoService>((ref) {
   return DeviceInfoService();
 });
 
-/// معلومات الجهاز (Async)
 final deviceInfoProvider = FutureProvider<DeviceInfo>((ref) async {
   final service = ref.watch(deviceInfoServiceProvider);
   return service.getInfo();
 });
 
-/// device_id فقط (للعمليات السريعة)
 final deviceIdProvider = FutureProvider<String>((ref) async {
   final service = ref.watch(deviceInfoServiceProvider);
   return service.getDeviceId();

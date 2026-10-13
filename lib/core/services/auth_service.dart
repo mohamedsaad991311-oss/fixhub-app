@@ -371,15 +371,21 @@ class AuthService {
   }
 
   Future<String?> getUserTenantId() async {
-    if (!isLoggedIn) return null;
+    debugPrint('🔍 [getUserTenantId] isLoggedIn=$isLoggedIn userId=$userId');
+    if (!isLoggedIn) {
+      debugPrint('🔴 [getUserTenantId] NOT logged in');
+      return null;
+    }
     try {
       final data = await _supabase.client
           .from('staff')
           .select('tenant_id')
           .eq('user_id', userId!)
           .maybeSingle();
+      debugPrint('🔍 [getUserTenantId] data=$data');
       return data?['tenant_id'] as String?;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('🔴 [getUserTenantId] error: $e');
       return null;
     }
   }
