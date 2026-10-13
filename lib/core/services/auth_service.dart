@@ -100,17 +100,19 @@ class AuthService {
           params: {'p_phone': normalized},
         );
 
-        debugPrint(
-            '🔍 [resolveIdentifier] RPC returned ${(data as List).length} rows');
+        final dataList = data as List;
 
-        if ((data as List).isEmpty) {
+        debugPrint(
+            '🔍 [resolveIdentifier] RPC returned ${dataList.length} rows');
+
+        if (dataList.isEmpty) {
           debugPrint('🔴 [resolveIdentifier] NO ROW FOUND');
           throw const AuthException(
             'رقم التليفون غير مسجّل. جرب الإيميل أو سجّل حساب جديد.',
           );
         }
 
-        final row = data.first as Map<String, dynamic>;
+        final row = dataList.first as Map<String, dynamic>;
         final email = row['email'] as String?;
 
         if (email == null || email.isEmpty) {

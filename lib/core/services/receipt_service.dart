@@ -344,7 +344,6 @@ class ReceiptService {
         note: 'تم استلام الجهاز',
         userId: userId,
       );
-
       return receipt;
     } catch (e) {
       if (kDebugMode) {
@@ -456,6 +455,7 @@ class ReceiptService {
       await _logStatusChange(
         receiptId: receiptId,
         status: newStatus,
+        fromStatus: current.status,
         note: note,
         userId: userId,
       );
@@ -674,24 +674,21 @@ class ReceiptService {
   Future<void> _logStatusChange({
     required String receiptId,
     required ReceiptStatus status,
+    ReceiptStatus? fromStatus,
     String? note,
     String? userId,
   }) async {
     try {
-      final tenantId = await _authService.getUserTenantId();
       await _client.from(_historyTable).insert({
         'receipt_id': receiptId,
-        'tenant_id': tenantId,
-        'status': status.name,
-        'note': note,
+        'from_status': (fromStatus ?? ReceiptStatus.received).name,
+        'to_status': status.name,
+        'notes': note,
         'changed_by': userId,
         'changed_at': DateTime.now().toIso8601String(),
       });
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('_logStatusChange warning: $e');
-      }
+      debugPrint('_logStatusChange warning: $e');
     }
   }
 
