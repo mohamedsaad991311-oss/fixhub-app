@@ -174,11 +174,22 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       }
 
       debugPrint('🔵 [_loadCurrentSession] userId=${_auth.userId}');
+      debugPrint('🔵 [_loadCurrentSession] BEFORE _fetchAppUser');
 
       final user = await _fetchAppUser();
+
+      debugPrint(
+          '🔵 [_loadCurrentSession] AFTER _fetchAppUser user=${user?.email} tenantId=${user?.tenantId}');
+
       if (user == null) {
         debugPrint('🟡 [_loadCurrentSession] user not found, ensuring staff');
+        debugPrint('🔵 [_loadCurrentSession] BEFORE _ensureStaffRecord');
+
         final created = await _ensureStaffRecord();
+
+        debugPrint(
+            '🔵 [_loadCurrentSession] AFTER _ensureStaffRecord created=${created?.email}');
+
         if (created == null) {
           debugPrint('🔴 [_loadCurrentSession] staff creation failed');
           return AuthState.unauthenticated;
@@ -186,7 +197,10 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         return await _loadCurrentSession();
       }
 
+      debugPrint('🔵 [_loadCurrentSession] BEFORE _fetchTenant');
       final tenant = await _fetchTenant(user.tenantId);
+      debugPrint(
+          '🔵 [_loadCurrentSession] AFTER _fetchTenant tenant=${tenant?.name}');
 
       debugPrint(
           '🟢 [_loadCurrentSession] OK user=${user.email} tenant=${tenant?.name}');
@@ -256,11 +270,17 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
       // ═══ فحص الجهاز ═══
       final userId = _auth.currentUser?.id;
+      debugPrint('🔵 [signIn] BEFORE checkDeviceAllowed userId=$userId');
+
       if (userId != null) {
         final manager = ref.read(sessionManagerProvider);
         final deviceCheck = await manager.checkDeviceAllowed(userId: userId);
 
+        debugPrint(
+            '🔵 [signIn] AFTER checkDeviceAllowed isAllowed=${deviceCheck.isAllowed}');
+
         if (!deviceCheck.isAllowed) {
+          debugPrint('🚫 [signIn] Device blocked! Calling signOut...');
           await _auth.signOut();
           state = AsyncData(
             AuthState(
@@ -275,22 +295,28 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       }
 
       // ═══ تحميل البيانات ═══
+      debugPrint('🔵 [signIn] BEFORE _loadCurrentSession');
       final fresh = await _loadCurrentSession();
-
-      debugPrint('🟢 [signIn] fresh.isAuthenticated=${fresh.isAuthenticated}');
+      debugPrint(
+          '🟢 [signIn] AFTER _loadCurrentSession isAuthenticated=${fresh.isAuthenticated}');
 
       // ═══ سجّل الجهاز ═══
       if (fresh.isAuthenticated && fresh.user != null && fresh.tenant != null) {
         try {
+          debugPrint('🔵 [signIn] BEFORE registerDevice');
           final manager = ref.read(sessionManagerProvider);
           await manager.registerDevice(
             userId: fresh.user!.userId,
             tenantId: fresh.tenant!.id,
           );
-        } catch (_) {}
+          debugPrint('🟢 [signIn] AFTER registerDevice');
+        } catch (e) {
+          debugPrint('🔴 [signIn] registerDevice error: $e');
+        }
       }
 
       state = AsyncData(fresh);
+      debugPrint('🟢 [signIn] DONE — returning ${fresh.isAuthenticated}');
       return fresh.isAuthenticated;
     } on AuthException catch (e) {
       debugPrint('🔴 [signIn] AuthException: ${e.message}');
@@ -412,6 +438,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   // ─────────────────────────────────────────────────────────────
 
   Future<void> signOut() async {
+    debugPrint('🛑 [AuthNotifier.signOut] called');
     state = const AsyncData(AuthState.loading);
     try {
       await _auth.signOut();

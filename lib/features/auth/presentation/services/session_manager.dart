@@ -195,7 +195,14 @@ class SessionManager {
           .eq('is_active', true);
 
       final activeDevices = (data as List).cast<Map<String, dynamic>>();
-
+      debugPrint('📱 [checkDeviceAllowed] userId=$userId');
+      debugPrint('📱 [checkDeviceAllowed] deviceId=${deviceInfo.deviceId}');
+      debugPrint(
+          '📱 [checkDeviceAllowed] activeDevicesCount=${activeDevices.length}');
+      for (final d in activeDevices) {
+        debugPrint(
+            '   - row: user_id=${d['user_id']} device_id=${d['device_id']} is_active=${d['is_active']}');
+      }
       // 2. مفيش أجهزة → مسموح (أول دخول)
       if (activeDevices.isEmpty) {
         return DeviceCheckResult.allowed(

@@ -210,6 +210,9 @@ class AuthService {
   // ═══════════════════════════════════════════════════════════
 
   Future<void> signOut() async {
+    debugPrint('🛑 [AuthService.signOut] called!');
+    debugPrint('📍 Stack trace:');
+    debugPrint(StackTrace.current.toString());
     await _supabase.auth.signOut();
   }
 
@@ -304,8 +307,11 @@ class AuthService {
     if (session == null) return true;
     final expiresAt = session.expiresAt;
     if (expiresAt == null) return false;
-    return DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000)
-        .isBefore(DateTime.now());
+    final expiryDate = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+    final isExpired = expiryDate.isBefore(DateTime.now());
+    debugPrint(
+        '⏰ [isSessionExpired] expiresAt=$expiresAt expiry=$expiryDate now=${DateTime.now()} isExpired=$isExpired');
+    return isExpired;
   }
 
   Future<bool> ensureValidSession() async {

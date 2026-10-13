@@ -622,21 +622,51 @@ class ReceiptService {
     try {
       final startOfDay =
           DateTime(now.year, now.month, now.day).toIso8601String();
-      final count = await _client
-          .from(_table)
-          .select('id')
-          .gte('created_at', startOfDay)
-          .count(CountOption.exact);
 
-      final seq = (count.count + 1).toString().padLeft(4, '0');
-      return 'RCP-$datePart-$seq';
+      // 1) اجلب آخر رقم إيصال لليوم
+      final lastReceipt = await _client
+          .from(_table)
+          .select('receipt_number')
+          .gte('created_at', startOfDay)
+          .order('receipt_number', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      int nextSeq = 1;
+      if (lastReceipt != null) {
+        final lastNumber = lastReceipt['receipt_number'] as String?;
+        if (lastNumber != null) {
+          final parts = lastNumber.split('-');
+          if (parts.length == 3) {
+            final lastSeq = int.tryParse(parts[2]) ?? 0;
+            nextSeq = lastSeq + 1;
+          }
+        }
+      }
+
+      // 2) تأكد إن الرقم مش مكرر — لو مكرر زوّد
+      String candidate;
+      int attempts = 0;
+      do {
+        candidate = 'RCP-$datePart-${nextSeq.toString().padLeft(4, '0')}';
+        final existing = await _client
+            .from(_table)
+            .select('id')
+            .eq('receipt_number', candidate)
+            .maybeSingle();
+        if (existing == null) break;
+        nextSeq++;
+        attempts++;
+      } while (attempts < 100);
+
+      return candidate;
     } catch (_) {
+      // fallback: timestamp كأمان أخير
       final seq =
-          (now.millisecondsSinceEpoch % 10000).toString().padLeft(4, '0');
+          (now.millisecondsSinceEpoch % 100000).toString().padLeft(5, '0');
       return 'RCP-$datePart-$seq';
     }
   }
-
   // ─────────────────────────────────────────────────────────────
   //  INTERNAL HELPERS
   // ─────────────────────────────────────────────────────────────
