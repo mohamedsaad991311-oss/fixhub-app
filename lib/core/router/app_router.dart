@@ -14,6 +14,8 @@ import '../../features/home/presentation/pages/home_dashboard_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/receiving/presentation/pages/receiving_wizard_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
+import '../../features/receipts/presentation/pages/receipt_detail_page.dart';
+import '../../features/receipts/presentation/pages/receipts_list_page.dart';
 import '../providers/onboarding_provider.dart';
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
@@ -181,7 +183,7 @@ class AppRouter {
             GoRoute(
               path: RouteNames.receipts,
               name: 'receipts',
-              builder: (context, state) => const ReceiptsPlaceholderPage(),
+              builder: (context, state) => const ReceiptsListPage(),
               routes: [
                 GoRoute(
                   path: 'create',
@@ -189,7 +191,7 @@ class AppRouter {
                   builder: (context, state) =>
                       const ReceiptCreatePlaceholderPage(),
                 ),
-                // ⭐ جديد: Receiving Wizard
+                // ⭐ Receiving Wizard
                 GoRoute(
                   path: 'receiving',
                   name: 'receivingWizard',
@@ -200,7 +202,7 @@ class AppRouter {
                   name: 'receiptDetail',
                   builder: (context, state) {
                     final id = state.pathParameters['id'] ?? '';
-                    return ReceiptDetailPlaceholderPage(id: id);
+                    return ReceiptDetailPage(receiptId: id);
                   },
                   routes: [
                     GoRoute(

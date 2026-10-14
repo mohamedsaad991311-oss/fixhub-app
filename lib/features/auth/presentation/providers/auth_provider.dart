@@ -268,31 +268,25 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
       debugPrint('🟢 [signIn] Supabase returned success');
 
-      // ═══ فحص الجهاز ═══
-      final userId = _auth.currentUser?.id;
-      debugPrint('🔵 [signIn] BEFORE checkDeviceAllowed userId=$userId');
-
-      if (userId != null) {
-        final manager = ref.read(sessionManagerProvider);
-        final deviceCheck = await manager.checkDeviceAllowed(userId: userId);
-
-        debugPrint(
-            '🔵 [signIn] AFTER checkDeviceAllowed isAllowed=${deviceCheck.isAllowed}');
-
-        if (!deviceCheck.isAllowed) {
-          debugPrint('🚫 [signIn] Device blocked! Calling signOut...');
-          await _auth.signOut();
-          state = AsyncData(
-            AuthState(
-              status: AuthStatus.unauthenticated,
-              errorMessage:
-                  'الحساب مرتبط بجهاز آخر. تواصل مع مدير الورشة لإعادة التعيين.',
-              deviceBlockedInfo: DeviceBlockedInfo.fromCheck(deviceCheck),
-            ),
-          );
-          return false;
-        }
-      }
+      // ═══ فحص الجهاز (معطل مؤقتاً للتطوير) ═══
+      // TODO: فعّله بعد ما نضبط device_id في Web
+      // final userId = _auth.currentUser?.id;
+      // if (userId != null) {
+      //   final manager = ref.read(sessionManagerProvider);
+      //   final deviceCheck = await manager.checkDeviceAllowed(userId: userId);
+      //
+      //   if (!deviceCheck.isAllowed) {
+      //     await _auth.signOut();
+      //     state = AsyncData(
+      //       AuthState(
+      //         status: AuthStatus.unauthenticated,
+      //         errorMessage: 'الحساب مرتبط بجهاز آخر.',
+      //         deviceBlockedInfo: DeviceBlockedInfo.fromCheck(deviceCheck),
+      //       ),
+      //     );
+      //     return false;
+      //   }
+      // }
 
       // ═══ تحميل البيانات ═══
       debugPrint('🔵 [signIn] BEFORE _loadCurrentSession');
