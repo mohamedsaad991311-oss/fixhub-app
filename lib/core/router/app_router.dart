@@ -23,6 +23,10 @@ import '../../features/suppliers/data/models/supplier.dart';
 import '../../features/suppliers/presentation/pages/supplier_detail_page.dart';
 import '../../features/suppliers/presentation/pages/supplier_form_page.dart';
 import '../../features/suppliers/presentation/pages/suppliers_list_page.dart';
+import '../../features/staff/data/models/staff_member.dart';
+import '../../features/staff/presentation/pages/staff_detail_page.dart';
+import '../../features/staff/presentation/pages/staff_form_page.dart';
+import '../../features/staff/presentation/pages/staff_list_page.dart';
 import '../providers/onboarding_provider.dart';
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
@@ -375,19 +379,24 @@ class AppRouter {
     GoRoute(
       path: RouteNames.staff,
       name: 'staff',
-      builder: (context, state) => const StaffPlaceholderPage(),
+      builder: (context, state) => const StaffListPage(),
       routes: [
         GoRoute(
           path: 'edit',
           name: 'staffEdit',
-          builder: (context, state) => const StaffEditPlaceholderPage(),
+          builder: (context, state) {
+            final member = state.extra;
+            return StaffFormPage(
+              editingMember: member is StaffMember ? member : null,
+            );
+          },
         ),
         GoRoute(
           path: ':id',
           name: 'staffDetail',
           builder: (context, state) {
             final id = state.pathParameters['id'] ?? '';
-            return StaffDetailPlaceholderPage(id: id);
+            return StaffDetailPage(staffId: id);
           },
         ),
       ],
