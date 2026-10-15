@@ -1,3 +1,5 @@
+// lib/core/services/supplier_service.dart
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -68,8 +70,8 @@ class SupplierStats {
 
   final int totalSuppliers;
   final int activeSuppliers;
-  final double totalDebt; // إجمالي اللي إحنا مدينين بيه
-  final double totalOwed; // إجمالي اللي ليهم عندنا
+  final double totalDebt;
+  final double totalOwed;
   final int unpaidInvoices;
   final int overdueInvoices;
 
@@ -140,8 +142,7 @@ class SupplierService {
           .toList();
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.list error: $e');
+        debugPrint('SupplierService.list error: $e');
       }
       return const [];
     }
@@ -155,8 +156,7 @@ class SupplierService {
       return Supplier.fromJson(Map<String, dynamic>.from(data));
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.getById error: $e');
+        debugPrint('SupplierService.getById error: $e');
       }
       return null;
     }
@@ -179,8 +179,7 @@ class SupplierService {
       return Supplier.fromJson(Map<String, dynamic>.from(inserted));
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.create error: $e');
+        debugPrint('SupplierService.create error: $e');
       }
       return null;
     }
@@ -193,7 +192,7 @@ class SupplierService {
         ..remove('tenant_id')
         ..remove('created_at')
         ..remove('updated_at')
-        ..remove('balance'); // الرصيد بيتغير تلقائياً عبر الفواتير/الدفعات
+        ..remove('balance');
 
       final updated = await _client
           .from(_table)
@@ -205,8 +204,7 @@ class SupplierService {
       return Supplier.fromJson(Map<String, dynamic>.from(updated));
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.update error: $e');
+        debugPrint('SupplierService.update error: $e');
       }
       return null;
     }
@@ -218,8 +216,7 @@ class SupplierService {
       return true;
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.delete error: $e');
+        debugPrint('SupplierService.delete error: $e');
       }
       return false;
     }
@@ -271,8 +268,7 @@ class SupplierService {
           .toList();
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.listInvoices error: $e');
+        debugPrint('SupplierService.listInvoices error: $e');
       }
       return const [];
     }
@@ -292,20 +288,17 @@ class SupplierService {
     }
   }
 
-  /// إنشاء فاتورة + تحديث رصيد المورد تلقائياً
   Future<SupplierInvoice?> createInvoice(SupplierInvoice invoice) async {
     try {
       final tenantId = await _authService.getUserTenantId();
       final userId = _authService.currentUser?.id;
       if (tenantId == null) return null;
 
-      // احسب remaining + total تلقائياً من items
       final computedTotal = invoice.items.isEmpty
           ? invoice.total
           : invoice.items.fold<double>(0, (s, e) => s + e.total);
       final remaining = computedTotal - invoice.paid;
 
-      // حدد الحالة تلقائياً
       final status = _computeInvoiceStatus(
         total: computedTotal,
         paid: invoice.paid,
@@ -326,7 +319,6 @@ class SupplierService {
       final created =
           SupplierInvoice.fromJson(Map<String, dynamic>.from(inserted));
 
-      // حدّث رصيد المورد (يزيد بالـ remaining)
       await _adjustSupplierBalance(
         supplierId: invoice.supplierId,
         delta: remaining,
@@ -335,8 +327,7 @@ class SupplierService {
       return created;
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.createInvoice error: $e');
+        debugPrint('SupplierService.createInvoice error: $e');
       }
       return null;
     }
@@ -344,13 +335,11 @@ class SupplierService {
 
   Future<bool> deleteInvoice(String id) async {
     try {
-      // اجلب الفاتورة الأول لحساب التأثير
       final invoice = await getInvoiceById(id);
       if (invoice == null) return false;
 
       await _client.from(_invoicesTable).delete().eq('id', id);
 
-      // ارجع الرصيد
       await _adjustSupplierBalance(
         supplierId: invoice.supplierId,
         delta: -invoice.remaining,
@@ -358,8 +347,7 @@ class SupplierService {
       return true;
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.deleteInvoice error: $e');
+        debugPrint('SupplierService.deleteInvoice error: $e');
       }
       return false;
     }
@@ -403,7 +391,6 @@ class SupplierService {
     }
   }
 
-  /// تسجيل دفعة + تحديث رصيد المورد (والفاتورة لو مربوطة)
   Future<SupplierPayment?> recordPayment(SupplierPayment payment) async {
     try {
       final tenantId = await _authService.getUserTenantId();
@@ -420,13 +407,11 @@ class SupplierService {
       final created =
           SupplierPayment.fromJson(Map<String, dynamic>.from(inserted));
 
-      // قلل رصيد المورد
       await _adjustSupplierBalance(
         supplierId: payment.supplierId,
         delta: -payment.amount,
       );
 
-      // لو مربوطة بفاتورة → حدّثها
       if (payment.invoiceId != null) {
         await _applyPaymentToInvoice(
           invoiceId: payment.invoiceId!,
@@ -437,8 +422,7 @@ class SupplierService {
       return created;
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.recordPayment error: $e');
+        debugPrint('SupplierService.recordPayment error: $e');
       }
       return null;
     }
@@ -456,13 +440,11 @@ class SupplierService {
 
       await _client.from(_paymentsTable).delete().eq('id', id);
 
-      // ارجع الرصيد
       await _adjustSupplierBalance(
         supplierId: payment.supplierId,
         delta: payment.amount,
       );
 
-      // ارجع تأثير الفاتورة
       if (payment.invoiceId != null) {
         await _applyPaymentToInvoice(
           invoiceId: payment.invoiceId!,
@@ -472,8 +454,7 @@ class SupplierService {
       return true;
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.deletePayment error: $e');
+        debugPrint('SupplierService.deletePayment error: $e');
       }
       return false;
     }
@@ -539,14 +520,12 @@ class SupplierService {
       return SupplierReturn.fromJson(Map<String, dynamic>.from(inserted));
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.createReturn error: $e');
+        debugPrint('SupplierService.createReturn error: $e');
       }
       return null;
     }
   }
 
-  /// تغيير حالة المرتجع — لما يوصل completed → يقلل رصيد المورد
   Future<SupplierReturn?> changeReturnStatus({
     required String returnId,
     required ReturnStatus newStatus,
@@ -578,7 +557,6 @@ class SupplierService {
       final result =
           SupplierReturn.fromJson(Map<String, dynamic>.from(updated));
 
-      // لو completed → قلل رصيد المورد
       if (newStatus == ReturnStatus.completed &&
           current.status != ReturnStatus.completed) {
         await _adjustSupplierBalance(
@@ -589,8 +567,7 @@ class SupplierService {
       return result;
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.changeReturnStatus error: $e');
+        debugPrint('SupplierService.changeReturnStatus error: $e');
       }
       return null;
     }
@@ -629,7 +606,6 @@ class SupplierService {
         }
       }
 
-      // الفواتير غير المدفوعة
       final invoicesData = await _client
           .from(_invoicesTable)
           .select('status, due_date, remaining')
@@ -657,8 +633,7 @@ class SupplierService {
       );
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('SupplierService.getStats error: $e');
+        debugPrint('SupplierService.getStats error: $e');
       }
       return SupplierStats.empty;
     }
@@ -668,7 +643,6 @@ class SupplierService {
   //  INTERNAL HELPERS
   // ═════════════════════════════════════════════════════════════
 
-  /// عدّل رصيد المورد (delta موجب يزيد، سالب ينقص)
   Future<void> _adjustSupplierBalance({
     required String supplierId,
     required double delta,
@@ -689,13 +663,11 @@ class SupplierService {
           .update({'balance': newBalance}).eq('id', supplierId);
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('_adjustSupplierBalance warning: $e');
+        debugPrint('_adjustSupplierBalance warning: $e');
       }
     }
   }
 
-  /// طبّق دفعة على فاتورة (amount موجب = دفع، سالب = إلغاء دفع)
   Future<void> _applyPaymentToInvoice({
     required String invoiceId,
     required double amount,
@@ -728,13 +700,11 @@ class SupplierService {
       }).eq('id', invoiceId);
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('_applyPaymentToInvoice warning: $e');
+        debugPrint('_applyPaymentToInvoice warning: $e');
       }
     }
   }
 
-  /// حساب حالة الفاتورة تلقائياً
   InvoiceStatus _computeInvoiceStatus({
     required double total,
     required double paid,
@@ -746,20 +716,17 @@ class SupplierService {
     }
     if (paid >= total && total > 0) return InvoiceStatus.paid;
     if (paid > 0) {
-      // لو متأخرة
       if (dueDate != null && DateTime.now().isAfter(dueDate)) {
         return InvoiceStatus.overdue;
       }
       return InvoiceStatus.partial;
     }
-    // paid == 0
     if (dueDate != null && DateTime.now().isAfter(dueDate)) {
       return InvoiceStatus.overdue;
     }
     return InvoiceStatus.pending;
   }
 
-  /// توليد رقم مرتجع: RET-YYYYMMDD-XXXX
   Future<String> _generateReturnNumber() async {
     final now = DateTime.now();
     final datePart = '${now.year}${_pad(now.month)}${_pad(now.day)}';
@@ -820,7 +787,6 @@ final supplierServiceProvider = Provider<SupplierService>((ref) {
   return SupplierService(client: client, authService: authService);
 });
 
-/// Stream لقائمة الموردين (auto-refresh كل 30 ثانية)
 final suppliersStreamProvider = StreamProvider.autoDispose
     .family<List<Supplier>, SupplierFilter>((ref, filter) async* {
   final service = ref.watch(supplierServiceProvider);
