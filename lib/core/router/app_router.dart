@@ -27,6 +27,10 @@ import '../../features/staff/data/models/staff_member.dart';
 import '../../features/staff/presentation/pages/staff_detail_page.dart';
 import '../../features/staff/presentation/pages/staff_form_page.dart';
 import '../../features/staff/presentation/pages/staff_list_page.dart';
+import '../../features/expenses/data/models/expense.dart';
+import '../../features/expenses/presentation/pages/expense_detail_page.dart';
+import '../../features/expenses/presentation/pages/expense_form_page.dart';
+import '../../features/expenses/presentation/pages/expenses_list_page.dart';
 import '../providers/onboarding_provider.dart';
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
@@ -406,19 +410,24 @@ class AppRouter {
     GoRoute(
       path: RouteNames.expenses,
       name: 'expenses',
-      builder: (context, state) => const ExpensesPlaceholderPage(),
+      builder: (context, state) => const ExpensesListPage(),
       routes: [
         GoRoute(
           path: 'edit',
           name: 'expenseEdit',
-          builder: (context, state) => const ExpenseEditPlaceholderPage(),
+          builder: (context, state) {
+            final expense = state.extra;
+            return ExpenseFormPage(
+              editingExpense: expense is Expense ? expense : null,
+            );
+          },
         ),
         GoRoute(
           path: ':id',
           name: 'expenseDetail',
           builder: (context, state) {
             final id = state.pathParameters['id'] ?? '';
-            return ExpenseDetailPlaceholderPage(id: id);
+            return ExpenseDetailPage(expenseId: id);
           },
         ),
       ],
