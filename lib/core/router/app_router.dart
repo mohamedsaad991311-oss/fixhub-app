@@ -19,6 +19,10 @@ import '../../features/receipts/presentation/pages/receipts_list_page.dart';
 import '../../features/inventory/presentation/pages/inventory_detail_page.dart';
 import '../../features/inventory/presentation/pages/inventory_form_page.dart';
 import '../../features/inventory/presentation/pages/inventory_list_page.dart';
+import '../../features/suppliers/data/models/supplier.dart';
+import '../../features/suppliers/presentation/pages/supplier_detail_page.dart';
+import '../../features/suppliers/presentation/pages/supplier_form_page.dart';
+import '../../features/suppliers/presentation/pages/suppliers_list_page.dart';
 import '../providers/onboarding_provider.dart';
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
@@ -318,19 +322,24 @@ class AppRouter {
     GoRoute(
       path: RouteNames.suppliers,
       name: 'suppliers',
-      builder: (context, state) => const SuppliersPlaceholderPage(),
+      builder: (context, state) => const SuppliersListPage(),
       routes: [
         GoRoute(
           path: 'edit',
           name: 'supplierEdit',
-          builder: (context, state) => const SupplierEditPlaceholderPage(),
+          builder: (context, state) {
+            final supplier = state.extra;
+            return SupplierFormPage(
+              editingSupplier: supplier is Supplier ? supplier : null,
+            );
+          },
         ),
         GoRoute(
           path: ':id',
           name: 'supplierDetail',
           builder: (context, state) {
             final id = state.pathParameters['id'] ?? '';
-            return SupplierDetailPlaceholderPage(id: id);
+            return SupplierDetailPage(supplierId: id);
           },
           routes: [
             GoRoute(
