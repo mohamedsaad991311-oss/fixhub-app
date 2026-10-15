@@ -1,6 +1,7 @@
 // lib/features/inventory/data/models/inventory_item.dart
 
 import 'package:flutter/material.dart';
+import 'inventory_variants.dart';
 
 /// ═══════════════════════════════════════════════════════════
 /// InventoryItem — قطعة مخزون
@@ -260,8 +261,8 @@ class InventoryItem {
   final String? sku;
   final String? barcode;
   final InventoryCategory category;
+  final InventoryVariant variant;
   final String? description;
-
   // ─── الكميات ───
   final int quantity;
   final int minQuantity;
@@ -292,6 +293,7 @@ class InventoryItem {
     this.sku,
     this.barcode,
     this.category = InventoryCategory.other,
+    this.variant = InventoryVariant.aftermarket,
     this.description,
     this.quantity = 0,
     this.minQuantity = 5,
@@ -319,6 +321,7 @@ class InventoryItem {
     String? sku,
     String? barcode,
     InventoryCategory? category,
+    InventoryVariant? variant,
     String? description,
     int? quantity,
     int? minQuantity,
@@ -339,6 +342,7 @@ class InventoryItem {
       sku: sku ?? this.sku,
       barcode: barcode ?? this.barcode,
       category: category ?? this.category,
+      variant: variant ?? this.variant,
       description: description ?? this.description,
       quantity: quantity ?? this.quantity,
       minQuantity: minQuantity ?? this.minQuantity,
@@ -362,6 +366,7 @@ class InventoryItem {
       sku: json['sku'] as String?,
       barcode: json['barcode'] as String?,
       category: InventoryCategoryX.fromString(json['category'] as String?),
+      variant: InventoryVariantX.fromString(json['variant'] as String?),
       description: json['description'] as String?,
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
       minQuantity: (json['min_quantity'] as num?)?.toInt() ?? 5,
@@ -385,6 +390,7 @@ class InventoryItem {
       'sku': sku,
       'barcode': barcode,
       'category': category.name,
+      'variant': variant.name,
       'description': description,
       'quantity': quantity,
       'min_quantity': minQuantity,

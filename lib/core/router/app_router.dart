@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../features/inventory/data/models/inventory_item.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/pin_lock_page.dart';
@@ -16,6 +16,9 @@ import '../../features/receiving/presentation/pages/receiving_wizard_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
 import '../../features/receipts/presentation/pages/receipt_detail_page.dart';
 import '../../features/receipts/presentation/pages/receipts_list_page.dart';
+import '../../features/inventory/presentation/pages/inventory_detail_page.dart';
+import '../../features/inventory/presentation/pages/inventory_form_page.dart';
+import '../../features/inventory/presentation/pages/inventory_list_page.dart';
 import '../providers/onboarding_provider.dart';
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
@@ -226,20 +229,26 @@ class AppRouter {
             GoRoute(
               path: RouteNames.inventory,
               name: 'inventory',
-              builder: (context, state) => const InventoryPlaceholderPage(),
+              builder: (context, state) => const InventoryListPage(),
               routes: [
+                // إضافة/تعديل صنف (query: ?id=...)
                 GoRoute(
                   path: 'edit',
                   name: 'inventoryEdit',
-                  builder: (context, state) =>
-                      const InventoryEditPlaceholderPage(),
+                  builder: (context, state) {
+                    // نستقبل الصنف من extra أو من id في query
+                    final item = state.extra;
+                    return InventoryFormPage(
+                      editingItem: item is InventoryItem ? item : null,
+                    );
+                  },
                 ),
                 GoRoute(
                   path: ':id',
                   name: 'inventoryDetail',
                   builder: (context, state) {
                     final id = state.pathParameters['id'] ?? '';
-                    return InventoryDetailPlaceholderPage(id: id);
+                    return InventoryDetailPage(itemId: id);
                   },
                 ),
               ],
