@@ -33,6 +33,15 @@ import '../../features/expenses/presentation/pages/expense_form_page.dart';
 import '../../features/expenses/presentation/pages/expenses_list_page.dart';
 import '../../features/reports/presentation/pages/reports_page.dart';
 import '../../features/scanner/presentation/pages/scanner_page.dart';
+import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/settings/presentation/pages/shop_info_page.dart';
+import '../../features/settings/presentation/pages/whatsapp_settings_page.dart';
+import '../../features/settings/presentation/pages/language_settings_page.dart';
+import '../../features/settings/presentation/pages/theme_settings_page.dart';
+import '../../features/settings/presentation/pages/security_settings_page.dart';
+import '../../features/settings/presentation/pages/backup_settings_page.dart';
+import '../../features/settings/presentation/pages/subscription_settings_page.dart';
+import '../../features/settings/presentation/pages/about_page.dart';
 import '../../features/cloud_sync/presentation/pages/cloud_sync_page.dart';
 import '../../features/delivery/presentation/pages/delivery_page.dart';
 import '../providers/onboarding_provider.dart';
@@ -289,35 +298,47 @@ class AppRouter {
             GoRoute(
               path: RouteNames.settings,
               name: 'settings',
-              builder: (context, state) => const SettingsPlaceholderPage(),
+              builder: (context, state) => const SettingsPage(),
               routes: [
                 GoRoute(
                   path: 'shop-info',
                   name: 'shopInfo',
-                  builder: (context, state) => const ShopInfoPlaceholderPage(),
+                  builder: (context, state) => const ShopInfoPage(),
                 ),
                 GoRoute(
                   path: 'whatsapp',
                   name: 'whatsappSettings',
-                  builder: (context, state) =>
-                      const WhatsappSettingsPlaceholderPage(),
+                  builder: (context, state) => const WhatsappSettingsPage(),
+                ),
+                GoRoute(
+                  path: 'theme',
+                  name: 'themeSettings',
+                  builder: (context, state) => const ThemeSettingsPage(),
                 ),
                 GoRoute(
                   path: 'language',
                   name: 'languageSettings',
-                  builder: (context, state) =>
-                      const LanguageSettingsPlaceholderPage(),
+                  builder: (context, state) => const LanguageSettingsPage(),
                 ),
                 GoRoute(
                   path: 'security',
                   name: 'securitySettings',
-                  builder: (context, state) =>
-                      const SecuritySettingsPlaceholderPage(),
+                  builder: (context, state) => const SecuritySettingsPage(),
+                ),
+                GoRoute(
+                  path: 'backup',
+                  name: 'backupSettings',
+                  builder: (context, state) => const BackupSettingsPage(),
+                ),
+                GoRoute(
+                  path: 'subscription',
+                  name: 'subscriptionSettings',
+                  builder: (context, state) => const SubscriptionSettingsPage(),
                 ),
                 GoRoute(
                   path: 'about',
                   name: 'about',
-                  builder: (context, state) => const AboutPlaceholderPage(),
+                  builder: (context, state) => const AboutPage(),
                 ),
               ],
             ),
@@ -485,7 +506,7 @@ class AppRouter {
     GoRoute(
       path: RouteNames.backup,
       name: 'backup',
-      builder: (context, state) => const BackupPlaceholderPage(),
+      builder: (context, state) => const BackupSettingsPage(),
     ),
 
     // ─── Activity Log ───
@@ -499,7 +520,7 @@ class AppRouter {
     GoRoute(
       path: RouteNames.subscription,
       name: 'subscription',
-      builder: (context, state) => const SubscriptionPlaceholderPage(),
+      builder: (context, state) => const SubscriptionSettingsPage(),
     ),
   ];
 }

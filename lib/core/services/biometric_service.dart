@@ -70,7 +70,6 @@ class BiometricService {
   bool get isPlatformSupported {
     if (kIsWeb) return false;
     if (Platform.isAndroid || Platform.isIOS) return true;
-    // Windows / macOS / Linux → غير مدعوم (سنستخدم PIN)
     return false;
   }
 
@@ -170,11 +169,6 @@ class BiometricService {
   }
 
   /// هل البصمة جاهزة للاستخدام؟
-  ///
-  /// شروط:
-  /// - المنصة تدعم البصمة
-  /// - الجهاز فيه بصمة مُسجَّلة
-  /// - البصمة مُفعّلة في إعدادات التطبيق
   Future<bool> isReady() async {
     if (!await isEnabled()) return false;
     if (!await isAvailable()) return false;
@@ -186,41 +180,33 @@ class BiometricService {
   // ─────────────────────────────────────────────────────────────
 
   /// محاولة مصادقة بالبصمة
-  ///
-  /// [reason] السبب اللي يظهر للمستخدم (مثلاً "افتح FixHub")
-  /// [allowFallback] هل يسمح بالرجوع لكلمة مرور الجهاز؟
   Future<BiometricResult> authenticate({
     String? reason,
     bool allowFallback = true,
   }) async {
-    // 1. فحص المنصة
     if (!isPlatformSupported) {
       return BiometricResult.unavailable;
     }
 
-    // 2. فحص التوفر
     if (!await isAvailable()) {
       return BiometricResult.unavailable;
     }
 
-    // 3. فحص التسجيل
     if (!await hasEnrolledBiometrics()) {
       return BiometricResult.notEnrolled;
     }
 
-    // 4. الرسالة
     final message = reason ??
         (Platform.isIOS
             ? 'افتح FixHub باستخدام Face ID'
             : 'افتح FixHub باستخدام البصمة');
 
-    // 5. المصادقة
     try {
       final success = await _auth.authenticate(
         localizedReason: message,
         options: AuthenticationOptions(
           biometricOnly: !allowFallback,
-          stickyAuth: true, // يستمر لو رجع من الخلفية
+          stickyAuth: true,
           sensitiveTransaction: true,
           useErrorDialogs: true,
         ),
@@ -257,7 +243,6 @@ class BiometricService {
       return BiometricResult.notEnrolled;
     }
     if (code.contains('lockedout') || code.contains('lockedoutpermanently')) {
-      // flutter local_auth بترمي lockedOutPermanently أو lockedOut
       if (code.contains('permanent')) {
         return BiometricResult.permanentlyLockedOut;
       }
@@ -267,7 +252,6 @@ class BiometricService {
       return BiometricResult.cancelled;
     }
     if (code.contains('passcode')) {
-      // المستخدم اختار كلمة مرور الجهاز بدل البصمة
       return BiometricResult.cancelled;
     }
 
@@ -281,7 +265,6 @@ class BiometricService {
   /// إعادة تعيين "lockout" — للاستخدام بعد sign in
   Future<void> resetLockout() async {
     // local_auth مفيش عندها API مباشر لإعادة التعيين
-    // القفل يختفي تلقائياً بعد فترة أو بعد sign in ناجح
   }
 }
 
