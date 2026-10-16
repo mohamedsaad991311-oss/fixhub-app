@@ -42,6 +42,7 @@ import '../../features/settings/presentation/pages/security_settings_page.dart';
 import '../../features/settings/presentation/pages/backup_settings_page.dart';
 import '../../features/settings/presentation/pages/subscription_settings_page.dart';
 import '../../features/settings/presentation/pages/about_page.dart';
+import '../../features/activity_log/presentation/pages/activity_log_page.dart';
 import '../../features/cloud_sync/presentation/pages/cloud_sync_page.dart';
 import '../../features/delivery/presentation/pages/delivery_page.dart';
 import '../providers/onboarding_provider.dart';
@@ -513,7 +514,7 @@ class AppRouter {
     GoRoute(
       path: RouteNames.activityLog,
       name: 'activityLog',
-      builder: (context, state) => const ActivityLogPlaceholderPage(),
+      builder: (context, state) => const ActivityLogPage(),
     ),
 
     // ─── Subscription ───
