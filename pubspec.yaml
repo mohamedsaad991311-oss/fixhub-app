@@ -36,6 +36,7 @@ dependencies:
   local_auth: any
   crypto: any
   qr_flutter: any
+  mobile_scanner: any
   share_plus: any
   url_launcher: any
   path_provider: any

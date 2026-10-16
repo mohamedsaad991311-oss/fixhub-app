@@ -32,6 +32,7 @@ import '../../features/expenses/presentation/pages/expense_detail_page.dart';
 import '../../features/expenses/presentation/pages/expense_form_page.dart';
 import '../../features/expenses/presentation/pages/expenses_list_page.dart';
 import '../../features/reports/presentation/pages/reports_page.dart';
+import '../../features/scanner/presentation/pages/scanner_page.dart';
 import '../providers/onboarding_provider.dart';
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
@@ -442,10 +443,16 @@ class AppRouter {
     ),
 
     // ─── Scanner ───
+    // دعم وضعين:
+    // - Standalone: /scanner → يبحث في Supabase ويعرض النتيجة
+    // - Tool Mode: /scanner?popOnDetect=true → يرجّع القيمة فوراً
     GoRoute(
       path: RouteNames.scanner,
       name: 'scanner',
-      builder: (context, state) => const ScannerPlaceholderPage(),
+      builder: (context, state) {
+        final popOnDetect = state.uri.queryParameters['popOnDetect'] == 'true';
+        return ScannerPage(popOnDetect: popOnDetect);
+      },
     ),
 
     // ─── Tracking ───
