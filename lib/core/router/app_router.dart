@@ -31,6 +31,7 @@ import '../../features/expenses/data/models/expense.dart';
 import '../../features/expenses/presentation/pages/expense_detail_page.dart';
 import '../../features/expenses/presentation/pages/expense_form_page.dart';
 import '../../features/expenses/presentation/pages/expenses_list_page.dart';
+import '../../features/reports/presentation/pages/reports_page.dart';
 import '../providers/onboarding_provider.dart';
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
@@ -274,7 +275,7 @@ class AppRouter {
             GoRoute(
               path: RouteNames.reports,
               name: 'reports',
-              builder: (context, state) => const ReportsPlaceholderPage(),
+              builder: (context, state) => const ReportsPage(),
             ),
           ],
         ),

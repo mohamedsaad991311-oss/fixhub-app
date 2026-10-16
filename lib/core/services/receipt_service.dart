@@ -610,6 +610,51 @@ class ReceiptService {
     }
   }
 
+  /// سلسلة زمنية للإيرادات اليومية (delivered receipts only)
+  /// ترجّع: `Map<DateTime (بداية اليوم), double totalRevenue>`
+  Future<Map<DateTime, double>> getRevenueTimeSeries({
+    required DateTime fromDate,
+    required DateTime toDate,
+  }) async {
+    try {
+      final data = await _client
+          .from(_table)
+          .select('delivered_at, total, final_cost')
+          .eq('status', ReceiptStatus.delivered.name)
+          .gte('delivered_at', fromDate.toIso8601String())
+          .lte('delivered_at', toDate.toIso8601String())
+          .order('delivered_at', ascending: true);
+
+      final rows = (data as List).cast<Map<String, dynamic>>();
+      final series = <DateTime, double>{};
+
+      for (final r in rows) {
+        final deliveredAt = r['delivered_at'];
+        if (deliveredAt == null) continue;
+
+        final dt = DateTime.tryParse(deliveredAt.toString());
+        if (dt == null) continue;
+
+        // بداية اليوم (نطبع الساعات)
+        final dayKey = DateTime(dt.year, dt.month, dt.day);
+
+        final total = _toDouble(r['total']);
+        final finalCost = _toDouble(r['final_cost']);
+        final amount = total > 0 ? total : finalCost;
+
+        series[dayKey] = (series[dayKey] ?? 0) + amount;
+      }
+
+      return series;
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('ReceiptService.getRevenueTimeSeries error: $e');
+      }
+      return const {};
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────
   //  RECEIPT NUMBER GENERATION
   // ─────────────────────────────────────────────────────────────

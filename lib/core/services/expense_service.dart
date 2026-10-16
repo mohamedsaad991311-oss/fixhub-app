@@ -389,6 +389,48 @@ class ExpenseService {
     }
   }
 
+  /// سلسلة زمنية للمصروفات اليومية
+  /// ترجّع: `Map<DateTime (بداية اليوم), double totalExpenses>`
+  Future<Map<DateTime, double>> getExpensesTimeSeries({
+    required DateTime fromDate,
+    required DateTime toDate,
+  }) async {
+    try {
+      final data = await _client
+          .from(_table)
+          .select('expense_date, amount')
+          .gte('expense_date', _dateOnly(fromDate))
+          .lte('expense_date', _dateOnly(toDate))
+          .order('expense_date', ascending: true);
+
+      final rows = (data as List).cast<Map<String, dynamic>>();
+      final series = <DateTime, double>{};
+
+      for (final r in rows) {
+        final rawDate = r['expense_date'];
+        if (rawDate == null) continue;
+
+        final dt = DateTime.tryParse(rawDate.toString());
+        if (dt == null) continue;
+
+        // بداية اليوم (نطبع الساعات)
+        final dayKey = DateTime(dt.year, dt.month, dt.day);
+
+        final amount = _toDouble(r['amount']);
+
+        series[dayKey] = (series[dayKey] ?? 0) + amount;
+      }
+
+      return series;
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('ExpenseService.getExpensesTimeSeries error: $e');
+      }
+      return const {};
+    }
+  }
+
   /// أعلى المصروفات في فترة
   Future<List<Expense>> getTopExpenses({
     DateTime? fromDate,
@@ -513,6 +555,13 @@ class ExpenseService {
   String _dateOnly(DateTime d) => '${d.year}-${_pad(d.month)}-${_pad(d.day)}';
 
   String _pad(int n) => n.toString().padLeft(2, '0');
+
+  double _toDouble(dynamic v) {
+    if (v == null) return 0;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0;
+    return 0;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
