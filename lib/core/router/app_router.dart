@@ -34,6 +34,7 @@ import '../../features/expenses/presentation/pages/expenses_list_page.dart';
 import '../../features/reports/presentation/pages/reports_page.dart';
 import '../../features/scanner/presentation/pages/scanner_page.dart';
 import '../../features/cloud_sync/presentation/pages/cloud_sync_page.dart';
+import '../../features/delivery/presentation/pages/delivery_page.dart';
 import '../providers/onboarding_provider.dart';
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
@@ -440,7 +441,7 @@ class AppRouter {
     GoRoute(
       path: RouteNames.delivery,
       name: 'delivery',
-      builder: (context, state) => const DeliveryPlaceholderPage(),
+      builder: (context, state) => const DeliveryPage(),
     ),
 
     // ─── Scanner ───
