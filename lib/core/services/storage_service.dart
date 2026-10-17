@@ -150,16 +150,25 @@ class StorageService {
         folder: folder,
       );
 
-      // 5. الرفع
-      final uploadData = file ?? bytes!;
-      await _client.storage.from(bucket.name).upload(
-            path,
-            uploadData,
-            fileOptions: FileOptions(
-              contentType: _mimeType(ext),
-              upsert: upsert,
-            ),
-          );
+      // 5. ارفع (نمرر النوع الصح صراحةً)
+      final fileOptions = FileOptions(
+        contentType: _mimeType(ext),
+        upsert: upsert,
+      );
+
+      if (file != null) {
+        await _client.storage.from(bucket.name).upload(
+              path,
+              file,
+              fileOptions: fileOptions,
+            );
+      } else {
+        await _client.storage.from(bucket.name).uploadBinary(
+              path,
+              bytes!,
+              fileOptions: fileOptions,
+            );
+      }
 
       // 6. الحصول على الرابط
       final url = bucket.isPublic
