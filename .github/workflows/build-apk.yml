@@ -10,6 +10,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+          - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # هذا الخيار يحذف أدوات .NET و Haskell وغيرها لتوفير مساحة
+          tool-cache: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
       - name: Checkout code
         uses: actions/checkout@v4
 
