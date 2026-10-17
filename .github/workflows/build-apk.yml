@@ -8,8 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
+      # 1. توفير مساحة بحذف البرامج غير الضرورية
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
@@ -18,15 +18,26 @@ jobs:
           docker-images: false
           swap-storage: true
 
+      # 2. حذف ملفات NDK غير الضرورية لتوفير مساحة أكبر
+      - name: Delete Unnecessary NDK Files
+        run: |
+          sudo rm -rf /usr/local/lib/android/sdk/ndk/*/toolchains/llvm/prebuilt/*/lib/clang/*/lib/linux/libclang_rt.*
+          sudo rm -rf /usr/local/lib/android/sdk/ndk/*/toolchains/llvm/prebuilt/*/lib/python3
+          sudo rm -rf /usr/local/lib/android/sdk/ndk/*/toolchains/llvm/prebuilt/*/share
+          sudo rm -rf /usr/local/lib/android/sdk/ndk/*/toolchains/llvm/prebuilt/*/lib/clang/*/share
+
+      # 3. جلب الكود
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 4. إعداد Java
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
+      # 5. إعداد Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -34,12 +45,15 @@ jobs:
           channel: 'stable'
           cache: true
 
+      # 6. جلب الحزم
       - name: Get dependencies
         run: flutter pub get
 
+      # 7. بناء APK (Debug)
       - name: Build APK (Debug)
         run: flutter build apk --debug
 
+      # 8. رفع الـ APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
