@@ -11,7 +11,6 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      # 1. توفير مساحة
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
@@ -20,18 +19,15 @@ jobs:
           docker-images: false
           swap-storage: true
 
-      # 2. جلب الكود
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 3. إعداد Java
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      # 4. إعداد Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -39,22 +35,18 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # 5. إعداد Android SDK (الحل النهائي)
-      -       - name: Setup Android SDK
+      - name: Setup Android SDK
         uses: amyu/setup-android@v6.0
         with:
           sdk-version: '36'
           build-tools-version: '36.0.0'
 
-      # 6. جلب الحزم
       - name: Get dependencies
         run: flutter pub get
 
-      # 7. بناء APK (Debug)
-      - name: Build APK (Debug)
+      - name: Build APK
         run: flutter build apk --debug
 
-      # 8. رفع الـ APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
