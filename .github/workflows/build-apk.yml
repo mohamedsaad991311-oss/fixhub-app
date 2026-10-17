@@ -41,7 +41,7 @@ jobs:
 
       # 5. إعداد Android SDK (الحل النهائي)
       - name: Setup Android SDK
-        uses: amyu/setup-android@v6
+               uses: amyu/setup-android@v6.0
         with:
           sdk-version: '36'
           build-tools-version: '36.0.0'
