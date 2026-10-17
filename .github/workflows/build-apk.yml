@@ -10,23 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-          - name: Free Disk Space (Ubuntu)
+      # 1. توفير مساحة بحذف البرامج غير الضرورية
+      - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
-          # هذا الخيار يحذف أدوات .NET و Haskell وغيرها لتوفير مساحة
           tool-cache: true
           large-packages: true
           docker-images: false
           swap-storage: true
+
+      # 2. جلب الكود
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 3. إعداد Java
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
+      # 4. إعداد Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -34,10 +38,16 @@ jobs:
           channel: 'stable'
           cache: true
 
+      # 5. جلب الحزم
       - name: Get dependencies
         run: flutter pub get
 
-      -          - name: Upload APK
+      # 6. بناء APK (Debug حالياً)
+      - name: Build APK (Debug)
+        run: flutter build apk --debug
+
+      # 7. رفع الـ APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: fixhub-debug-apk
