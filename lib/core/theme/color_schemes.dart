@@ -4,20 +4,18 @@ import 'package:flutter/material.dart';
 import 'theme_model.dart';
 
 /// ═══════════════════════════════════════════════════════════
-/// Color Schemes — 5 مجموعات × (Light + Dark) = 10 ColorSchemes
+/// Color Schemes — 5 ألوان أساسية (Monochrome Themes)
 /// ═══════════════════════════════════════════════════════════
 ///
-/// المنهجية: هجين
-/// - نبدأ بـ ColorScheme.fromSeed
-/// - نخصص الألوان الحرجة (primary, secondary, surface, error)
-/// - نضمن إن الـ Dark mode يبان حلو مش باهت
+/// كل ثيم معتمد على لون واحد بدرجاته (مريح للعين)
+/// - بنفسجي (Violet)
+/// - أزرق سماوي (Sky Blue)
+/// - تركواز (Teal)
+/// - أخضر (Emerald)
+/// - كهرماني (Amber)
 ///
 class AppColorSchemes {
-  AppColorSchemes._(); // منع الإنشاء
-
-  // ─────────────────────────────────────────────────────────
-  // نقطة الدخول الرئيسية
-  // ─────────────────────────────────────────────────────────
+  AppColorSchemes._();
 
   /// إرجاع ColorScheme بناءً على النوع + الـ Brightness
   static ColorScheme get({
@@ -25,47 +23,118 @@ class AppColorSchemes {
     required Brightness brightness,
   }) {
     switch (type) {
-      case ColorSchemeType.tealCoral:
-        return brightness == Brightness.light
-            ? tealCoralLight
-            : tealCoralDark;
-      case ColorSchemeType.indigoAmber:
-        return brightness == Brightness.light
-            ? indigoAmberLight
-            : indigoAmberDark;
-      case ColorSchemeType.emeraldRose:
-        return brightness == Brightness.light
-            ? emeraldRoseLight
-            : emeraldRoseDark;
-      case ColorSchemeType.violetCyan:
-        return brightness == Brightness.light
-            ? violetCyanLight
-            : violetCyanDark;
-      case ColorSchemeType.slateOrange:
-        return brightness == Brightness.light
-            ? slateOrangeLight
-            : slateOrangeDark;
+      case ColorSchemeType.violet:
+        return brightness == Brightness.light ? violetLight : violetDark;
+      case ColorSchemeType.skyBlue:
+        return brightness == Brightness.light ? skyBlueLight : skyBlueDark;
+      case ColorSchemeType.teal:
+        return brightness == Brightness.light ? tealLight : tealDark;
+      case ColorSchemeType.emerald:
+        return brightness == Brightness.light ? emeraldLight : emeraldDark;
+      case ColorSchemeType.amber:
+        return brightness == Brightness.light ? amberLight : amberDark;
     }
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 1) TEAL + CORAL
+  // 1) VIOLET (بنفسجي)
   // ═══════════════════════════════════════════════════════════
 
-  /// Teal + Coral — Light
-  static final ColorScheme tealCoralLight = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF14B8A6), // Teal 500
+  static final ColorScheme violetLight = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF9333EA), // بنفسجي مشبع
     brightness: Brightness.light,
   ).copyWith(
-    primary: const Color(0xFF0F766E),        // Teal 700
+    primary: const Color(0xFF9333EA), // بنفسجي
+    onPrimary: Colors.white,
+    primaryContainer: const Color(0xFFF3E8FF), // بنفسجي فاتح جداً
+    onPrimaryContainer: const Color(0xFF3B0764),
+    secondary: const Color(0xFFEC4899), // وردي (Pink)
+    onSecondary: Colors.white,
+    secondaryContainer: const Color(0xFFFCE7F3),
+    onSecondaryContainer: const Color(0xFF500724),
+    surface: const Color(0xFFFAF9FC),
+    onSurface: const Color(0xFF1B1B1F),
+    surfaceContainer: const Color(0xFFF1EDF7),
+    error: const Color(0xFFDC2626),
+    onError: Colors.white,
+  );
+
+  static final ColorScheme violetDark = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF9333EA),
+    brightness: Brightness.dark,
+  ).copyWith(
+    primary: const Color(0xFFA855F7), // بنفسجي مضيء
+    onPrimary: Colors.white,
+    primaryContainer: const Color(0xFF6B21A8), // بنفسجي غامق
+    onPrimaryContainer: const Color(0xFFF3E8FF),
+    secondary: const Color(0xFFF472B6), // وردي مضيء
+    onSecondary: const Color(0xFF500724),
+    secondaryContainer: const Color(0xFF831843),
+    onSecondaryContainer: const Color(0xFFFCE7F3),
+    surface: const Color(0xFF100A1A), // خلفية غامقة جداً بلمسة بنفسجية
+    onSurface: const Color(0xFFE9DDF2),
+    surfaceContainer: const Color(0xFF1C1229),
+    error: const Color(0xFFF87171),
+    onError: const Color(0xFF450A0A),
+  );
+  // ═══════════════════════════════════════════════════════════
+  // 2) SKY BLUE (أزرق سماوي)
+  // ═══════════════════════════════════════════════════════════
+
+  static final ColorScheme skyBlueLight = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF0EA5E9),
+    brightness: Brightness.light,
+  ).copyWith(
+    primary: const Color(0xFF0284C7), // Sky 600
+    onPrimary: Colors.white,
+    primaryContainer: const Color(0xFFE0F2FE), // Sky 100
+    onPrimaryContainer: const Color(0xFF082F49), // Sky 950
+    secondary: const Color(0xFF7DD3FC), // Sky 300
+    onSecondary: const Color(0xFF082F49),
+    secondaryContainer: const Color(0xFFF0F9FF),
+    onSecondaryContainer: const Color(0xFF082F49),
+    surface: const Color(0xFFF8FAFC),
+    onSurface: const Color(0xFF0F172A),
+    surfaceContainer: const Color(0xFFEFF6FB),
+    error: const Color(0xFFDC2626),
+    onError: Colors.white,
+  );
+
+  static final ColorScheme skyBlueDark = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF0EA5E9),
+    brightness: Brightness.dark,
+  ).copyWith(
+    primary: const Color(0xFF38BDF8), // Sky 400
+    onPrimary: const Color(0xFF082F49),
+    primaryContainer: const Color(0xFF0369A1), // Sky 700
+    onPrimaryContainer: const Color(0xFFE0F2FE),
+    secondary: const Color(0xFF7DD3FC), // Sky 300
+    onSecondary: const Color(0xFF082F49),
+    secondaryContainer: const Color(0xFF075985),
+    onSecondaryContainer: const Color(0xFFF0F9FF),
+    surface: const Color(0xFF0F1419),
+    onSurface: const Color(0xFFE2E8F0),
+    surfaceContainer: const Color(0xFF1B2027),
+    error: const Color(0xFFF87171),
+    onError: const Color(0xFF450A0A),
+  );
+
+  // ═══════════════════════════════════════════════════════════
+  // 3) TEAL (تركواز)
+  // ═══════════════════════════════════════════════════════════
+
+  static final ColorScheme tealLight = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF14B8A6),
+    brightness: Brightness.light,
+  ).copyWith(
+    primary: const Color(0xFF0D9488), // Teal 600
     onPrimary: Colors.white,
     primaryContainer: const Color(0xFFCCFBF1), // Teal 100
     onPrimaryContainer: const Color(0xFF042F2E), // Teal 950
-    secondary: const Color(0xFFE85D3A),      // Coral مشبع
-    onSecondary: Colors.white,
-    secondaryContainer: const Color(0xFFFFE4DB),
-    onSecondaryContainer: const Color(0xFF4A1206),
-    tertiary: const Color(0xFFFFB088),
+    secondary: const Color(0xFF5EEAD4), // Teal 300
+    onSecondary: const Color(0xFF042F2E),
+    secondaryContainer: const Color(0xFFF0FDFA),
+    onSecondaryContainer: const Color(0xFF042F2E),
     surface: const Color(0xFFF8FAFA),
     onSurface: const Color(0xFF1A1C1C),
     surfaceContainer: const Color(0xFFEEF2F2),
@@ -73,20 +142,18 @@ class AppColorSchemes {
     onError: Colors.white,
   );
 
-  /// Teal + Coral — Dark
-  static final ColorScheme tealCoralDark = ColorScheme.fromSeed(
+  static final ColorScheme tealDark = ColorScheme.fromSeed(
     seedColor: const Color(0xFF14B8A6),
     brightness: Brightness.dark,
   ).copyWith(
-    primary: const Color(0xFF5EEAD4),        // Teal 300
-    onPrimary: const Color(0xFF003731),
+    primary: const Color(0xFF2DD4BF), // Teal 400
+    onPrimary: const Color(0xFF042F2E),
     primaryContainer: const Color(0xFF115E59), // Teal 800
-    onPrimaryContainer: const Color(0xFFA7F3D0),
-    secondary: const Color(0xFFFF8A65),      // Coral فاتح
-    onSecondary: const Color(0xFF561B0A),
-    secondaryContainer: const Color(0xFF7C2D12),
-    onSecondaryContainer: const Color(0xFFFFDAD0),
-    tertiary: const Color(0xFFFFCFA8),
+    onPrimaryContainer: const Color(0xFFCCFBF1),
+    secondary: const Color(0xFF5EEAD4), // Teal 300
+    onSecondary: const Color(0xFF042F2E),
+    secondaryContainer: const Color(0xFF134E4A),
+    onSecondaryContainer: const Color(0xFFF0FDFA),
     surface: const Color(0xFF0E1414),
     onSurface: const Color(0xFFE0E3E2),
     surfaceContainer: const Color(0xFF1A2020),
@@ -95,69 +162,21 @@ class AppColorSchemes {
   );
 
   // ═══════════════════════════════════════════════════════════
-  // 2) INDIGO + AMBER
+  // 4) EMERALD (أخضر)
   // ═══════════════════════════════════════════════════════════
 
-  /// Indigo + Amber — Light
-  static final ColorScheme indigoAmberLight = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF6366F1), // Indigo 500
+  static final ColorScheme emeraldLight = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF10B981),
     brightness: Brightness.light,
   ).copyWith(
-    primary: const Color(0xFF4338CA),        // Indigo 700
-    onPrimary: Colors.white,
-    primaryContainer: const Color(0xFFE0E7FF), // Indigo 100
-    onPrimaryContainer: const Color(0xFF1E1B4B), // Indigo 950
-    secondary: const Color(0xFFF59E0B),      // Amber 500
-    onSecondary: const Color(0xFF451A03),
-    secondaryContainer: const Color(0xFFFEF3C7),
-    onSecondaryContainer: const Color(0xFF451A03),
-    tertiary: const Color(0xFFFFD54F),
-    surface: const Color(0xFFFAFAFC),
-    onSurface: const Color(0xFF1B1B1F),
-    surfaceContainer: const Color(0xFFEEEEF4),
-    error: const Color(0xFFDC2626),
-    onError: Colors.white,
-  );
-
-  /// Indigo + Amber — Dark
-  static final ColorScheme indigoAmberDark = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF6366F1),
-    brightness: Brightness.dark,
-  ).copyWith(
-    primary: const Color(0xFFA5B4FC),        // Indigo 300
-    onPrimary: const Color(0xFF1E1B4B),
-    primaryContainer: const Color(0xFF3730A3), // Indigo 800
-    onPrimaryContainer: const Color(0xFFE0E7FF),
-    secondary: const Color(0xFFFCD34D),      // Amber 300
-    onSecondary: const Color(0xFF451A03),
-    secondaryContainer: const Color(0xFF78350F),
-    onSecondaryContainer: const Color(0xFFFEF3C7),
-    tertiary: const Color(0xFFFFE082),
-    surface: const Color(0xFF121218),
-    onSurface: const Color(0xFFE4E1E6),
-    surfaceContainer: const Color(0xFF1E1E26),
-    error: const Color(0xFFF87171),
-    onError: const Color(0xFF450A0A),
-  );
-
-  // ═══════════════════════════════════════════════════════════
-  // 3) EMERALD + ROSE
-  // ═══════════════════════════════════════════════════════════
-
-  /// Emerald + Rose — Light
-  static final ColorScheme emeraldRoseLight = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF10B981), // Emerald 500
-    brightness: Brightness.light,
-  ).copyWith(
-    primary: const Color(0xFF047857),        // Emerald 700
+    primary: const Color(0xFF059669), // Emerald 600
     onPrimary: Colors.white,
     primaryContainer: const Color(0xFFD1FAE5), // Emerald 100
     onPrimaryContainer: const Color(0xFF022C22), // Emerald 950
-    secondary: const Color(0xFFE11D48),      // Rose 600
-    onSecondary: Colors.white,
-    secondaryContainer: const Color(0xFFFFE4E6),
-    onSecondaryContainer: const Color(0xFF4C0519),
-    tertiary: const Color(0xFFFDA4AF),
+    secondary: const Color(0xFF6EE7B7), // Emerald 300
+    onSecondary: const Color(0xFF022C22),
+    secondaryContainer: const Color(0xFFECFDF5),
+    onSecondaryContainer: const Color(0xFF022C22),
     surface: const Color(0xFFF8FAF9),
     onSurface: const Color(0xFF1A1C1B),
     surfaceContainer: const Color(0xFFEDF2F0),
@@ -165,20 +184,18 @@ class AppColorSchemes {
     onError: Colors.white,
   );
 
-  /// Emerald + Rose — Dark
-  static final ColorScheme emeraldRoseDark = ColorScheme.fromSeed(
+  static final ColorScheme emeraldDark = ColorScheme.fromSeed(
     seedColor: const Color(0xFF10B981),
     brightness: Brightness.dark,
   ).copyWith(
-    primary: const Color(0xFF6EE7B7),        // Emerald 300
-    onPrimary: const Color(0xFF00382B),
+    primary: const Color(0xFF34D399), // Emerald 400
+    onPrimary: const Color(0xFF022C22),
     primaryContainer: const Color(0xFF065F46), // Emerald 800
     onPrimaryContainer: const Color(0xFFD1FAE5),
-    secondary: const Color(0xFFFB7185),      // Rose 400
-    onSecondary: const Color(0xFF4C0519),
-    secondaryContainer: const Color(0xFF881337),
-    onSecondaryContainer: const Color(0xFFFFE4E6),
-    tertiary: const Color(0xFFFECDD3),
+    secondary: const Color(0xFF6EE7B7), // Emerald 300
+    onSecondary: const Color(0xFF022C22),
+    secondaryContainer: const Color(0xFF064E3B),
+    onSecondaryContainer: const Color(0xFFECFDF5),
     surface: const Color(0xFF0E1412),
     onSurface: const Color(0xFFE1E3E1),
     surfaceContainer: const Color(0xFF1A201E),
@@ -187,93 +204,43 @@ class AppColorSchemes {
   );
 
   // ═══════════════════════════════════════════════════════════
-  // 4) VIOLET + CYAN
+  // 5) AMBER (كهرماني / برتقالي)
   // ═══════════════════════════════════════════════════════════
 
-  /// Violet + Cyan — Light
-  static final ColorScheme violetCyanLight = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF8B5CF6), // Violet 500
+  static final ColorScheme amberLight = ColorScheme.fromSeed(
+    seedColor: const Color(0xFFF59E0B),
     brightness: Brightness.light,
   ).copyWith(
-    primary: const Color(0xFF6D28D9),        // Violet 700
+    primary: const Color(0xFFD97706), // Amber 600
     onPrimary: Colors.white,
-    primaryContainer: const Color(0xFFEDE9FE), // Violet 100
-    onPrimaryContainer: const Color(0xFF2E1065), // Violet 950
-    secondary: const Color(0xFF0891B2),      // Cyan 600
-    onSecondary: Colors.white,
-    secondaryContainer: const Color(0xFFCFFAFE),
-    onSecondaryContainer: const Color(0xFF083344),
-    tertiary: const Color(0xFF67E8F9),
-    surface: const Color(0xFFFAF9FC),
-    onSurface: const Color(0xFF1B1B1F),
-    surfaceContainer: const Color(0xFFEFEDF5),
+    primaryContainer: const Color(0xFFFEF3C7), // Amber 100
+    onPrimaryContainer: const Color(0xFF451A03), // Amber 950
+    secondary: const Color(0xFFFCD34D), // Amber 300
+    onSecondary: const Color(0xFF451A03),
+    secondaryContainer: const Color(0xFFFFFBEB),
+    onSecondaryContainer: const Color(0xFF451A03),
+    surface: const Color(0xFFFCFAF7),
+    onSurface: const Color(0xFF1F1B16),
+    surfaceContainer: const Color(0xFFF7F0E6),
     error: const Color(0xFFDC2626),
     onError: Colors.white,
   );
 
-  /// Violet + Cyan — Dark
-  static final ColorScheme violetCyanDark = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF8B5CF6),
+  static final ColorScheme amberDark = ColorScheme.fromSeed(
+    seedColor: const Color(0xFFF59E0B),
     brightness: Brightness.dark,
   ).copyWith(
-    primary: const Color(0xFFC4B5FD),        // Violet 300
-    onPrimary: const Color(0xFF2E1065),
-    primaryContainer: const Color(0xFF5B21B6), // Violet 800
-    onPrimaryContainer: const Color(0xFFEDE9FE),
-    secondary: const Color(0xFF67E8F9),      // Cyan 300
-    onSecondary: const Color(0xFF083344),
-    secondaryContainer: const Color(0xFF155E75),
-    onSecondaryContainer: const Color(0xFFCFFAFE),
-    tertiary: const Color(0xFFA5F3FC),
-    surface: const Color(0xFF131218),
-    onSurface: const Color(0xFFE4E1E9),
-    surfaceContainer: const Color(0xFF1F1E26),
-    error: const Color(0xFFF87171),
-    onError: const Color(0xFF450A0A),
-  );
-
-  // ═══════════════════════════════════════════════════════════
-  // 5) SLATE + ORANGE
-  // ═══════════════════════════════════════════════════════════
-
-  /// Slate + Orange — Light
-  static final ColorScheme slateOrangeLight = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF64748B), // Slate 500
-    brightness: Brightness.light,
-  ).copyWith(
-    primary: const Color(0xFF334155),        // Slate 700
-    onPrimary: Colors.white,
-    primaryContainer: const Color(0xFFE2E8F0), // Slate 200
-    onPrimaryContainer: const Color(0xFF0F172A), // Slate 900
-    secondary: const Color(0xFFEA580C),      // Orange 600
-    onSecondary: Colors.white,
-    secondaryContainer: const Color(0xFFFFEDD5),
-    onSecondaryContainer: const Color(0xFF431407),
-    tertiary: const Color(0xFFFDBA74),
-    surface: const Color(0xFFF8FAFC),
-    onSurface: const Color(0xFF1E293B),
-    surfaceContainer: const Color(0xFFEEF2F6),
-    error: const Color(0xFFB91C1C),
-    onError: Colors.white,
-  );
-
-  /// Slate + Orange — Dark
-  static final ColorScheme slateOrangeDark = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF64748B),
-    brightness: Brightness.dark,
-  ).copyWith(
-    primary: const Color(0xFFCBD5E1),        // Slate 300
-    onPrimary: const Color(0xFF0F172A),
-    primaryContainer: const Color(0xFF334155), // Slate 700
-    onPrimaryContainer: const Color(0xFFE2E8F0),
-    secondary: const Color(0xFFFB923C),      // Orange 400
-    onSecondary: const Color(0xFF431407),
-    secondaryContainer: const Color(0xFF9A3412),
-    onSecondaryContainer: const Color(0xFFFFEDD5),
-    tertiary: const Color(0xFFFDBA74),
-    surface: const Color(0xFF0F1419),
-    onSurface: const Color(0xFFE2E8F0),
-    surfaceContainer: const Color(0xFF1B2027),
+    primary: const Color(0xFFFBBF24), // Amber 400
+    onPrimary: const Color(0xFF451A03),
+    primaryContainer: const Color(0xFF92400E), // Amber 800
+    onPrimaryContainer: const Color(0xFFFEF3C7),
+    secondary: const Color(0xFFFCD34D), // Amber 300
+    onSecondary: const Color(0xFF451A03),
+    secondaryContainer: const Color(0xFF78350F),
+    onSecondaryContainer: const Color(0xFFFFFBEB),
+    surface: const Color(0xFF18150F),
+    onSurface: const Color(0xFFE6E1DA),
+    surfaceContainer: const Color(0xFF241F17),
     error: const Color(0xFFF87171),
     onError: const Color(0xFF450A0A),
   );

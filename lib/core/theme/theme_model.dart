@@ -3,73 +3,46 @@
 import 'package:flutter/material.dart';
 
 // ═══════════════════════════════════════════════════════════
-// 1) ColorSchemeType — 5 مجموعات ألوان
+// 1) ColorSchemeType — 5 ألوان أساسية
 // ═══════════════════════════════════════════════════════════
 
-/// المجموعات الخمس للألوان (كل مجموعة × Light+Dark = 10 ColorSchemes)
+/// الألوان الخمسة (كل لون × Light+Dark = 10 ColorSchemes)
 enum ColorSchemeType {
-  /// Teal + Coral — الأخضر المائل للأزرق + المرجاني
-  tealCoral,
-
-  /// Indigo + Amber — النيلي + العنبري
-  indigoAmber,
-
-  /// Emerald + Rose — الزمردي + الوردي
-  emeraldRose,
-
-  /// Violet + Cyan — البنفسجي + السماوي
-  violetCyan,
-
-  /// Slate + Orange — الرمادي المائل للأزرق + البرتقالي
-  slateOrange,
+  violet, // بنفسجي
+  skyBlue, // أزرق سماوي
+  teal, // تركواز
+  emerald, // أخضر
+  amber, // كهرماني
 }
 
 extension ColorSchemeTypeX on ColorSchemeType {
-  /// الاسم المعروض (للـ UI)
   String get label {
     switch (this) {
-      case ColorSchemeType.tealCoral:
-        return 'Teal + Coral';
-      case ColorSchemeType.indigoAmber:
-        return 'Indigo + Amber';
-      case ColorSchemeType.emeraldRose:
-        return 'Emerald + Rose';
-      case ColorSchemeType.violetCyan:
-        return 'Violet + Cyan';
-      case ColorSchemeType.slateOrange:
-        return 'Slate + Orange';
+      case ColorSchemeType.violet:
+        return 'بنفسجي';
+      case ColorSchemeType.skyBlue:
+        return 'أزرق سماوي';
+      case ColorSchemeType.teal:
+        return 'تركواز';
+      case ColorSchemeType.emerald:
+        return 'أخضر';
+      case ColorSchemeType.amber:
+        return 'كهرماني';
     }
   }
 
-  /// اللون الأساسي (Seed) — يُستخدم للعرض في معاينة الثيم
   Color get seedColor {
     switch (this) {
-      case ColorSchemeType.tealCoral:
-        return const Color(0xFF14B8A6); // Teal 500
-      case ColorSchemeType.indigoAmber:
-        return const Color(0xFF6366F1); // Indigo 500
-      case ColorSchemeType.emeraldRose:
-        return const Color(0xFF10B981); // Emerald 500
-      case ColorSchemeType.violetCyan:
-        return const Color(0xFF8B5CF6); // Violet 500
-      case ColorSchemeType.slateOrange:
-        return const Color(0xFF64748B); // Slate 500
-    }
-  }
-
-  /// اللون الثانوي (Accent) — للعرض في المعاينة
-  Color get accentColor {
-    switch (this) {
-      case ColorSchemeType.tealCoral:
-        return const Color(0xFFFF7F50); // Coral
-      case ColorSchemeType.indigoAmber:
-        return const Color(0xFFFFC107); // Amber
-      case ColorSchemeType.emeraldRose:
-        return const Color(0xFFF43F5E); // Rose
-      case ColorSchemeType.violetCyan:
-        return const Color(0xFF06B6D4); // Cyan
-      case ColorSchemeType.slateOrange:
-        return const Color(0xFFF97316); // Orange
+      case ColorSchemeType.violet:
+        return const Color(0xFF8B5CF6);
+      case ColorSchemeType.skyBlue:
+        return const Color(0xFF0EA5E9);
+      case ColorSchemeType.teal:
+        return const Color(0xFF14B8A6);
+      case ColorSchemeType.emerald:
+        return const Color(0xFF10B981);
+      case ColorSchemeType.amber:
+        return const Color(0xFFF59E0B);
     }
   }
 }
@@ -96,7 +69,6 @@ extension AppThemeModeX on AppThemeMode {
     }
   }
 
-  /// تحويل إلى ThemeMode الخاص بـ Flutter
   ThemeMode get themeMode {
     switch (this) {
       case AppThemeMode.light:
@@ -114,19 +86,10 @@ extension AppThemeModeX on AppThemeMode {
 // ═══════════════════════════════════════════════════════════
 
 enum ThemeStyle {
-  /// بسيط، مسطح، بدون ظلال تقريباً
   minimal,
-
-  /// زجاجي شفاف (Glassmorphism)
   glass,
-
-  /// ناعم مع ظلال داخلية/خارجية (Neumorphism)
   neumorphic,
-
-  /// نمط Google Material 3 الحديث
   material3,
-
-  /// أنيق بخطوط Serif وتفاصيل ذهبية
   elegant,
 }
 
@@ -146,7 +109,6 @@ extension ThemeStyleX on ThemeStyle {
     }
   }
 
-  /// وصف مختصر (للـ UI)
   String get description {
     switch (this) {
       case ThemeStyle.minimal:
@@ -188,7 +150,6 @@ extension FontScaleX on FontScale {
     }
   }
 
-  /// معامل الضرب لحجم الخط
   double get factor {
     switch (this) {
       case FontScale.small:
@@ -225,7 +186,6 @@ extension CornerStyleX on CornerStyle {
     }
   }
 
-  /// قيمة نصف قطر الحواف بالبكسل
   double get radius {
     switch (this) {
       case CornerStyle.sharp:
@@ -237,7 +197,6 @@ extension CornerStyleX on CornerStyle {
     }
   }
 
-  /// BorderRadius جاهز للاستخدام
   BorderRadius get borderRadius => BorderRadius.circular(radius);
 }
 
@@ -263,7 +222,6 @@ extension GlassIntensityX on GlassIntensity {
     }
   }
 
-  /// شدة الـ blur بالبكسل
   double get blurSigma {
     switch (this) {
       case GlassIntensity.subtle:
@@ -275,7 +233,6 @@ extension GlassIntensityX on GlassIntensity {
     }
   }
 
-  /// شفافية الخلفية (0 = شفاف تماماً، 1 = معتم)
   double get opacity {
     switch (this) {
       case GlassIntensity.subtle:
@@ -301,7 +258,7 @@ class ThemeSettings {
   final GlassIntensity glassIntensity;
 
   const ThemeSettings({
-    this.colorScheme = ColorSchemeType.tealCoral,
+    this.colorScheme = ColorSchemeType.violet, // الافتراضي بقى بنفسجي
     this.mode = AppThemeMode.system,
     this.style = ThemeStyle.material3,
     this.fontScale = FontScale.normal,
@@ -348,7 +305,7 @@ class ThemeSettings {
     return ThemeSettings(
       colorScheme: ColorSchemeType.values.firstWhere(
         (e) => e.name == map['colorScheme'],
-        orElse: () => ColorSchemeType.tealCoral,
+        orElse: () => ColorSchemeType.violet, // الافتراضي بقى بنفسجي
       ),
       mode: AppThemeMode.values.firstWhere(
         (e) => e.name == map['mode'],

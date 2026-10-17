@@ -105,7 +105,8 @@ class ThemeSettingsPage extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('إعادة للافتراضي'),
-        content: const Text('هل أنت متأكد من إعادة كل إعدادات المظهر للافتراضي؟'),
+        content:
+            const Text('هل أنت متأكد من إعادة كل إعدادات المظهر للافتراضي؟'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -183,7 +184,10 @@ class _ColorSchemesGrid extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [type.seedColor, type.accentColor],
+                colors: [
+                  type.seedColor,
+                  type.seedColor.withValues(alpha: 0.6),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -304,7 +308,8 @@ class _ThemeStyleGrid extends StatelessWidget {
                     isSelected
                         ? Icons.radio_button_checked
                         : Icons.radio_button_unchecked,
-                    color: isSelected ? scheme.primary : scheme.onSurfaceVariant,
+                    color:
+                        isSelected ? scheme.primary : scheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: ThemeTokens.spaceSm),
                   Expanded(
@@ -393,7 +398,8 @@ class _CornerStyleSelector extends StatelessWidget {
               onTap: () => onSelect(corner),
               borderRadius: BorderRadius.circular(8),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: ThemeTokens.spaceMd),
+                padding:
+                    const EdgeInsets.symmetric(vertical: ThemeTokens.spaceMd),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? scheme.primaryContainer
@@ -410,7 +416,9 @@ class _CornerStyleSelector extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: isSelected ? scheme.primary : scheme.onSurfaceVariant,
+                        color: isSelected
+                            ? scheme.primary
+                            : scheme.onSurfaceVariant,
                         borderRadius: BorderRadius.circular(corner.radius),
                       ),
                     ),
@@ -505,7 +513,8 @@ class _LivePreview extends ConsumerWidget {
                         avatar: Icon(
                           Icons.build,
                           size: 16,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
                         ),
                       ),
                       const SizedBox(width: ThemeTokens.spaceSm),
