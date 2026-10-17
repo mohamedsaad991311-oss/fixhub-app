@@ -50,11 +50,21 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      # 7. بناء APK (Debug)
-      - name: Build APK (Debug)
-        run: flutter build apk --debug
+            # 7. بناء APK (Debug)
+      -name: Build FixHub APK
 
-      # 8. رفع الـ APK
+on:
+  push:
+    branches: [ "main", "master" ] # يشتغل على الفرعين
+  workflow_dispatch: # يسمح بالتشغيل اليدوي
+
+      # 8. نسخ الـ APK للمكان اللي Flutter بيدور فيه (حل مشكلة المسارات)
+      - name: Copy APK to expected location
+        run: |
+          mkdir -p build/app/outputs/flutter-apk/
+          cp android/app/build/outputs/apk/debug/app-debug.apk build/app/outputs/flutter-apk/app-debug.apk
+
+      # 9. رفع الـ APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
