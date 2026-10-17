@@ -329,7 +329,7 @@ class StaffMember {
   bool get isOwner => role.isOwner;
 
   /// هل هو مدير أو أعلى؟
-  bool get isAdmin => role.isAdmin;
+  bool get isAdmin => role.isTenantAdmin;
 
   /// سنوات الخدمة
   int get yearsOfService {

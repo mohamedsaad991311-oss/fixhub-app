@@ -43,6 +43,8 @@ import '../../features/settings/presentation/pages/backup_settings_page.dart';
 import '../../features/settings/presentation/pages/subscription_settings_page.dart';
 import '../../features/settings/presentation/pages/about_page.dart';
 import '../../features/activity_log/presentation/pages/activity_log_page.dart';
+import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
+import '../../features/admin/presentation/pages/device_reset_request_page.dart';
 import '../../features/cloud_sync/presentation/pages/cloud_sync_page.dart';
 import '../../features/delivery/presentation/pages/delivery_page.dart';
 import '../providers/onboarding_provider.dart';
@@ -522,6 +524,20 @@ class AppRouter {
       path: RouteNames.subscription,
       name: 'subscription',
       builder: (context, state) => const SubscriptionSettingsPage(),
+    ),
+
+    // ─── Admin Dashboard ───
+    GoRoute(
+      path: '/admin',
+      name: 'adminDashboard',
+      builder: (context, state) => const AdminDashboardPage(),
+    ),
+
+    // ─── Device Reset Request (للعميل) ───
+    GoRoute(
+      path: '/device-reset-request',
+      name: 'deviceResetRequest',
+      builder: (context, state) => const DeviceResetRequestPage(),
     ),
   ];
 }

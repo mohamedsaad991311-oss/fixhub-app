@@ -4,7 +4,7 @@
 /// AppUser — نموذج المستخدم
 /// ═══════════════════════════════════════════════════════════
 ///
-/// بيمثّل المستخدم في التطبيق (owner / staff).
+/// يمثّل المستخدم في التطبيق (owner / staff).
 /// مرتبط بـ Supabase Auth (auth.users) + جدول staff.
 ///
 enum UserRole {
@@ -51,8 +51,9 @@ extension UserRoleX on UserRole {
   /// هل هو owner؟
   bool get isOwner => this == UserRole.owner;
 
-  /// هل هو admin (owner أو manager)؟
-  bool get isAdmin => this == UserRole.owner || this == UserRole.manager;
+  /// هل هو tenant admin (owner أو manager)؟
+  /// يعني: صلاحيات إدارية داخل الورشة فقط
+  bool get isTenantAdmin => this == UserRole.owner || this == UserRole.manager;
 
   /// من string
   static UserRole fromString(String? value) {
@@ -91,6 +92,10 @@ class AppUser {
   final UserRole role;
   final String? tenantId; // الورشة اللي بينتمي لها
 
+  /// هل هو أدمن النظام؟ (يقدر يدخل Admin Dashboard)
+  /// ده حقل في قاعدة البيانات: staff.is_admin
+  final bool isAdmin;
+
   // ─── الحالة ───
   final bool isActive;
   final bool isEmailVerified;
@@ -115,6 +120,7 @@ class AppUser {
     this.avatarUrl,
     this.role = UserRole.technician,
     this.tenantId,
+    this.isAdmin = false,
     this.isActive = true,
     this.isEmailVerified = false,
     this.isPhoneVerified = false,
@@ -147,6 +153,7 @@ class AppUser {
     String? avatarUrl,
     UserRole? role,
     String? tenantId,
+    bool? isAdmin,
     bool? isActive,
     bool? isEmailVerified,
     bool? isPhoneVerified,
@@ -166,6 +173,7 @@ class AppUser {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       role: role ?? this.role,
       tenantId: tenantId ?? this.tenantId,
+      isAdmin: isAdmin ?? this.isAdmin,
       isActive: isActive ?? this.isActive,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       isPhoneVerified: isPhoneVerified ?? this.isPhoneVerified,
@@ -192,6 +200,7 @@ class AppUser {
       avatarUrl: json['avatar_url'] as String?,
       role: UserRoleX.fromString(json['role'] as String?),
       tenantId: json['tenant_id'] as String?,
+      isAdmin: json['is_admin'] as bool? ?? false,
       isActive: json['is_active'] as bool? ?? true,
       isEmailVerified: json['is_email_verified'] as bool? ?? false,
       isPhoneVerified: json['is_phone_verified'] as bool? ?? false,
@@ -218,6 +227,7 @@ class AppUser {
       'avatar_url': avatarUrl,
       'role': role.name,
       'tenant_id': tenantId,
+      'is_admin': isAdmin,
       'is_active': isActive,
       'is_email_verified': isEmailVerified,
       'is_phone_verified': isPhoneVerified,
@@ -240,6 +250,7 @@ class AppUser {
       'avatar_url': avatarUrl,
       'role': role.name,
       'tenant_id': tenantId,
+      'is_admin': isAdmin,
       'is_active': isActive,
       'bio': bio,
     };
@@ -271,8 +282,9 @@ class AppUser {
   /// هل المستخدم owner؟
   bool get isOwner => role.isOwner;
 
-  /// هل هو admin؟
-  bool get isAdmin => role.isAdmin;
+  /// هل هو tenant admin (owner أو manager)؟
+  /// ده صلاحيات داخل الورشة فقط
+  bool get isTenantAdmin => role.isTenantAdmin;
 
   /// الاسم المعروض (عربي أو إنجليزي)
   String displayName({bool isArabic = true}) {
@@ -312,6 +324,7 @@ class AppUser {
         other.avatarUrl == avatarUrl &&
         other.role == role &&
         other.tenantId == tenantId &&
+        other.isAdmin == isAdmin &&
         other.isActive == isActive &&
         other.isEmailVerified == isEmailVerified &&
         other.isPhoneVerified == isPhoneVerified &&
@@ -329,6 +342,7 @@ class AppUser {
         avatarUrl,
         role,
         tenantId,
+        isAdmin,
         isActive,
         isEmailVerified,
         isPhoneVerified,
@@ -337,6 +351,7 @@ class AppUser {
 
   @override
   String toString() {
-    return 'AppUser(id: $id, email: $email, name: $fullName, role: ${role.name})';
+    return 'AppUser(id: $id, email: $email, name: $fullName, '
+        'role: ${role.name}, isAdmin: $isAdmin)';
   }
 }
