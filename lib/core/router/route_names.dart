@@ -184,6 +184,9 @@ class RouteNames {
   /// طلب إعادة تعيين الجهاز (للعميل)
   static const String deviceResetRequest = '/device-reset-request';
 
+  /// الأجهزة المرتبطة بالحساب
+  static const String devices = '/devices';
+
   // ═══════════════════════════════════════════════════════════
   // 7) ERROR / NOT FOUND
   // ═══════════════════════════════════════════════════════════
