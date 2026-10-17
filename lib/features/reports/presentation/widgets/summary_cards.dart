@@ -27,7 +27,8 @@ class SummaryCards extends StatelessWidget {
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 600;
         final columns = isNarrow ? 2 : 4;
-        final aspectRatio = isNarrow ? 1.6 : 1.8;
+        // زيادة الارتفاع عشان المحتوى يبقى مناسب (كان 1.6 و 1.8)
+        final aspectRatio = isNarrow ? 1.4 : 1.6;
 
         return GridView.count(
           shrinkWrap: true,
