@@ -46,6 +46,7 @@ import '../../features/activity_log/presentation/pages/activity_log_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/device_reset_request_page.dart';
 import '../../features/devices/presentation/pages/devices_page.dart';
+import '../../features/invitations/presentation/pages/invitations_page.dart';
 import '../../features/cloud_sync/presentation/pages/cloud_sync_page.dart';
 import '../../features/delivery/presentation/pages/delivery_page.dart';
 import '../providers/onboarding_provider.dart';
@@ -546,6 +547,13 @@ class AppRouter {
       path: '/devices',
       name: 'devices',
       builder: (context, state) => const DevicesPage(),
+    ),
+
+    // ─── دعوات الموظفين ───
+    GoRoute(
+      path: '/invitations',
+      name: 'invitations',
+      builder: (context, state) => const InvitationsPage(),
     ),
   ];
 }

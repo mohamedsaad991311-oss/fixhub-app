@@ -66,6 +66,12 @@ class SettingsPage extends ConsumerWidget {
                     icon: Icons.store_outlined,
                     children: [
                       SettingsTile(
+                        icon: Icons.mail_outline,
+                        title: 'دعوات الموظفين',
+                        subtitle: 'إدارة دعوات الانضمام للورشة',
+                        onTap: () => context.push('/invitations'),
+                      ),
+                      SettingsTile(
                         icon: Icons.store,
                         title: 'معلومات الورشة',
                         subtitle: 'الاسم، العنوان، الشعار',

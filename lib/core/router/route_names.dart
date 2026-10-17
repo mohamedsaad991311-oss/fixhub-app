@@ -187,6 +187,8 @@ class RouteNames {
   /// الأجهزة المرتبطة بالحساب
   static const String devices = '/devices';
 
+  /// دعوات الموظفين
+  static const String invitations = '/invitations';
   // ═══════════════════════════════════════════════════════════
   // 7) ERROR / NOT FOUND
   // ═══════════════════════════════════════════════════════════
