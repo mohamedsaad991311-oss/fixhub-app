@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      # 1. توفير مساحة (أقوى خطوة)
+      # 1. توفير مساحة
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
@@ -39,15 +39,19 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # 5. جلب الحزم
+      # 5. إعداد Android SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # 6. جلب الحزم
       - name: Get dependencies
         run: flutter pub get
 
-      # 6. بناء APK (Debug)
+      # 7. بناء APK (Debug)
       - name: Build APK (Debug)
         run: flutter build apk --debug
 
-      # 7. رفع الـ APK
+      # 8. رفع الـ APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
