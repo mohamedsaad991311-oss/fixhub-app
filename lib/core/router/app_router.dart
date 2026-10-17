@@ -47,6 +47,8 @@ import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/device_reset_request_page.dart';
 import '../../features/devices/presentation/pages/devices_page.dart';
 import '../../features/invitations/presentation/pages/invitations_page.dart';
+import '../../features/tracking/presentation/pages/tracking_page.dart';
+import '../../features/tracking/presentation/pages/tracking_detail_page.dart';
 import '../../features/cloud_sync/presentation/pages/cloud_sync_page.dart';
 import '../../features/delivery/presentation/pages/delivery_page.dart';
 import '../providers/onboarding_provider.dart';
@@ -487,14 +489,14 @@ class AppRouter {
     GoRoute(
       path: RouteNames.tracking,
       name: 'tracking',
-      builder: (context, state) => const TrackingPlaceholderPage(),
+      builder: (context, state) => const TrackingPage(),
       routes: [
         GoRoute(
           path: ':token',
           name: 'trackingDetail',
           builder: (context, state) {
             final token = state.pathParameters['token'] ?? '';
-            return TrackingDetailPlaceholderPage(token: token);
+            return TrackingDetailPage(token: token);
           },
         ),
       ],
