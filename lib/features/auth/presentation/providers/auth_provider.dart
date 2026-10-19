@@ -162,38 +162,26 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     return await _loadCurrentSession();
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
   //  LOAD
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
 
   Future<AuthState> _loadCurrentSession() async {
     try {
       if (!_auth.isLoggedIn) {
-        debugPrint('⚪ [_loadCurrentSession] not logged in');
         return AuthState.unauthenticated;
       }
-
-      debugPrint('🔵 [_loadCurrentSession] userId=${_auth.userId}');
-      debugPrint('🔵 [_loadCurrentSession] BEFORE _fetchAppUser');
 
       final user = await _fetchAppUser();
 
-      debugPrint(
-          '🔵 [_loadCurrentSession] AFTER _fetchAppUser user=${user?.email} tenantId=${user?.tenantId}');
-
       if (user == null) {
-        debugPrint(
-            '🟡 [_loadCurrentSession] user not found in staff — trigger may not have run yet');
+        // لو المستخدم مش موجود في staff (مثلاً لسه ما اتعملوش trigger)،
+        // هنا ممكن نحاول نعمله manually (لو التطبيق محتاج)
+        debugPrint('[_loadCurrentSession] user not found in staff');
         return AuthState.unauthenticated;
       }
 
-      debugPrint('🔵 [_loadCurrentSession] BEFORE _fetchTenant');
       final tenant = await _fetchTenant(user.tenantId);
-      debugPrint(
-          '🔵 [_loadCurrentSession] AFTER _fetchTenant tenant=${tenant?.name}');
-
-      debugPrint(
-          '🟢 [_loadCurrentSession] OK user=${user.email} tenant=${tenant?.name}');
 
       return AuthState(
         status: AuthStatus.authenticated,
@@ -202,7 +190,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         lastSyncAt: DateTime.now(),
       );
     } catch (e) {
-      debugPrint('🔴 [_loadCurrentSession] error: $e');
+      debugPrint('[_loadCurrentSession] error: $e');
       return AuthState.unauthenticated;
     }
   }
@@ -211,9 +199,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     try {
       final session = event.session as Session?;
       final eventType = event.event;
-
-      debugPrint(
-          '📡 [_handleAuthEvent] type=$eventType hasSession=${session != null}');
 
       if (session == null) {
         final oldState = state.valueOrNull;
@@ -239,15 +224,14 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = AsyncData(fresh);
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
   //  SIGN IN
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
 
   Future<bool> signIn({
     required String identifier,
     required String password,
   }) async {
-    debugPrint('🔵 [signIn] START identifier=$identifier');
     state = const AsyncData(AuthState.loading);
 
     try {
@@ -256,54 +240,24 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         password: password,
       );
 
-      debugPrint('🟢 [signIn] Supabase returned success');
+      final fresh = await _loadCurrentSession();
 
-      // ═══ فحص الجهاز (معطل مؤقتاً للتطوير) ═══
-      // TODO: فعّله بعد ما نضبط device_id في Web
-      // final userId = _auth.currentUser?.id;
-      // if (userId != null) {
-      //   final manager = ref.read(sessionManagerProvider);
-      //   final deviceCheck = await manager.checkDeviceAllowed(userId: userId);
-      //
-      //   if (!deviceCheck.isAllowed) {
-      //     await _auth.signOut();
-      //     state = AsyncData(
-      //       AuthState(
-      //         status: AuthStatus.unauthenticated,
-      //         errorMessage: 'الحساب مرتبط بجهاز آخر.',
-      //         deviceBlockedInfo: DeviceBlockedInfo.fromCheck(deviceCheck),
-      //       ),
+      // تسجيل الجهاز (Single-Device Policy) - معطلة مؤقتاً
+      // if (fresh.isAuthenticated && fresh.user != null && fresh.tenant != null) {
+      //   try {
+      //     final manager = ref.read(sessionManagerProvider);
+      //     await manager.registerDevice(
+      //       userId: fresh.user!.userId,
+      //       tenantId: fresh.tenant!.id,
       //     );
-      //     return false;
+      //   } catch (e) {
+      //     debugPrint('[signIn] registerDevice error: $e');
       //   }
       // }
 
-      // ═══ تحميل البيانات ═══
-      debugPrint('🔵 [signIn] BEFORE _loadCurrentSession');
-      final fresh = await _loadCurrentSession();
-      debugPrint(
-          '🟢 [signIn] AFTER _loadCurrentSession isAuthenticated=${fresh.isAuthenticated}');
-
-      // ═══ سجّل الجهاز ═══
-      if (fresh.isAuthenticated && fresh.user != null && fresh.tenant != null) {
-        try {
-          debugPrint('🔵 [signIn] BEFORE registerDevice');
-          final manager = ref.read(sessionManagerProvider);
-          await manager.registerDevice(
-            userId: fresh.user!.userId,
-            tenantId: fresh.tenant!.id,
-          );
-          debugPrint('🟢 [signIn] AFTER registerDevice');
-        } catch (e) {
-          debugPrint('🔴 [signIn] registerDevice error: $e');
-        }
-      }
-
       state = AsyncData(fresh);
-      debugPrint('🟢 [signIn] DONE — returning ${fresh.isAuthenticated}');
       return fresh.isAuthenticated;
     } on AuthException catch (e) {
-      debugPrint('🔴 [signIn] AuthException: ${e.message}');
       state = AsyncData(
         AuthState(
           status: AuthStatus.unauthenticated,
@@ -312,7 +266,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       );
       return false;
     } catch (e) {
-      debugPrint('🔴 [signIn] Generic error: $e');
       state = const AsyncData(
         AuthState(
           status: AuthStatus.unauthenticated,
@@ -323,9 +276,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
   //  SIGN UP
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
 
   Future<bool> signUp({
     required String phone,
@@ -335,7 +288,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     String? tenantName,
     bool createTenant = false,
   }) async {
-    debugPrint('🔵 [signUp] START phone=$phone');
     state = const AsyncData(AuthState.loading);
 
     try {
@@ -350,9 +302,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         },
       );
 
-      debugPrint(
-          '🟢 [signUp] Supabase signUp done, isLoggedIn=${_auth.isLoggedIn}');
-
       if (!_auth.isLoggedIn) {
         state = const AsyncData(
           AuthState(
@@ -363,25 +312,14 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         return false;
       }
 
-      // ملاحظة: الـ Trigger في Supabase بيقوم بإنشاء tenant + staff تلقائياً
-      // مش محتاجين نعمل insert يدوي هنا.
+      // ⚠️ ملاحظة: الـ Trigger في Supabase بيعمل tenant + staff أوتوماتيك
+      // فمش محتاجين _ensureStaffRecord هنا.
 
       final fresh = await _loadCurrentSession();
-
-      if (fresh.isAuthenticated && fresh.user != null && fresh.tenant != null) {
-        try {
-          final manager = ref.read(sessionManagerProvider);
-          await manager.registerDevice(
-            userId: fresh.user!.userId,
-            tenantId: fresh.tenant!.id,
-          );
-        } catch (_) {}
-      }
 
       state = AsyncData(fresh);
       return fresh.isAuthenticated;
     } on AuthException catch (e) {
-      debugPrint('🔴 [signUp] AuthException: ${e.message}');
       state = AsyncData(
         AuthState(
           status: AuthStatus.unauthenticated,
@@ -390,7 +328,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       );
       return false;
     } catch (e) {
-      debugPrint('🔴 [signUp] Generic error: $e');
       state = const AsyncData(
         AuthState(
           status: AuthStatus.unauthenticated,
@@ -401,12 +338,11 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
   //  SIGN OUT
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
 
   Future<void> signOut() async {
-    debugPrint('🛑 [AuthNotifier.signOut] called');
     state = const AsyncData(AuthState.loading);
     try {
       await _auth.signOut();
@@ -418,9 +354,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
   //  PASSWORD RESET
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
 
   Future<bool> resetPassword(String email) async {
     try {
@@ -442,9 +378,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
   //  PROFILE
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
 
   Future<bool> updateProfile({
     String? fullName,
@@ -471,7 +407,10 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
 
       if (updates.isNotEmpty) {
-        await client.from('staff').update(updates).eq('id', current!.user!.id);
+        await client
+            .from('staff')
+            .update(updates)
+            .eq('user_id', current!.user!.userId);
       }
 
       final updatedUser = current!.user!.copyWith(
@@ -487,9 +426,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
   //  REFRESH
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
 
   Future<void> refresh() async {
     state = const AsyncData(AuthState.loading);
@@ -504,26 +443,33 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         AsyncData(current.copyWith(clearError: true, clearDeviceBlocked: true));
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
   //  INTERNAL
-  // ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
 
   Future<AppUser?> _fetchAppUser() async {
     try {
       final client = ref.read(supabaseClientProvider);
 
-      // بنستخدم RPC آمنة عشان نتخطى مشاكل RLS
+      debugPrint('[_fetchAppUser] userId = ${_auth.userId}');
+
       final data = await client.rpc(
         'get_staff_profile',
         params: {'p_user_id': _auth.userId!},
       );
 
-      // لو النتيجة فاضية، معناها المستخدم مش موجود في staff
-      if (data == null || (data is Map && data.isEmpty)) return null;
+      debugPrint('[_fetchAppUser] Raw data = $data');
 
-      return AppUser.fromJson(Map<String, dynamic>.from(data as Map));
+      if (data == null || (data is Map && data.isEmpty)) {
+        debugPrint('[_fetchAppUser] Data is empty or null');
+        return null;
+      }
+
+      final user = AppUser.fromJson(Map<String, dynamic>.from(data as Map));
+      debugPrint('[_fetchAppUser] Parsed User = ${user.email}');
+      return user;
     } catch (e) {
-      debugPrint('_fetchAppUser error: $e');
+      debugPrint('[_fetchAppUser] error: $e');
       return null;
     }
   }

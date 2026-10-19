@@ -34,29 +34,24 @@ class AuthService {
   // Identifier Detection
   // ═══════════════════════════════════════════════════════════
 
-  /// هل النص إيميل؟
   bool isEmail(String input) => input.contains('@');
 
-  /// هل النص رقم تليفون؟
   bool isPhone(String input) {
     if (isEmail(input)) return false;
     final cleaned = input.replaceAll(RegExp(r'[\s\-()]'), '');
     return RegExp(r'^[\+]?\d{8,15}$').hasMatch(cleaned);
   }
 
-  /// تطبيع رقم التليفون
   String normalizePhone(String phone) {
     var cleaned = phone.replaceAll(RegExp(r'[\s\-()]'), '');
 
     if (cleaned.startsWith('+')) return cleaned;
     if (cleaned.startsWith('00')) return '+${cleaned.substring(2)}';
 
-    // مصري بدون كود: 01012345678 → +201012345678
     if (cleaned.startsWith('0') && cleaned.length == 11) {
       return '+20${cleaned.substring(1)}';
     }
 
-    // مصري بدون صفر: 1012345678 → +201012345678
     if (cleaned.length == 10 && cleaned.startsWith('1')) {
       return '+20$cleaned';
     }
@@ -64,22 +59,19 @@ class AuthService {
     return '+$cleaned';
   }
 
-  /// تحويل رقم التليفون لإيميل داخلي
   String phoneToAuthEmail(String phone) {
     final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
     return '$digits@$_phoneEmailDomain';
   }
 
-  /// هل الإيميل ده مولّد من رقم؟
   bool isPhoneAuthEmail(String email) {
     return email.endsWith('@$_phoneEmailDomain');
   }
 
   // ═══════════════════════════════════════════════════════════
-  // Identifier Resolution — إيميل أو تليفون
+  // Identifier Resolution
   // ═══════════════════════════════════════════════════════════
 
-  /// تحويل identifier (إيميل أو تليفون) إلى email للـ Supabase Auth
   Future<String> resolveIdentifier(String identifier) async {
     final trimmed = identifier.trim();
 
@@ -88,7 +80,7 @@ class AuthService {
       return trimmed.toLowerCase();
     }
 
-    // 2. تليفون → ابحث في staff عبر RPC (آمن + بيتخطى RLS)
+    // 2. تليفون → ابحث في staff عبر RPC
     if (isPhone(trimmed)) {
       final normalized = normalizePhone(trimmed);
       debugPrint(
@@ -102,34 +94,30 @@ class AuthService {
 
         final dataList = data as List;
 
-        debugPrint(
-            '🔍 [resolveIdentifier] RPC returned ${dataList.length} rows');
+        if (dataList.isNotEmpty) {
+          final row = dataList.first as Map<String, dynamic>;
+          final email = row['email'] as String?;
 
-        if (dataList.isEmpty) {
-          debugPrint('🔴 [resolveIdentifier] NO ROW FOUND');
-          throw const AuthException(
-            'رقم التليفون غير مسجّل. جرب الإيميل أو سجّل حساب جديد.',
-          );
+          if (email != null && email.isNotEmpty) {
+            return email.toLowerCase();
+          }
         }
 
-        final row = dataList.first as Map<String, dynamic>;
-        final email = row['email'] as String?;
-
-        if (email == null || email.isEmpty) {
-          return phoneToAuthEmail(normalized);
-        }
-
-        return email.toLowerCase();
+        // ✅ الحل: fallback للإيميل الوهمي لو الـ RPC ملقاش
+        final fallbackEmail = phoneToAuthEmail(normalized);
+        debugPrint('🟡 [resolveIdentifier] fallback to $fallbackEmail');
+        return fallbackEmail;
       } catch (e) {
         if (e is AuthException) rethrow;
         debugPrint('🔴 [resolveIdentifier] RPC error: $e');
-        throw const AuthException(
-          'تعذّر البحث برقم التليفون. جرب الإيميل.',
-        );
+
+        // ✅ fallback برضه لو فيه خطأ
+        final fallbackEmail = phoneToAuthEmail(normalized);
+        debugPrint('🟡 [resolveIdentifier] fallback (catch) to $fallbackEmail');
+        return fallbackEmail;
       }
     }
 
-    // 3. غير معروف
     throw const AuthException('أدخل بريد إلكتروني صحيح أو رقم تليفون.');
   }
 
@@ -212,9 +200,6 @@ class AuthService {
   // ═══════════════════════════════════════════════════════════
 
   Future<void> signOut() async {
-    debugPrint('🛑 [AuthService.signOut] called!');
-    debugPrint('📍 Stack trace:');
-    debugPrint(StackTrace.current.toString());
     await _supabase.auth.signOut();
   }
 
@@ -310,10 +295,7 @@ class AuthService {
     final expiresAt = session.expiresAt;
     if (expiresAt == null) return false;
     final expiryDate = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
-    final isExpired = expiryDate.isBefore(DateTime.now());
-    debugPrint(
-        '⏰ [isSessionExpired] expiresAt=$expiresAt expiry=$expiryDate now=${DateTime.now()} isExpired=$isExpired');
-    return isExpired;
+    return expiryDate.isBefore(DateTime.now());
   }
 
   Future<bool> ensureValidSession() async {
@@ -345,7 +327,6 @@ class AuthService {
     }
   }
 
-  /// هل الرقم مسجّل؟ (عبر RPC)
   Future<bool> isPhoneRegistered(String phone) async {
     try {
       final normalized = normalizePhone(phone);
@@ -373,18 +354,13 @@ class AuthService {
   }
 
   Future<String?> getUserTenantId() async {
-    debugPrint('🔍 [getUserTenantId] isLoggedIn=$isLoggedIn userId=$userId');
-    if (!isLoggedIn) {
-      debugPrint('🔴 [getUserTenantId] NOT logged in');
-      return null;
-    }
+    if (!isLoggedIn) return null;
     try {
       final data = await _supabase.client
           .from('staff')
           .select('tenant_id')
           .eq('user_id', userId!)
           .maybeSingle();
-      debugPrint('🔍 [getUserTenantId] data=$data');
       return data?['tenant_id'] as String?;
     } catch (e) {
       debugPrint('🔴 [getUserTenantId] error: $e');
