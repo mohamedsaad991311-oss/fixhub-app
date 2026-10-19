@@ -31,7 +31,8 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(appSettingsProvider);
     final scheme = Theme.of(context).colorScheme;
-
+    final authState = ref.watch(authProvider).valueOrNull;
+    final user = authState?.user;
     return Scaffold(
       appBar: AppBar(
         title: const Text('الإعدادات'),
@@ -147,26 +148,25 @@ class SettingsPage extends ConsumerWidget {
 
                   const SizedBox(height: AppSizes.spaceMdLg),
 
-                  // ═══ قسم الحساب ═══
-                  SettingsSection(
-                    title: 'الحساب',
-                    icon: Icons.person_outline,
-                    children: [
-                      SettingsTile(
-                        icon: Icons.workspace_premium_outlined,
-                        title: 'الاشتراك',
-                        subtitle: 'إدارة خطة الاشتراك',
-                        onTap: () =>
-                            context.push(RouteNames.subscriptionSettings),
-                      ),
-                      SettingsTile(
-                        icon: Icons.info_outline,
-                        title: 'حول التطبيق',
-                        subtitle: 'FixHub — الإصدار 1.0.0',
-                        onTap: () => context.push(RouteNames.about),
-                      ),
-                    ],
-                  ),
+                  // ═══ قسم الأدمن (يظهر بس لو المستخدم أدمن) ═══
+                  if (user?.isAdmin ?? false)
+                    Column(
+                      children: [
+                        SettingsSection(
+                          title: 'الأدمن',
+                          icon: Icons.admin_panel_settings,
+                          children: [
+                            SettingsTile(
+                              icon: Icons.dashboard,
+                              title: 'لوحة التحكم',
+                              subtitle: 'إدارة الورش والطلبات',
+                              onTap: () => context.push('/admin'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSizes.spaceMdLg),
+                      ],
+                    ),
 
                   const SizedBox(height: AppSizes.spaceMdLg),
 
