@@ -182,19 +182,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
           '🔵 [_loadCurrentSession] AFTER _fetchAppUser user=${user?.email} tenantId=${user?.tenantId}');
 
       if (user == null) {
-        debugPrint('🟡 [_loadCurrentSession] user not found, ensuring staff');
-        debugPrint('🔵 [_loadCurrentSession] BEFORE _ensureStaffRecord');
-
-        final created = await _ensureStaffRecord();
-
         debugPrint(
-            '🔵 [_loadCurrentSession] AFTER _ensureStaffRecord created=${created?.email}');
-
-        if (created == null) {
-          debugPrint('🔴 [_loadCurrentSession] staff creation failed');
-          return AuthState.unauthenticated;
-        }
-        return await _loadCurrentSession();
+            '🟡 [_loadCurrentSession] user not found in staff — trigger may not have run yet');
+        return AuthState.unauthenticated;
       }
 
       debugPrint('🔵 [_loadCurrentSession] BEFORE _fetchTenant');
@@ -373,24 +363,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         return false;
       }
 
-      final staffCreated = await _ensureStaffRecord(
-        createTenant: createTenant,
-        tenantName: tenantName,
-        fullName: fullName,
-        phone: phone,
-        realEmail: email,
-        role: createTenant ? UserRole.owner : UserRole.technician,
-      );
-
-      if (staffCreated == null) {
-        state = const AsyncData(
-          AuthState(
-            status: AuthStatus.unauthenticated,
-            errorMessage: 'فشل إنشاء ملف المستخدم',
-          ),
-        );
-        return false;
-      }
+      // ملاحظة: الـ Trigger في Supabase بيقوم بإنشاء tenant + staff تلقائياً
+      // مش محتاجين نعمل insert يدوي هنا.
 
       final fresh = await _loadCurrentSession();
 
@@ -497,10 +471,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
 
       if (updates.isNotEmpty) {
-        await client
-            .from('staff')
-            .update(updates)
-            .eq('user_id', current!.user!.id);
+        await client.from('staff').update(updates).eq('id', current!.user!.id);
       }
 
       final updatedUser = current!.user!.copyWith(
@@ -540,13 +511,17 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   Future<AppUser?> _fetchAppUser() async {
     try {
       final client = ref.read(supabaseClientProvider);
-      final data = await client
-          .from('staff')
-          .select()
-          .eq('user_id', _auth.userId!)
-          .maybeSingle();
-      if (data == null) return null;
-      return AppUser.fromJson(Map<String, dynamic>.from(data));
+
+      // بنستخدم RPC آمنة عشان نتخطى مشاكل RLS
+      final data = await client.rpc(
+        'get_staff_profile',
+        params: {'p_user_id': _auth.userId!},
+      );
+
+      // لو النتيجة فاضية، معناها المستخدم مش موجود في staff
+      if (data == null || (data is Map && data.isEmpty)) return null;
+
+      return AppUser.fromJson(Map<String, dynamic>.from(data as Map));
     } catch (e) {
       debugPrint('_fetchAppUser error: $e');
       return null;
@@ -566,62 +541,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       return Tenant.fromJson(Map<String, dynamic>.from(data));
     } catch (e) {
       debugPrint('_fetchTenant error: $e');
-      return null;
-    }
-  }
-
-  Future<AppUser?> _ensureStaffRecord({
-    bool createTenant = false,
-    String? tenantName,
-    String? fullName,
-    String? phone,
-    String? realEmail,
-    UserRole role = UserRole.technician,
-  }) async {
-    try {
-      final client = ref.read(supabaseClientProvider);
-      final userId = _auth.userId!;
-      final authEmail = _auth.userEmail ?? '';
-
-      final staffEmail = (realEmail != null && realEmail.isNotEmpty)
-          ? realEmail.trim().toLowerCase()
-          : authEmail;
-
-      String? tenantId;
-
-      if (createTenant) {
-        final tenantPayload = {
-          'name': (tenantName ?? 'ورشتك').trim(),
-          'owner_id': userId,
-          'currency': 'EGP',
-          'timezone': 'Africa/Cairo',
-          'subscription_plan': SubscriptionPlan.free.name,
-          'is_active': true,
-        };
-        final tenantData = await client
-            .from('tenants')
-            .insert(tenantPayload)
-            .select('id')
-            .single();
-        tenantId = tenantData['id'] as String?;
-      }
-
-      final staffPayload = {
-        'user_id': userId,
-        'email': staffEmail,
-        if (fullName != null) 'full_name': fullName,
-        if (phone != null) 'phone': phone,
-        'role': role.name,
-        if (tenantId != null) 'tenant_id': tenantId,
-        'is_active': true,
-      };
-
-      final staffData =
-          await client.from('staff').insert(staffPayload).select().single();
-
-      return AppUser.fromJson(Map<String, dynamic>.from(staffData));
-    } catch (e) {
-      debugPrint('_ensureStaffRecord error: $e');
       return null;
     }
   }
