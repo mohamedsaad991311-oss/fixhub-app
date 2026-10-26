@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FixHub - تتبع جهازك</title>
+  <link rel="stylesheet" href="track.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- ═══ Header ═══ -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🔧</div>
+      <div class="logo-text">FixHub</div>
+    </div>
+    <p class="header-subtitle">نظام تتبع صيانة الموبايل</p>
+  </header>
+
+  <!-- ═══ Main ═══ -->
+  <main class="main">
+    <!-- ─── Search Box ─── -->
+    <div class="search-box">
+      <h1 class="search-title">تابع حالة جهازك</h1>
+      <p class="search-subtitle">أدخل رقم التليفون أو رقم الإيصال عشان تشوف حالة جهازك</p>
+
+      <div class="search-inputs">
+        <div class="input-group">
+          <label>رقم التليفون</label>
+          <input type="tel" id="phoneInput" placeholder="مثال: 01100055005" dir="ltr">
+        </div>
+
+        <div class="or-divider">أو</div>
+
+        <div class="input-group">
+          <label>رقم الإيصال</label>
+          <input type="text" id="receiptInput" placeholder="مثال: RCP-20261015-0001" dir="ltr">
+        </div>
+      </div>
+
+      <button id="searchBtn" class="search-btn">
+        <span>بحث</span>
+        <span class="search-icon">🔍</span>
+      </button>
+    </div>
+
+    <!-- ─── Results Container (مخفي في البداية) ─── -->
+    <div id="results" class="results hidden">
+      <!-- النتائج هتظهر هنا -->
+    </div>
+
+    <!-- ─── Loading Spinner ─── -->
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <p>جاري البحث...</p>
+    </div>
+
+    <!-- ─── Error Message ─── -->
+    <div id="errorMessage" class="error-message hidden">
+      <span class="error-icon">⚠️</span>
+      <p id="errorText">حدث خطأ</p>
+    </div>
+  </main>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <p>صُنع بحب في مصر 🇪🇬 — FixHub © 2026</p>
+  </footer>
+
+  <!-- ═══ JS ═══ -->
+  <script src="track.js"></script>
+</body>
+</html>
