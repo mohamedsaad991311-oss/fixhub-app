@@ -45,10 +45,8 @@ extension SubscriptionPlanX on SubscriptionPlan {
     }
   }
 
-  /// هل هي خطة مدفوعة؟
   bool get isPaid => this != SubscriptionPlan.free;
 
-  /// السعر الشهري (بالجنيه المصري)
   double get monthlyPrice {
     switch (this) {
       case SubscriptionPlan.free:
@@ -62,7 +60,6 @@ extension SubscriptionPlanX on SubscriptionPlan {
     }
   }
 
-  /// الحد الأقصى للموظفين
   int get maxStaff {
     switch (this) {
       case SubscriptionPlan.free:
@@ -76,7 +73,6 @@ extension SubscriptionPlanX on SubscriptionPlan {
     }
   }
 
-  /// الحد الأقصى للإيصالات شهرياً
   int get maxReceiptsPerMonth {
     switch (this) {
       case SubscriptionPlan.free:
@@ -113,6 +109,9 @@ class Tenant {
   final String? nameAr;
   final String ownerId; // UUID من auth.users
 
+  /// رقم هاتف صاحب الورشة (للأدمن)
+  final String? ownerPhone;
+
   // ─── معلومات الاتصال ───
   final String? phone;
   final String? email;
@@ -139,6 +138,7 @@ class Tenant {
     required this.name,
     this.nameAr,
     required this.ownerId,
+    this.ownerPhone,
     this.phone,
     this.email,
     this.address,
@@ -168,6 +168,7 @@ class Tenant {
     String? name,
     String? nameAr,
     String? ownerId,
+    String? ownerPhone,
     String? phone,
     String? email,
     String? address,
@@ -185,6 +186,7 @@ class Tenant {
       name: name ?? this.name,
       nameAr: nameAr ?? this.nameAr,
       ownerId: ownerId ?? this.ownerId,
+      ownerPhone: ownerPhone ?? this.ownerPhone,
       phone: phone ?? this.phone,
       email: email ?? this.email,
       address: address ?? this.address,
@@ -210,6 +212,7 @@ class Tenant {
       name: json['name'] as String? ?? '',
       nameAr: json['name_ar'] as String?,
       ownerId: json['owner_id'] as String? ?? '',
+      ownerPhone: json['owner_phone'] as String?,
       phone: json['phone'] as String?,
       email: json['email'] as String?,
       address: json['address'] as String?,
@@ -236,6 +239,7 @@ class Tenant {
       'name': name,
       'name_ar': nameAr,
       'owner_id': ownerId,
+      'owner_phone': ownerPhone,
       'phone': phone,
       'email': email,
       'address': address,
@@ -256,6 +260,7 @@ class Tenant {
       'name': name,
       'name_ar': nameAr,
       'owner_id': ownerId,
+      'owner_phone': ownerPhone,
       'phone': phone,
       'email': email,
       'address': address,
@@ -290,7 +295,6 @@ class Tenant {
 
   // ─── Getters ───
 
-  /// الاسم المعروض (عربي/إنجليزي)
   String displayName({bool isArabic = true}) {
     if (isArabic && nameAr != null && nameAr!.isNotEmpty) {
       return nameAr!;
@@ -298,7 +302,6 @@ class Tenant {
     return name;
   }
 
-  /// أول حرفين من الاسم (للـ Avatar)
   String get initials {
     final n = name.trim();
     if (n.isEmpty) return '?';
@@ -307,27 +310,23 @@ class Tenant {
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 
-  /// هل الاشتراك منتهي؟
   bool get isSubscriptionExpired {
     if (subscriptionExpiresAt == null) return false;
     return subscriptionExpiresAt!.isBefore(DateTime.now());
   }
 
-  /// الأيام المتبقية في الاشتراك
   int get subscriptionDaysLeft {
     if (subscriptionExpiresAt == null) return 0;
     final diff = subscriptionExpiresAt!.difference(DateTime.now()).inDays;
     return diff < 0 ? 0 : diff;
   }
 
-  /// هل الاشتراك فعّال؟
   bool get hasActiveSubscription {
     if (subscriptionPlan == SubscriptionPlan.free) return true;
     if (subscriptionExpiresAt == null) return false;
     return subscriptionExpiresAt!.isAfter(DateTime.now());
   }
 
-  /// هل البيانات مكتملة؟
   bool get isComplete => id.isNotEmpty && name.isNotEmpty && ownerId.isNotEmpty;
 
   // ═══════════════════════════════════════════════════════════
@@ -342,6 +341,7 @@ class Tenant {
         other.name == name &&
         other.nameAr == nameAr &&
         other.ownerId == ownerId &&
+        other.ownerPhone == ownerPhone &&
         other.phone == phone &&
         other.email == email &&
         other.address == address &&
@@ -359,6 +359,7 @@ class Tenant {
         name,
         nameAr,
         ownerId,
+        ownerPhone,
         phone,
         email,
         address,
@@ -372,6 +373,6 @@ class Tenant {
 
   @override
   String toString() {
-    return 'Tenant(id: $id, name: $name, owner: $ownerId, plan: ${subscriptionPlan.name})';
+    return 'Tenant(id: $id, name: $name, owner: $ownerId, ownerPhone: $ownerPhone, plan: ${subscriptionPlan.name})';
   }
 }

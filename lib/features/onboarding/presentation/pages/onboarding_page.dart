@@ -16,6 +16,7 @@ import '../../../../core/router/route_names.dart';
 /// - Dots indicator
 /// - أزرار Next / Skip
 /// - زر "ابدأ" في آخر شاشة
+/// - قابل للـ Scroll (عشان الشاشات القصيرة)
 ///
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
@@ -33,22 +34,19 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     _OnboardingItem(
       icon: Icons.build_circle_outlined,
       title: 'مرحباً بك في FixHub',
-      description:
-          'نظام متكامل لإدارة ورش صيانة الموبايل.\n'
+      description: 'نظام متكامل لإدارة ورش صيانة الموبايل.\n'
           'نظّم شغلك، تابع عملاءك، وطوّر ورشتك.',
     ),
     _OnboardingItem(
       icon: Icons.receipt_long_outlined,
       title: 'إيصالات ومخزون',
-      description:
-          'أنشئ إيصالات استلام بسهولة،\n'
+      description: 'أنشئ إيصالات استلام بسهولة،\n'
           'وتابع المخزون والقطع في مكان واحد.',
     ),
     _OnboardingItem(
       icon: Icons.insights_outlined,
       title: 'تقارير وتتبع',
-      description:
-          'تقارير مفصّلة عن الإيرادات والمصروفات،\n'
+      description: 'تقارير مفصّلة عن الإيرادات والمصروفات،\n'
           'مع تتبع مباشر لحالة كل جهاز.',
     ),
   ];
@@ -100,8 +98,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
     return Scaffold(
       backgroundColor: scheme.surface,
-
-      // ─── زر التخطي ───
       body: SafeArea(
         child: Column(
           children: [
@@ -142,7 +138,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             // ─── Dots Indicator ───
             Padding(
               padding: const EdgeInsets.symmetric(
-                vertical: AppSizes.spaceLg,
+                vertical: AppSizes.spaceMd,
               ),
               child: _DotsIndicator(
                 total: _items.length,
@@ -198,7 +194,7 @@ class _OnboardingItem {
 }
 
 // ═══════════════════════════════════════════════════════════
-// Onboarding Slide Widget
+// Onboarding Slide Widget (قابل للـ Scroll)
 // ═══════════════════════════════════════════════════════════
 
 class _OnboardingSlide extends StatelessWidget {
@@ -210,52 +206,58 @@ class _OnboardingSlide extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.spaceLg,
+        vertical: AppSizes.spaceMd,
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // ─── الأيقونة ───
-          Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              color: scheme.primaryContainer.withValues(alpha: 0.5),
-              shape: BoxShape.circle,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.sizeOf(context).height * 0.5,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // ─── الأيقونة (حجم أصغر) ───
+            Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer.withValues(alpha: 0.5),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                item.icon,
+                size: 65,
+                color: scheme.primary,
+              ),
             ),
-            child: Icon(
-              item.icon,
-              size: 80,
-              color: scheme.primary,
+
+            const SizedBox(height: AppSizes.spaceLg),
+
+            // ─── العنوان ───
+            Text(
+              item.title,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: scheme.onSurface,
+                  ),
+              textAlign: TextAlign.center,
             ),
-          ),
 
-          const SizedBox(height: AppSizes.spaceXl),
+            const SizedBox(height: AppSizes.spaceSmMd),
 
-          // ─── العنوان ───
-          Text(
-            item.title,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: scheme.onSurface,
-                ),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: AppSizes.spaceMd),
-
-          // ─── الوصف ───
-          Text(
-            item.description,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  height: 1.6,
-                ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            // ─── الوصف ───
+            Text(
+              item.description,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    height: 1.6,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

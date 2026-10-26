@@ -27,50 +27,54 @@ class SummaryCards extends StatelessWidget {
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 600;
         final columns = isNarrow ? 2 : 4;
-        // زيادة الارتفاع عشان المحتوى يبقى مناسب (كان 1.6 و 1.8)
-        final aspectRatio = isNarrow ? 1.4 : 1.6;
 
-        return GridView.count(
+        return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: columns,
-          crossAxisSpacing: AppSizes.spaceSmMd,
-          mainAxisSpacing: AppSizes.spaceSmMd,
-          childAspectRatio: aspectRatio,
-          children: [
-            _SummaryCard(
-              label: 'الإيرادات',
-              value: CurrencyFormatter.formatCompact(stats.totalRevenue),
-              icon: Icons.trending_up,
-              color: const Color(0xFF10B981),
-              subtitle: '${stats.deliveredReceipts} إيصال مسلَّم',
-            ),
-            _SummaryCard(
-              label: 'المصروفات',
-              value: CurrencyFormatter.formatCompact(stats.totalExpenses),
-              icon: Icons.trending_down,
-              color: const Color(0xFFEF4444),
-              subtitle: 'خلال الفترة',
-            ),
-            _SummaryCard(
-              label: 'صافي الربح',
-              value: CurrencyFormatter.formatCompact(stats.netProfit),
-              icon: stats.netProfit >= 0
-                  ? Icons.account_balance_wallet
-                  : Icons.money_off,
-              color: stats.netProfit >= 0
-                  ? const Color(0xFF3B82F6)
-                  : const Color(0xFFEF4444),
-              subtitle: stats.netProfit >= 0 ? 'ربح' : 'خسارة',
-            ),
-            _SummaryCard(
-              label: 'هامش الربح',
-              value: '${stats.profitMargin.toStringAsFixed(1)}%',
-              icon: Icons.percent,
-              color: const Color(0xFFF59E0B),
-              subtitle: 'من الإيرادات',
-            ),
-          ],
+          itemCount: 4,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: AppSizes.spaceSmMd,
+            mainAxisSpacing: AppSizes.spaceSmMd,
+            // ✅ ارتفاع ثابت يضمن ظهور كل المحتوى بدون Overflow
+            mainAxisExtent: isNarrow ? 120 : 135,
+          ),
+          itemBuilder: (context, index) {
+            return [
+              _SummaryCard(
+                label: 'الإيرادات',
+                value: CurrencyFormatter.formatCompact(stats.totalRevenue),
+                icon: Icons.trending_up,
+                color: const Color(0xFF10B981),
+                subtitle: '${stats.deliveredReceipts} إيصال مسلَّم',
+              ),
+              _SummaryCard(
+                label: 'المصروفات',
+                value: CurrencyFormatter.formatCompact(stats.totalExpenses),
+                icon: Icons.trending_down,
+                color: const Color(0xFFEF4444),
+                subtitle: 'خلال الفترة',
+              ),
+              _SummaryCard(
+                label: 'صافي الربح',
+                value: CurrencyFormatter.formatCompact(stats.netProfit),
+                icon: stats.netProfit >= 0
+                    ? Icons.account_balance_wallet
+                    : Icons.money_off,
+                color: stats.netProfit >= 0
+                    ? const Color(0xFF3B82F6)
+                    : const Color(0xFFEF4444),
+                subtitle: stats.netProfit >= 0 ? 'ربح' : 'خسارة',
+              ),
+              _SummaryCard(
+                label: 'هامش الربح',
+                value: '${stats.profitMargin.toStringAsFixed(1)}%',
+                icon: Icons.percent,
+                color: const Color(0xFFF59E0B),
+                subtitle: 'من الإيرادات',
+              ),
+            ][index];
+          },
         );
       },
     );

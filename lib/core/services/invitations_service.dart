@@ -358,7 +358,8 @@ class InvitationsService {
 
   /// توليد رابط دعوة للويب
   String buildInviteLink(String token) {
-    return 'https://fixhub.app/invite/$token';
+    // TODO: استبدل بـ رابط الموقع الفعلي بعد Phase 10
+    return 'https://fixhub-app.web.app/invite/$token';
   }
 }
 

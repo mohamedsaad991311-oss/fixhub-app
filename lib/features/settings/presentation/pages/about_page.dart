@@ -256,7 +256,7 @@ class _AboutPageState extends State<AboutPage> {
             context,
             icon: Icons.person_outline,
             label: 'المطور',
-            value: 'ElForQan',
+            value: 'mohamed saad',
           ),
         ],
       ),

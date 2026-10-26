@@ -95,13 +95,24 @@ class AdminTenantCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
+                            tenant.ownerPhone ?? 'رقم غير محدد',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: scheme.onSurface,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
                             tenant.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: scheme.onSurface,
+                              fontSize: 11,
+                              color: scheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: 2),

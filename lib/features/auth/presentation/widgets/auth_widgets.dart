@@ -27,6 +27,8 @@ class AuthScaffold extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: scheme.surface,
+      // ✅ resizeToAvoidBottomInset يخلي الشاشة تتقلص لما الكيبورد يفتح
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           // ─── خلفية زخرفية ───
@@ -64,19 +66,26 @@ class AuthScaffold extends StatelessWidget {
                       ),
                     ),
                   ),
-                Center(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSizes.spaceLg,
-                      vertical: AppSizes.spaceLg,
-                    ),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: AppSizes.maxFormWidth,
+                // ✅ شيلنا Center — المحتوى بيبدأ من فوق + Scroll
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSizes.spaceLg,
+                        vertical: AppSizes.spaceLg,
                       ),
-                      child: child,
-                    ),
-                  ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight:
+                              constraints.maxHeight - (AppSizes.spaceLg * 2),
+                          maxWidth: AppSizes.maxFormWidth,
+                        ),
+                        child: Center(
+                          child: child,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

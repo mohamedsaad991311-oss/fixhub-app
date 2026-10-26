@@ -338,7 +338,7 @@ class _StatItem extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  EMPTY STATE
+//  EMPTY STATE (قابل للـ Scroll عشان نمنع Overflow)
 // ═══════════════════════════════════════════════════════════
 
 class _EmptyState extends StatelessWidget {
@@ -356,53 +356,67 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.spaceLg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              hasFilters ? Icons.filter_list_off : Icons.inventory_2_outlined,
-              size: 72,
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(AppSizes.spaceLg),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight - AppSizes.spaceLg * 2,
             ),
-            const SizedBox(height: AppSizes.spaceMd),
-            Text(
-              hasFilters ? 'مفيش نتائج للفلتر الحالي' : 'مفيش أصناف في المخزون',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: scheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  hasFilters
+                      ? Icons.filter_list_off
+                      : Icons.inventory_2_outlined,
+                  size: 72,
+                  color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: AppSizes.spaceMd),
+                Text(
+                  hasFilters
+                      ? 'مفيش نتائج للفلتر الحالي'
+                      : 'مفيش أصناف في المخزون',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSizes.spaceSm),
+                Text(
+                  hasFilters
+                      ? 'جرب تغير الفلتر أو امسحه'
+                      : 'ابدأ بإضافة أول صنف',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: scheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSizes.spaceLg),
+                if (hasFilters)
+                  OutlinedButton.icon(
+                    onPressed: onClearFilters,
+                    icon: const Icon(Icons.clear_all),
+                    label: const Text('مسح الفلاتر'),
+                  )
+                else
+                  FilledButton.icon(
+                    onPressed: onAddNew,
+                    icon: const Icon(Icons.add),
+                    label: const Text('صنف جديد'),
+                  ),
+              ],
             ),
-            const SizedBox(height: AppSizes.spaceSm),
-            Text(
-              hasFilters ? 'جرب تغير الفلتر أو امسحه' : 'ابدأ بإضافة أول صنف',
-              style: TextStyle(
-                fontSize: 13,
-                color: scheme.onSurfaceVariant,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSizes.spaceLg),
-            if (hasFilters)
-              OutlinedButton.icon(
-                onPressed: onClearFilters,
-                icon: const Icon(Icons.clear_all),
-                label: const Text('مسح الفلاتر'),
-              )
-            else
-              FilledButton.icon(
-                onPressed: onAddNew,
-                icon: const Icon(Icons.add),
-                label: const Text('صنف جديد'),
-              ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -421,28 +435,36 @@ class _ErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.spaceLg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: scheme.error),
-            const SizedBox(height: AppSizes.spaceMd),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: scheme.onSurface),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(AppSizes.spaceLg),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight - AppSizes.spaceLg * 2,
             ),
-            const SizedBox(height: AppSizes.spaceLg),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('حاول تاني'),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: scheme.error),
+                const SizedBox(height: AppSizes.spaceMd),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: scheme.onSurface),
+                ),
+                const SizedBox(height: AppSizes.spaceLg),
+                FilledButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('حاول تاني'),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
