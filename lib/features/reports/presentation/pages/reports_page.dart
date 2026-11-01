@@ -41,7 +41,7 @@ class ReportsPage extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(reportsProvider.notifier).refresh(),
-        child: _buildBody(context, state),
+        child: _buildBody(context, ref, state),
       ),
     );
   }
@@ -50,10 +50,10 @@ class ReportsPage extends ConsumerWidget {
   //  BODY
   // ═══════════════════════════════════════════════════════════════
 
-  Widget _buildBody(BuildContext context, ReportsState state) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, ReportsState state) {
     // ──── Error ────
     if (state.hasError) {
-      return _buildError(context);
+      return _buildError(context, ref);
     }
 
     // ──── Loading (first time) ────
@@ -138,7 +138,7 @@ class ReportsPage extends ConsumerWidget {
   //  ERROR STATE
   // ═══════════════════════════════════════════════════════════════
 
-  Widget _buildError(BuildContext context) {
+  Widget _buildError(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
 
@@ -165,7 +165,7 @@ class ReportsPage extends ConsumerWidget {
             const SizedBox(height: AppSizes.spaceLg),
             FilledButton.icon(
               onPressed: () {
-                // هنحتاج نستخدم ref هنا، فهنحول _buildError لـ ConsumerWidget أو نمرر ref
+                ref.read(reportsProvider.notifier).refresh();
               },
               icon: const Icon(Icons.refresh),
               label: Text(l10n.retry),
