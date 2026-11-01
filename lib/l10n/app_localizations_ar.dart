@@ -426,4 +426,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String reportsReceiptDeliveredCount(Object count) {
     return '$count إيصال مسلَّم';
   }
+
+  @override
+  String get reportsReceiptsDistribution => 'توزيع الإيصالات';
+
+  @override
+  String get reportsNoReceiptsInPeriod => 'لا توجد إيصالات في هذه الفترة';
+
+  @override
+  String get receiptStatusReceived => 'تم الاستلام';
+
+  @override
+  String get receiptStatusInProgress => 'قيد الإصلاح';
+
+  @override
+  String get receiptStatusWaitingParts => 'بانتظار قطع';
+
+  @override
+  String get receiptStatusReady => 'جاهز للتسليم';
+
+  @override
+  String get receiptStatusDelivered => 'تم التسليم';
+
+  @override
+  String get receiptStatusRejected => 'مرفوض';
 }

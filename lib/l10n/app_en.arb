@@ -135,5 +135,13 @@
   "reportsProfit": "Profit",
   "reportsLoss": "Loss",
   "reportsOfRevenue": "Of revenue",
-  "reportsReceiptDeliveredCount": "{count} receipts delivered"
+  "reportsReceiptDeliveredCount": "{count} receipts delivered",
+  "reportsReceiptsDistribution": "Receipts Distribution",
+  "reportsNoReceiptsInPeriod": "No receipts in this period",
+  "receiptStatusReceived": "Received",
+  "receiptStatusInProgress": "In Progress",
+  "receiptStatusWaitingParts": "Waiting for Parts",
+  "receiptStatusReady": "Ready",
+  "receiptStatusDelivered": "Delivered",
+  "receiptStatusRejected": "Rejected"
 }

@@ -135,5 +135,13 @@
   "reportsProfit": "ربح",
   "reportsLoss": "خسارة",
   "reportsOfRevenue": "من الإيرادات",
-  "reportsReceiptDeliveredCount": "{count} إيصال مسلَّم"
+   "reportsReceiptDeliveredCount": "{count} إيصال مسلَّم",
+  "reportsReceiptsDistribution": "توزيع الإيصالات",
+  "reportsNoReceiptsInPeriod": "لا توجد إيصالات في هذه الفترة",
+  "receiptStatusReceived": "تم الاستلام",
+  "receiptStatusInProgress": "قيد الإصلاح",
+  "receiptStatusWaitingParts": "بانتظار قطع",
+  "receiptStatusReady": "جاهز للتسليم",
+  "receiptStatusDelivered": "تم التسليم",
+  "receiptStatusRejected": "مرفوض"
 }

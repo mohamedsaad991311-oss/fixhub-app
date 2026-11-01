@@ -427,4 +427,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String reportsReceiptDeliveredCount(Object count) {
     return '$count receipts delivered';
   }
+
+  @override
+  String get reportsReceiptsDistribution => 'Receipts Distribution';
+
+  @override
+  String get reportsNoReceiptsInPeriod => 'No receipts in this period';
+
+  @override
+  String get receiptStatusReceived => 'Received';
+
+  @override
+  String get receiptStatusInProgress => 'In Progress';
+
+  @override
+  String get receiptStatusWaitingParts => 'Waiting for Parts';
+
+  @override
+  String get receiptStatusReady => 'Ready';
+
+  @override
+  String get receiptStatusDelivered => 'Delivered';
+
+  @override
+  String get receiptStatusRejected => 'Rejected';
 }

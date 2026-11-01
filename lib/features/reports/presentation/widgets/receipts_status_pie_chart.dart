@@ -2,27 +2,25 @@
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/l10n/l10n_ext.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../receipts/data/models/receipt.dart';
 import '../providers/reports_provider.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// ReceiptsStatusPieChart — توزيع الإيصالات حسب الحالة
 /// ═══════════════════════════════════════════════════════════════
-///
-/// - Pie Chart (Donut) بـ fl_chart
-/// - 6 حالات بألوان مختلفة
-/// - Legend أسفل الرسم مع النسب
-/// - Responsive
-///
-class ReceiptsStatusPieChart extends StatelessWidget {
+class ReceiptsStatusPieChart extends ConsumerWidget {
   const ReceiptsStatusPieChart({super.key, required this.stats});
 
   final ReportsStats stats;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isNarrow = MediaQuery.sizeOf(context).width < 600;
@@ -65,7 +63,7 @@ class ReceiptsStatusPieChart extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.spaceXs),
               Text(
-                'توزيع الإيصالات',
+                l10n.reportsReceiptsDistribution,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -74,7 +72,7 @@ class ReceiptsStatusPieChart extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                'الإجمالي: $total',
+                '${l10n.total}: $total',
                 style: TextStyle(
                   fontSize: 11,
                   color: scheme.onSurfaceVariant,
@@ -101,7 +99,7 @@ class ReceiptsStatusPieChart extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSizes.spaceSm),
                     Text(
-                      'لا توجد إيصالات في هذه الفترة',
+                      l10n.reportsNoReceiptsInPeriod,
                       style: TextStyle(
                         fontSize: 13,
                         color: scheme.onSurfaceVariant,
@@ -121,7 +119,7 @@ class ReceiptsStatusPieChart extends StatelessWidget {
                         child: _buildChart(context, entries, total, scheme),
                       ),
                       const SizedBox(height: AppSizes.spaceMd),
-                      _buildLegend(entries, total, scheme),
+                      _buildLegend(context, entries, total, scheme),
                     ],
                   )
                 : Row(
@@ -137,7 +135,7 @@ class ReceiptsStatusPieChart extends StatelessWidget {
                       const SizedBox(width: AppSizes.spaceMd),
                       Expanded(
                         flex: 2,
-                        child: _buildLegend(entries, total, scheme),
+                        child: _buildLegend(context, entries, total, scheme),
                       ),
                     ],
                   ),
@@ -187,10 +185,13 @@ class ReceiptsStatusPieChart extends StatelessWidget {
   // ═══════════════════════════════════════════════════════════════
 
   Widget _buildLegend(
+    BuildContext context,
     List<_StatusEntry> entries,
     int total,
     ColorScheme scheme,
   ) {
+    final l10n = context.l10n;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -215,7 +216,7 @@ class ReceiptsStatusPieChart extends StatelessWidget {
               // ──── Label ────
               Expanded(
                 child: Text(
-                  e.labelAr,
+                  e.label(l10n),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -277,20 +278,20 @@ class _StatusEntry {
     }
   }
 
-  String get labelAr {
+  String label(AppLocalizations l10n) {
     switch (status) {
       case ReceiptStatus.received:
-        return 'تم الاستلام';
+        return l10n.receiptStatusReceived;
       case ReceiptStatus.inProgress:
-        return 'قيد الإصلاح';
+        return l10n.receiptStatusInProgress;
       case ReceiptStatus.waitingParts:
-        return 'بانتظار قطع';
+        return l10n.receiptStatusWaitingParts;
       case ReceiptStatus.ready:
-        return 'جاهز للتسليم';
+        return l10n.receiptStatusReady;
       case ReceiptStatus.delivered:
-        return 'تم التسليم';
+        return l10n.receiptStatusDelivered;
       case ReceiptStatus.rejected:
-        return 'مرفوض';
+        return l10n.receiptStatusRejected;
     }
   }
 }

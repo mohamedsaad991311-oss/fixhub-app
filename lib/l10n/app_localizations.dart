@@ -913,6 +913,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} receipts delivered'**
   String reportsReceiptDeliveredCount(Object count);
+
+  /// No description provided for @reportsReceiptsDistribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipts Distribution'**
+  String get reportsReceiptsDistribution;
+
+  /// No description provided for @reportsNoReceiptsInPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'No receipts in this period'**
+  String get reportsNoReceiptsInPeriod;
+
+  /// No description provided for @receiptStatusReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get receiptStatusReceived;
+
+  /// No description provided for @receiptStatusInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get receiptStatusInProgress;
+
+  /// No description provided for @receiptStatusWaitingParts.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Parts'**
+  String get receiptStatusWaitingParts;
+
+  /// No description provided for @receiptStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get receiptStatusReady;
+
+  /// No description provided for @receiptStatusDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get receiptStatusDelivered;
+
+  /// No description provided for @receiptStatusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get receiptStatusRejected;
 }
 
 class _AppLocalizationsDelegate
