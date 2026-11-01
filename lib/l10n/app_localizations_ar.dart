@@ -530,4 +530,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get expenseCategoryOther => 'أخرى';
+
+  @override
+  String get reportsItemsCount => 'عناصر';
 }

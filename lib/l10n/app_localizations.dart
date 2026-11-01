@@ -1117,6 +1117,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other'**
   String get expenseCategoryOther;
+
+  /// No description provided for @reportsItemsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'items'**
+  String get reportsItemsCount;
 }
 
 class _AppLocalizationsDelegate

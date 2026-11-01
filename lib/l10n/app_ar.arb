@@ -169,5 +169,6 @@
   "expenseCategoryTraining": "تدريب",
   "expenseCategorySubscriptions": "اشتراكات",
   "expenseCategoryCharity": "صدقات",
-  "expenseCategoryOther": "أخرى"
+    "expenseCategoryOther": "أخرى",
+  "reportsItemsCount": "عناصر"
 }

@@ -531,4 +531,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get expenseCategoryOther => 'Other';
+
+  @override
+  String get reportsItemsCount => 'items';
 }

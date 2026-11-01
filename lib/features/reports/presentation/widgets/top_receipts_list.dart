@@ -1,9 +1,11 @@
 // lib/features/reports/presentation/widgets/top_receipts_list.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/l10n/l10n_ext.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../receipts/data/models/receipt.dart';
@@ -12,18 +14,14 @@ import '../providers/reports_provider.dart';
 /// ═══════════════════════════════════════════════════════════════
 /// TopReceiptsList — أعلى 5 إيصالات بالإيراد
 /// ═══════════════════════════════════════════════════════════════
-///
-/// - قائمة الإيصالات الأعلى (من stats.topReceipts)
-/// - كل عنصر: اسم العميل، الرقم، الجهاز، المبلغ
-/// - الضغط → صفحة التفاصيل
-///
-class TopReceiptsList extends StatelessWidget {
+class TopReceiptsList extends ConsumerWidget {
   const TopReceiptsList({super.key, required this.stats});
 
   final ReportsStats stats;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final receipts = stats.topReceipts;
@@ -52,7 +50,7 @@ class TopReceiptsList extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.spaceXs),
               Text(
-                'أعلى الإيصالات',
+                l10n.reportsTopReceipts,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -61,7 +59,7 @@ class TopReceiptsList extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '${receipts.length} عناصر',
+                '${receipts.length} ${l10n.reportsItemsCount}',
                 style: TextStyle(
                   fontSize: 11,
                   color: scheme.onSurfaceVariant,
@@ -90,7 +88,7 @@ class TopReceiptsList extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSizes.spaceSm),
                     Text(
-                      'لا توجد إيصالات في هذه الفترة',
+                      l10n.reportsNoReceiptsInPeriod,
                       style: TextStyle(
                         fontSize: 13,
                         color: scheme.onSurfaceVariant,

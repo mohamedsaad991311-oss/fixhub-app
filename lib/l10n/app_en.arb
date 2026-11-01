@@ -169,5 +169,6 @@
   "expenseCategoryTraining": "Training",
   "expenseCategorySubscriptions": "Subscriptions",
   "expenseCategoryCharity": "Charity",
-  "expenseCategoryOther": "Other"
+    "expenseCategoryOther": "Other",
+  "reportsItemsCount": "items"
 }
