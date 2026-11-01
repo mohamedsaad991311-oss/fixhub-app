@@ -32,6 +32,10 @@ import '../../features/staff/presentation/pages/staff_list_page.dart';
 import '../../features/expenses/presentation/screens/expenses_list_screen.dart';
 import '../../features/expenses/presentation/screens/expense_form_screen.dart';
 
+// ✅ Delivery (جديد)
+import '../../features/delivery/presentation/pages/delivery_page.dart';
+import '../../features/delivery/presentation/pages/delivery_detail_page.dart';
+
 import '../../features/reports/presentation/pages/reports_page.dart';
 import '../../features/scanner/presentation/pages/scanner_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
@@ -51,7 +55,6 @@ import '../../features/invitations/presentation/pages/invitations_page.dart';
 import '../../features/tracking/presentation/pages/tracking_page.dart';
 import '../../features/tracking/presentation/pages/tracking_detail_page.dart';
 import '../../features/cloud_sync/presentation/pages/cloud_sync_page.dart';
-import '../../features/delivery/presentation/pages/delivery_page.dart';
 import '../providers/onboarding_provider.dart';
 import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
@@ -174,7 +177,7 @@ class AppRouter {
     ),
 
     // ═══════════════════════════════════════════════════════
-    // Main Shell (التابات الستة)
+    // Main Shell (التابات السبعة)
     // ═══════════════════════════════════════════════════════
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
@@ -265,7 +268,7 @@ class AppRouter {
           ],
         ),
 
-        // Branch 3: Expenses (تم نقله هنا)
+        // Branch 3: Expenses
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -291,7 +294,28 @@ class AppRouter {
           ],
         ),
 
-        // Branch 4: Reports
+        // Branch 4: Delivery (جديد - تم نقله هنا)
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RouteNames.delivery,
+              name: 'delivery',
+              builder: (context, state) => const DeliveryPage(),
+              routes: [
+                GoRoute(
+                  path: ':id',
+                  name: 'deliveryDetail',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id'] ?? '';
+                    return DeliveryDetailPage(receiptId: id);
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        // Branch 5: Reports
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -302,7 +326,7 @@ class AppRouter {
           ],
         ),
 
-        // Branch 5: Settings
+        // Branch 6: Settings
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -440,13 +464,6 @@ class AppRouter {
           },
         ),
       ],
-    ),
-
-    // ─── Delivery ───
-    GoRoute(
-      path: RouteNames.delivery,
-      name: 'delivery',
-      builder: (context, state) => const DeliveryPage(),
     ),
 
     // ─── Scanner ───

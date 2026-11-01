@@ -117,15 +117,16 @@ class MainShellRailWrapper extends ConsumerWidget {
   PreferredSizeWidget _buildAppBar(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final currentIndex = navigationShell.currentIndex;
-    
-    // إضافة "المصاريف" في الترتيب (Index 3)
+
+    // ✅ الترتيب الجديد للتابات (7 تابات)
     final titles = [
       'الرئيسية',    // 0
       'الإيصالات',   // 1
       'المخزون',     // 2
-      'المصاريف',    // 3 (جديد)
-      'التقارير',    // 4
-      'الإعدادات',   // 5
+      'المصاريف',    // 3
+      'التسليم',     // 4 (جديد)
+      'التقارير',    // 5
+      'الإعدادات',   // 6
     ];
 
     // حماية بسيطة لو الـ index خرج عن النطاق
@@ -189,6 +190,7 @@ class AppBarBuilder {
     if (location.contains('/receipts')) return 'الإيصالات';
     if (location.contains('/inventory')) return 'المخزون';
     if (location.contains('/expenses')) return 'المصاريف';
+    if (location.contains('/delivery')) return 'التسليم'; // ✅ جديد
     if (location.contains('/reports')) return 'التقارير';
     if (location.contains('/settings')) return 'الإعدادات';
     return 'FixHub';

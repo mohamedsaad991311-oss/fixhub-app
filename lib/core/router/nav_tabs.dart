@@ -70,7 +70,7 @@ class NavTabs {
       activeIcon: Icons.inventory_2,
       route: RouteNames.inventory,
     ),
-    // ─── 4. المصاريف (جديد) ───
+    // ─── 4. المصاريف ───
     NavTab(
       key: 'expenses',
       labelAr: 'المصاريف',
@@ -79,7 +79,16 @@ class NavTabs {
       activeIcon: Icons.account_balance_wallet,
       route: RouteNames.expenses,
     ),
-    // ─── 5. التقارير ───
+    // ─── 5. التسليم (جديد) ───
+    NavTab(
+      key: 'delivery',
+      labelAr: 'التسليم',
+      labelEn: 'Delivery',
+      icon: Icons.local_shipping_outlined,
+      activeIcon: Icons.local_shipping,
+      route: RouteNames.delivery,
+    ),
+    // ─── 6. التقارير ───
     NavTab(
       key: 'reports',
       labelAr: 'التقارير',
@@ -88,7 +97,7 @@ class NavTabs {
       activeIcon: Icons.bar_chart,
       route: RouteNames.reports,
     ),
-    // ─── 6. الإعدادات ───
+    // ─── 7. الإعدادات ───
     NavTab(
       key: 'settings',
       labelAr: 'الإعدادات',
