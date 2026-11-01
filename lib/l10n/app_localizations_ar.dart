@@ -471,4 +471,63 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get receiptStatusRejectedShort => 'مرفوض';
+
+  @override
+  String get reportsExpensesDistribution => 'توزيع المصروفات';
+
+  @override
+  String get reportsNoExpensesInPeriod => 'لا توجد مصروفات في هذه الفترة';
+
+  @override
+  String reportsOthers(Object count) {
+    return 'أخرى ($count)';
+  }
+
+  @override
+  String get expenseCategoryRent => 'إيجار';
+
+  @override
+  String get expenseCategorySalaries => 'رواتب';
+
+  @override
+  String get expenseCategoryUtilities => 'مرافق';
+
+  @override
+  String get expenseCategoryInternet => 'إنترنت';
+
+  @override
+  String get expenseCategoryPhone => 'هاتف';
+
+  @override
+  String get expenseCategorySupplies => 'مستلزمات';
+
+  @override
+  String get expenseCategoryTools => 'أدوات';
+
+  @override
+  String get expenseCategoryMaintenance => 'صيانة';
+
+  @override
+  String get expenseCategoryMarketing => 'تسويق';
+
+  @override
+  String get expenseCategoryTransportation => 'مواصلات';
+
+  @override
+  String get expenseCategoryTaxes => 'ضرائب';
+
+  @override
+  String get expenseCategoryInsurance => 'تأمين';
+
+  @override
+  String get expenseCategoryTraining => 'تدريب';
+
+  @override
+  String get expenseCategorySubscriptions => 'اشتراكات';
+
+  @override
+  String get expenseCategoryCharity => 'صدقات';
+
+  @override
+  String get expenseCategoryOther => 'أخرى';
 }

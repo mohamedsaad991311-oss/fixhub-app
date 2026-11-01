@@ -1003,6 +1003,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rejected'**
   String get receiptStatusRejectedShort;
+
+  /// No description provided for @reportsExpensesDistribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses Distribution'**
+  String get reportsExpensesDistribution;
+
+  /// No description provided for @reportsNoExpensesInPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'No expenses in this period'**
+  String get reportsNoExpensesInPeriod;
+
+  /// No description provided for @reportsOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Others ({count})'**
+  String reportsOthers(Object count);
+
+  /// No description provided for @expenseCategoryRent.
+  ///
+  /// In en, this message translates to:
+  /// **'Rent'**
+  String get expenseCategoryRent;
+
+  /// No description provided for @expenseCategorySalaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Salaries'**
+  String get expenseCategorySalaries;
+
+  /// No description provided for @expenseCategoryUtilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Utilities'**
+  String get expenseCategoryUtilities;
+
+  /// No description provided for @expenseCategoryInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'Internet'**
+  String get expenseCategoryInternet;
+
+  /// No description provided for @expenseCategoryPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get expenseCategoryPhone;
+
+  /// No description provided for @expenseCategorySupplies.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplies'**
+  String get expenseCategorySupplies;
+
+  /// No description provided for @expenseCategoryTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get expenseCategoryTools;
+
+  /// No description provided for @expenseCategoryMaintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance'**
+  String get expenseCategoryMaintenance;
+
+  /// No description provided for @expenseCategoryMarketing.
+  ///
+  /// In en, this message translates to:
+  /// **'Marketing'**
+  String get expenseCategoryMarketing;
+
+  /// No description provided for @expenseCategoryTransportation.
+  ///
+  /// In en, this message translates to:
+  /// **'Transportation'**
+  String get expenseCategoryTransportation;
+
+  /// No description provided for @expenseCategoryTaxes.
+  ///
+  /// In en, this message translates to:
+  /// **'Taxes'**
+  String get expenseCategoryTaxes;
+
+  /// No description provided for @expenseCategoryInsurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Insurance'**
+  String get expenseCategoryInsurance;
+
+  /// No description provided for @expenseCategoryTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get expenseCategoryTraining;
+
+  /// No description provided for @expenseCategorySubscriptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions'**
+  String get expenseCategorySubscriptions;
+
+  /// No description provided for @expenseCategoryCharity.
+  ///
+  /// In en, this message translates to:
+  /// **'Charity'**
+  String get expenseCategoryCharity;
+
+  /// No description provided for @expenseCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get expenseCategoryOther;
 }
 
 class _AppLocalizationsDelegate

@@ -472,4 +472,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get receiptStatusRejectedShort => 'Rejected';
+
+  @override
+  String get reportsExpensesDistribution => 'Expenses Distribution';
+
+  @override
+  String get reportsNoExpensesInPeriod => 'No expenses in this period';
+
+  @override
+  String reportsOthers(Object count) {
+    return 'Others ($count)';
+  }
+
+  @override
+  String get expenseCategoryRent => 'Rent';
+
+  @override
+  String get expenseCategorySalaries => 'Salaries';
+
+  @override
+  String get expenseCategoryUtilities => 'Utilities';
+
+  @override
+  String get expenseCategoryInternet => 'Internet';
+
+  @override
+  String get expenseCategoryPhone => 'Phone';
+
+  @override
+  String get expenseCategorySupplies => 'Supplies';
+
+  @override
+  String get expenseCategoryTools => 'Tools';
+
+  @override
+  String get expenseCategoryMaintenance => 'Maintenance';
+
+  @override
+  String get expenseCategoryMarketing => 'Marketing';
+
+  @override
+  String get expenseCategoryTransportation => 'Transportation';
+
+  @override
+  String get expenseCategoryTaxes => 'Taxes';
+
+  @override
+  String get expenseCategoryInsurance => 'Insurance';
+
+  @override
+  String get expenseCategoryTraining => 'Training';
+
+  @override
+  String get expenseCategorySubscriptions => 'Subscriptions';
+
+  @override
+  String get expenseCategoryCharity => 'Charity';
+
+  @override
+  String get expenseCategoryOther => 'Other';
 }

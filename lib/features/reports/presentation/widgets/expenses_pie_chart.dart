@@ -2,22 +2,26 @@
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/l10n/l10n_ext.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../expenses/data/models/expense.dart';
 import '../providers/reports_provider.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// ExpensesPieChart — توزيع المصروفات حسب الفئة
 /// ═══════════════════════════════════════════════════════════════
-class ExpensesPieChart extends StatelessWidget {
+class ExpensesPieChart extends ConsumerWidget {
   const ExpensesPieChart({super.key, required this.stats});
 
   final ReportsStats stats;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isNarrow = MediaQuery.sizeOf(context).width < 600;
@@ -64,7 +68,7 @@ class ExpensesPieChart extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.spaceXs),
               Text(
-                'توزيع المصروفات',
+                l10n.reportsExpensesDistribution,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -100,7 +104,7 @@ class ExpensesPieChart extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSizes.spaceSm),
                     Text(
-                      'لا توجد مصروفات في هذه الفترة',
+                      l10n.reportsNoExpensesInPeriod,
                       style: TextStyle(
                         fontSize: 13,
                         color: scheme.onSurfaceVariant,
@@ -119,7 +123,8 @@ class ExpensesPieChart extends StatelessWidget {
                         child: _buildChart(entries, total),
                       ),
                       const SizedBox(height: AppSizes.spaceMd),
-                      _buildLegend(entries, total, scheme, isNarrow: true),
+                      _buildLegend(context, entries, total, scheme,
+                          isNarrow: true),
                     ],
                   )
                 : Row(
@@ -135,7 +140,7 @@ class ExpensesPieChart extends StatelessWidget {
                       const SizedBox(width: AppSizes.spaceMd),
                       Expanded(
                         flex: 2,
-                        child: _buildLegend(entries, total, scheme),
+                        child: _buildLegend(context, entries, total, scheme),
                       ),
                     ],
                   ),
@@ -181,11 +186,13 @@ class ExpensesPieChart extends StatelessWidget {
   // ═══════════════════════════════════════════════════════════════
 
   Widget _buildLegend(
+    BuildContext context,
     List<_CategoryEntry> entries,
     double total,
     ColorScheme scheme, {
     bool isNarrow = false,
   }) {
+    final l10n = context.l10n;
     final maxItems = isNarrow ? 6 : 10;
     final visible = entries.take(maxItems).toList();
     final hidden = entries.skip(maxItems).toList();
@@ -197,7 +204,7 @@ class ExpensesPieChart extends StatelessWidget {
           total > 0 ? ((e.amount / total) * 100).toDouble() : 0.0;
       items.add(_buildLegendRow(
         color: e.color,
-        label: e.labelAr,
+        label: e.label(l10n),
         value: CurrencyFormatter.formatCompact(e.amount),
         percent: percent,
         scheme: scheme,
@@ -214,7 +221,7 @@ class ExpensesPieChart extends StatelessWidget {
           total > 0 ? ((otherTotal / total) * 100).toDouble() : 0.0;
       items.add(_buildLegendRow(
         color: scheme.outline,
-        label: 'أخرى (${hidden.length})',
+        label: l10n.reportsOthers(hidden.length),
         value: CurrencyFormatter.formatCompact(otherTotal),
         percent: percent,
         scheme: scheme,
@@ -298,40 +305,40 @@ class _CategoryEntry {
     return HSLColor.fromAHSL(1.0, hue, 0.65, 0.55).toColor();
   }
 
-  String get labelAr {
+  String label(AppLocalizations l10n) {
     switch (category) {
       case ExpenseCategory.rent:
-        return 'إيجار';
+        return l10n.expenseCategoryRent;
       case ExpenseCategory.salaries:
-        return 'رواتب';
+        return l10n.expenseCategorySalaries;
       case ExpenseCategory.utilities:
-        return 'مرافق';
+        return l10n.expenseCategoryUtilities;
       case ExpenseCategory.internet:
-        return 'إنترنت';
+        return l10n.expenseCategoryInternet;
       case ExpenseCategory.phone:
-        return 'هاتف';
+        return l10n.expenseCategoryPhone;
       case ExpenseCategory.supplies:
-        return 'مستلزمات';
+        return l10n.expenseCategorySupplies;
       case ExpenseCategory.tools:
-        return 'أدوات';
+        return l10n.expenseCategoryTools;
       case ExpenseCategory.maintenance:
-        return 'صيانة';
+        return l10n.expenseCategoryMaintenance;
       case ExpenseCategory.marketing:
-        return 'تسويق';
+        return l10n.expenseCategoryMarketing;
       case ExpenseCategory.transportation:
-        return 'مواصلات';
+        return l10n.expenseCategoryTransportation;
       case ExpenseCategory.taxes:
-        return 'ضرائب';
+        return l10n.expenseCategoryTaxes;
       case ExpenseCategory.insurance:
-        return 'تأمين';
+        return l10n.expenseCategoryInsurance;
       case ExpenseCategory.training:
-        return 'تدريب';
+        return l10n.expenseCategoryTraining;
       case ExpenseCategory.subscriptions:
-        return 'اشتراكات';
+        return l10n.expenseCategorySubscriptions;
       case ExpenseCategory.charity:
-        return 'صدقات';
+        return l10n.expenseCategoryCharity;
       case ExpenseCategory.other:
-        return 'أخرى';
+        return l10n.expenseCategoryOther;
     }
   }
 }
