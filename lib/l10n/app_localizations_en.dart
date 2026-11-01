@@ -88,4 +88,227 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get delivery => 'Delivery';
+
+  @override
+  String get inventoryItems => 'Items';
+
+  @override
+  String get inventoryQuantity => 'Quantity';
+
+  @override
+  String get inventoryValue => 'Value';
+
+  @override
+  String get inventoryNewItem => 'New Item';
+
+  @override
+  String get inventoryEmpty => 'No items in inventory';
+
+  @override
+  String get inventoryEmptySubtitle => 'Start by adding your first item';
+
+  @override
+  String get inventoryNoResults => 'No results for current filter';
+
+  @override
+  String get inventoryNoResultsSubtitle => 'Try changing or clearing filters';
+
+  @override
+  String get inventoryClearFilters => 'Clear Filters';
+
+  @override
+  String get inventoryDeleteTitle => 'Delete item?';
+
+  @override
+  String get inventoryDeleteConfirm =>
+      'Are you sure you want to delete this item?';
+
+  @override
+  String get inventoryDeleted => 'Deleted';
+
+  @override
+  String get inventoryDeleteFailed => 'Delete failed';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get viewDetails => 'View Details';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
+  String get error => 'An error occurred';
+
+  @override
+  String get success => 'Success';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get yes => 'Yes';
+
+  @override
+  String get no => 'No';
+
+  @override
+  String get newReceipt => 'New Receipt';
+
+  @override
+  String get newExpense => 'New Expense';
+
+  @override
+  String get newSupplier => 'New Supplier';
+
+  @override
+  String get newStaff => 'New Staff';
+
+  @override
+  String get dashboard => 'Dashboard';
+
+  @override
+  String get welcomeBack => 'Welcome back';
+
+  @override
+  String get todayRevenue => 'Today\'s Revenue';
+
+  @override
+  String get activeRepairs => 'Active Repairs';
+
+  @override
+  String get pendingDeliveries => 'Pending Deliveries';
+
+  @override
+  String get lowStockAlert => 'Low Stock Alert';
+
+  @override
+  String get total => 'Total';
+
+  @override
+  String get status => 'Status';
+
+  @override
+  String get customer => 'Customer';
+
+  @override
+  String get device => 'Device';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get amount => 'Amount';
+
+  @override
+  String get actions => 'Actions';
+
+  @override
+  String get notes => 'Notes';
+
+  @override
+  String get phone => 'Phone';
+
+  @override
+  String get address => 'Address';
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get print => 'Print';
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get confirmLogout => 'Are you sure you want to logout?';
+
+  @override
+  String get loginSubtitle => 'Sign in to continue';
+
+  @override
+  String get rememberMe => 'Remember me';
+
+  @override
+  String get forgotPassword => 'Forgot password?';
+
+  @override
+  String get or => 'Or';
+
+  @override
+  String get biometric => 'Biometric';
+
+  @override
+  String get pinCode => 'PIN Code';
+
+  @override
+  String get noAccount => 'Don\'t have an account?';
+
+  @override
+  String get signupNow => 'Sign up now';
+
+  @override
+  String get enterPassword => 'Enter password';
+
+  @override
+  String get sessionExpired =>
+      'Session expired. Please login with email or phone.';
+
+  @override
+  String get biometricFailed => 'Biometric authentication failed';
+
+  @override
+  String get deviceBlockedTitle => 'Account linked to another device';
+
+  @override
+  String get deviceBlockedMessage =>
+      'This account is active on another device. For your security, login is allowed from one device only.';
+
+  @override
+  String get currentDevice => 'Currently registered device';
+
+  @override
+  String get unknownDevice => 'Unknown';
+
+  @override
+  String get platform => 'Platform';
+
+  @override
+  String get lastSeen => 'Last seen';
+
+  @override
+  String get contactAdminHint =>
+      'Contact the shop manager to deactivate the old device.';
+
+  @override
+  String get contactAdmin => 'Contact Manager';
+
+  @override
+  String get tryAgain => 'Try logging in again';
+
+  @override
+  String get now => 'Now';
+
+  @override
+  String minutesAgo(Object count) {
+    return '$count minutes ago';
+  }
+
+  @override
+  String hoursAgo(Object count) {
+    return '$count hours ago';
+  }
+
+  @override
+  String daysAgo(Object count) {
+    return '$count days ago';
+  }
 }

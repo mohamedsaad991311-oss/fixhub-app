@@ -1,12 +1,14 @@
 // lib/features/inventory/data/models/inventory_variants.dart
 
 /// ═══════════════════════════════════════════════════════════
-/// InventoryVariant — نوع القطعة (أصلي توكيل / أصلي / تجاري)
+/// InventoryVariant — نوع القطعة (أصلي توكيل / أصلي / تجاري / خلع / مجددة)
 /// ═══════════════════════════════════════════════════════════
 enum InventoryVariant {
   originalOem, // أصلي توكيل
   original, // أصلي
   aftermarket, // تجاري
+  used, // خلع
+  refurbished, // مجددة
 }
 
 extension InventoryVariantX on InventoryVariant {
@@ -19,6 +21,10 @@ extension InventoryVariantX on InventoryVariant {
         return 'أصلي';
       case InventoryVariant.aftermarket:
         return 'تجاري';
+      case InventoryVariant.used:
+        return 'خلع';
+      case InventoryVariant.refurbished:
+        return 'مجددة';
     }
   }
 
@@ -31,6 +37,10 @@ extension InventoryVariantX on InventoryVariant {
         return 'Original';
       case InventoryVariant.aftermarket:
         return 'Aftermarket';
+      case InventoryVariant.used:
+        return 'Used / Pulled';
+      case InventoryVariant.refurbished:
+        return 'Refurbished';
     }
   }
 
@@ -43,6 +53,10 @@ extension InventoryVariantX on InventoryVariant {
         return 'قطعة أصلية من السوق';
       case InventoryVariant.aftermarket:
         return 'قطعة تجارية / تقليد';
+      case InventoryVariant.used:
+        return 'قطعة خلع من جهاز آخر';
+      case InventoryVariant.refurbished:
+        return 'قطعة مجددة / مُعاد تصنيعها';
     }
   }
 
@@ -55,6 +69,10 @@ extension InventoryVariantX on InventoryVariant {
         return 0xFF3B82F6; // أزرق
       case InventoryVariant.aftermarket:
         return 0xFFF59E0B; // برتقالي
+      case InventoryVariant.used:
+        return 0xFF8B5CF6; // بنفسجي
+      case InventoryVariant.refurbished:
+        return 0xFF06B6D4; // سماوي
     }
   }
 
@@ -67,6 +85,10 @@ extension InventoryVariantX on InventoryVariant {
         return 0xe86c; // Icons.verified_outlined
       case InventoryVariant.aftermarket:
         return 0xe5c9; // Icons.star_outline
+      case InventoryVariant.used:
+        return 0xe5c5; // Icons.recycling
+      case InventoryVariant.refurbished:
+        return 0xe8b0; // Icons.build_circle
     }
   }
 
@@ -82,6 +104,13 @@ extension InventoryVariantX on InventoryVariant {
       case 'aftermarket':
       case 'commercial':
         return InventoryVariant.aftermarket;
+      case 'used':
+      case 'pulled':
+      case 'khala':
+        return InventoryVariant.used;
+      case 'refurbished':
+      case 'refurb':
+        return InventoryVariant.refurbished;
       default:
         return InventoryVariant.aftermarket;
     }

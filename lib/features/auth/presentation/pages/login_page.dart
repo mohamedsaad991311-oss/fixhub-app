@@ -9,6 +9,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/services/biometric_service.dart';
 import '../../../../core/services/pin_lock_service.dart';
 import '../../../../core/services/settings_service.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/identifier_field.dart';
@@ -90,13 +91,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     final password = _passwordController.text;
 
-    // نستخدم القيمة المحسوبة من IdentifierField
-    // لو مش موجودة → ناخد من الـ controller مباشرة
     final identifier = _identifier?.value ?? _identifierController.text.trim();
 
     if (identifier.isEmpty) return;
 
-    // ⭐ signIn بقى يستقبل `identifier` (إيميل أو تليفون)
     final success = await ref.read(authProvider.notifier).signIn(
           identifier: identifier,
           password: password,
@@ -108,7 +106,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final pin = ref.read(pinLockServiceProvider);
       await pin.resetAttempts();
 
-      // ⭐ استنى شوية عشان authProvider يحدّث الـ state قبل redirect
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) context.go(RouteNames.home);
@@ -116,11 +113,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _handleBiometric() async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isBiometricLoading = true);
 
     try {
       final biometric = ref.read(biometricServiceProvider);
-      final result = await biometric.authenticate(reason: 'افتح FixHub');
+      final result = await biometric.authenticate(reason: l10n.appTitle);
 
       if (!mounted) return;
 
@@ -134,15 +132,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         if (current?.isAuthenticated ?? false) {
           context.go(RouteNames.home);
         } else {
-          _showError(
-            'انتهت الجلسة. الرجاء تسجيل الدخول بالإيميل أو التليفون.',
-          );
+          _showError(l10n.sessionExpired);
         }
       } else if (result != BiometricResult.cancelled) {
         _showError(result.messageAr);
       }
     } catch (e) {
-      if (mounted) _showError('فشل التحقق بالبصمة');
+      if (mounted) _showError(l10n.biometricFailed);
     } finally {
       if (mounted) setState(() => _isBiometricLoading = false);
     }
@@ -181,18 +177,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final authState = ref.watch(authProvider);
     final state = authState.valueOrNull;
     final isLoading = state?.isLoading ?? false;
     final errorMessage = state?.errorMessage;
     final deviceBlocked = state?.deviceBlockedInfo;
 
-    // بيانات الورشة
     final settingsAsync = ref.watch(appSettingsProvider);
-    final shopName = settingsAsync.valueOrNull?.shopName ?? 'FixHub';
+    final shopName = settingsAsync.valueOrNull?.shopName ?? l10n.appTitle;
     final shopLogo = settingsAsync.valueOrNull?.shopLogoUrl;
 
-    // ─── لو الجهاز ممنوع → شاشة تحذير ───
     if (deviceBlocked != null) {
       return _DeviceBlockedPage(
         info: deviceBlocked,
@@ -211,7 +206,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             // ─── Header ───
             AuthHeader(
               title: shopName,
-              subtitle: 'سجّل دخولك للمتابعة',
+              subtitle: l10n.loginSubtitle,
               logoUrl: shopLogo,
               icon: Icons.build_circle_outlined,
             ),
@@ -225,7 +220,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               const SizedBox(height: AppSizes.spaceMd),
             ],
 
-            // ─── Identifier (Email OR Phone Toggle) ⭐ ───
+            // ─── Identifier (Email OR Phone Toggle) ───
             IdentifierField(
               controller: _identifierController,
               initialType: IdentifierType.phone,
@@ -237,7 +232,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             // ─── Password ───
             AuthTextField(
               controller: _passwordController,
-              label: 'كلمة المرور',
+              label: l10n.password,
               prefixIcon: Icons.lock_outline,
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.done,
@@ -246,7 +241,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               autofillHints: const [AutofillHints.password],
               onSubmitted: (_) => _handleLogin(),
               validator: (v) {
-                if (v == null || v.isEmpty) return 'أدخل كلمة المرور';
+                if (v == null || v.isEmpty) return l10n.enterPassword;
                 return null;
               },
               suffixIcon: IconButton(
@@ -296,10 +291,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             ),
                           ),
                           const SizedBox(width: AppSizes.spaceXs),
-                          const Flexible(
+                          Flexible(
                             child: Text(
-                              'تذكرني',
-                              style: TextStyle(fontSize: 13),
+                              l10n.rememberMe,
+                              style: const TextStyle(fontSize: 13),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -315,9 +310,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     minimumSize: const Size(0, 32),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: const Text(
-                    'نسيت كلمة المرور؟',
-                    style: TextStyle(fontSize: 13),
+                  child: Text(
+                    l10n.forgotPassword,
+                    style: const TextStyle(fontSize: 13),
                   ),
                 ),
               ],
@@ -327,7 +322,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
             // ─── Login Button ───
             AuthButton(
-              label: 'تسجيل الدخول',
+              label: l10n.login,
               onPressed: _handleLogin,
               isLoading: isLoading,
             ),
@@ -335,7 +330,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             // ─── Biometric + PIN ───
             if (_biometricAvailable || _pinAvailable) ...[
               const SizedBox(height: AppSizes.spaceLg),
-              const AuthDivider(label: 'أو'),
+              AuthDivider(label: l10n.or),
               const SizedBox(height: AppSizes.spaceLg),
               Row(
                 children: [
@@ -343,7 +338,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     Expanded(
                       child: AuthIconButton(
                         icon: Icons.fingerprint,
-                        label: 'البصمة',
+                        label: l10n.biometric,
                         onPressed: _handleBiometric,
                         isLoading: _isBiometricLoading,
                       ),
@@ -354,7 +349,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     Expanded(
                       child: AuthIconButton(
                         icon: Icons.dialpad,
-                        label: 'رمز PIN',
+                        label: l10n.pinCode,
                         onPressed: _handlePin,
                         isLoading: _isPinLoading,
                       ),
@@ -367,8 +362,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
             // ─── Signup Link ───
             AuthFooterLink(
-              question: 'ليس لديك حساب؟',
-              actionText: 'سجّل الآن',
+              question: l10n.noAccount,
+              actionText: l10n.signupNow,
               onTap: isLoading ? () {} : _handleSignup,
             ),
           ],
@@ -393,6 +388,7 @@ class _DeviceBlockedPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -418,7 +414,7 @@ class _DeviceBlockedPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.spaceLg),
           Text(
-            'الحساب مرتبط بجهاز آخر',
+            l10n.deviceBlockedTitle,
             textAlign: TextAlign.center,
             style: textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
@@ -427,7 +423,7 @@ class _DeviceBlockedPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.spaceMd),
           Text(
-            'هذا الحساب نشط على جهاز آخر. لحماية حسابك، يُسمح بالدخول من جهاز واحد فقط.',
+            l10n.deviceBlockedMessage,
             textAlign: TextAlign.center,
             style: textTheme.bodyMedium?.copyWith(
               color: scheme.onSurfaceVariant,
@@ -457,7 +453,7 @@ class _DeviceBlockedPage extends StatelessWidget {
                     ),
                     const SizedBox(width: AppSizes.spaceSm),
                     Text(
-                      'الجهاز المسجّل حالياً',
+                      l10n.currentDevice,
                       style: textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -466,18 +462,18 @@ class _DeviceBlockedPage extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSizes.spaceSmMd),
                 _InfoRow(
-                  label: 'الجهاز',
-                  value: info.blockedByName ?? 'غير معروف',
+                  label: l10n.device,
+                  value: info.blockedByName ?? l10n.unknownDevice,
                 ),
                 if (info.blockedByPlatform != null)
                   _InfoRow(
-                    label: 'المنصة',
+                    label: l10n.platform,
                     value: info.blockedByPlatform!.toUpperCase(),
                   ),
                 if (info.blockedByLastSeen != null)
                   _InfoRow(
-                    label: 'آخر ظهور',
-                    value: _formatDate(info.blockedByLastSeen!),
+                    label: l10n.lastSeen,
+                    value: _formatDate(context, info.blockedByLastSeen!),
                   ),
               ],
             ),
@@ -499,7 +495,7 @@ class _DeviceBlockedPage extends StatelessWidget {
                 const SizedBox(width: AppSizes.spaceSm),
                 Expanded(
                   child: Text(
-                    'تواصل مع مدير الورشة لإلغاء تفعيل الجهاز القديم.',
+                    l10n.contactAdminHint,
                     style: TextStyle(
                       fontSize: 13,
                       color: scheme.onSurface,
@@ -512,14 +508,14 @@ class _DeviceBlockedPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSizes.spaceXl),
           AuthButton(
-            label: 'تواصل مع المدير',
+            label: l10n.contactAdmin,
             icon: Icons.chat_outlined,
             variant: AuthButtonVariant.outlined,
-            onPressed: () => _contactAdmin(context),
+            onPressed: () => _contactAdmin(context, l10n),
           ),
           const SizedBox(height: AppSizes.spaceSmMd),
           AuthButton(
-            label: 'محاولة الدخول مرة أخرى',
+            label: l10n.tryAgain,
             icon: Icons.refresh,
             onPressed: onTryAgain,
           ),
@@ -528,22 +524,18 @@ class _DeviceBlockedPage extends StatelessWidget {
     );
   }
 
-  void _contactAdmin(BuildContext context) {
+  void _contactAdmin(BuildContext context, AppLocalizations l10n) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('تواصل مع مدير الورشة على الرقم المسجّل في الإعدادات'),
+      SnackBar(
+        content: Text(l10n.contactAdminHint),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
-  String _formatDate(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'الآن';
-    if (diff.inHours < 1) return 'منذ ${diff.inMinutes} دقيقة';
-    if (diff.inDays < 1) return 'منذ ${diff.inHours} ساعة';
-    if (diff.inDays < 7) return 'منذ ${diff.inDays} يوم';
-    return '${dt.year}/${dt.month}/${dt.day}';
+  // ✅ دالة مبسطة (بدون replaceAll)
+  String _formatDate(BuildContext context, DateTime dt) {
+    return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
   }
 }
 

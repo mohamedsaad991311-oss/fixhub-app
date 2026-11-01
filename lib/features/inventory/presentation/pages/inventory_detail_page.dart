@@ -9,6 +9,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../data/models/inventory_item.dart';
 import '../providers/inventory_detail_provider.dart';
+import '../providers/inventory_list_provider.dart'; // ✅ جديد
 import '../widgets/stock_adjust_sheet.dart';
 
 /// ═══════════════════════════════════════════════════════════
@@ -35,7 +36,7 @@ class InventoryDetailPage extends ConsumerWidget {
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
         actions: [
-          if (state.item != null)
+          if (state.item != null) ...[
             IconButton(
               tooltip: 'تعديل',
               icon: const Icon(Icons.edit_outlined),
@@ -44,6 +45,12 @@ class InventoryDetailPage extends ConsumerWidget {
                 extra: state.item,
               ),
             ),
+            IconButton(
+              tooltip: 'حذف',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _confirmDelete(context, ref, state.item!),
+            ),
+          ],
           IconButton(
             tooltip: 'تحديث',
             icon: const Icon(Icons.refresh),
@@ -56,6 +63,60 @@ class InventoryDetailPage extends ConsumerWidget {
       bottomNavigationBar:
           state.item != null ? _StockActionsBar(item: state.item!) : null,
     );
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    InventoryItem item,
+  ) async {
+    final scheme = Theme.of(context).colorScheme;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('حذف الصنف؟'),
+        content: Text('هل أنت متأكد من حذف "${item.displayName()}"؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: scheme.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('حذف'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    // ✅ استخدام inventoryListProvider.notifier.delete
+    final ok = await ref
+        .read(inventoryListProvider.notifier)
+        .delete(item.id);
+
+    if (!context.mounted) return;
+
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم الحذف'),
+          backgroundColor: Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      context.pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('فشل الحذف'),
+          backgroundColor: scheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _buildBody(

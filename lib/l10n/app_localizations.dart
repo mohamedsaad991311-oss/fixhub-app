@@ -259,6 +259,432 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delivery'**
   String get delivery;
+
+  /// No description provided for @inventoryItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Items'**
+  String get inventoryItems;
+
+  /// No description provided for @inventoryQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get inventoryQuantity;
+
+  /// No description provided for @inventoryValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get inventoryValue;
+
+  /// No description provided for @inventoryNewItem.
+  ///
+  /// In en, this message translates to:
+  /// **'New Item'**
+  String get inventoryNewItem;
+
+  /// No description provided for @inventoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No items in inventory'**
+  String get inventoryEmpty;
+
+  /// No description provided for @inventoryEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start by adding your first item'**
+  String get inventoryEmptySubtitle;
+
+  /// No description provided for @inventoryNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results for current filter'**
+  String get inventoryNoResults;
+
+  /// No description provided for @inventoryNoResultsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try changing or clearing filters'**
+  String get inventoryNoResultsSubtitle;
+
+  /// No description provided for @inventoryClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Filters'**
+  String get inventoryClearFilters;
+
+  /// No description provided for @inventoryDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete item?'**
+  String get inventoryDeleteTitle;
+
+  /// No description provided for @inventoryDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this item?'**
+  String get inventoryDeleteConfirm;
+
+  /// No description provided for @inventoryDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted'**
+  String get inventoryDeleted;
+
+  /// No description provided for @inventoryDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete failed'**
+  String get inventoryDeleteFailed;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @viewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get viewDetails;
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// No description provided for @loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loading;
+
+  /// No description provided for @error.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred'**
+  String get error;
+
+  /// No description provided for @success.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get success;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get no;
+
+  /// No description provided for @newReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'New Receipt'**
+  String get newReceipt;
+
+  /// No description provided for @newExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'New Expense'**
+  String get newExpense;
+
+  /// No description provided for @newSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'New Supplier'**
+  String get newSupplier;
+
+  /// No description provided for @newStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'New Staff'**
+  String get newStaff;
+
+  /// No description provided for @dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get dashboard;
+
+  /// No description provided for @welcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back'**
+  String get welcomeBack;
+
+  /// No description provided for @todayRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Revenue'**
+  String get todayRevenue;
+
+  /// No description provided for @activeRepairs.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Repairs'**
+  String get activeRepairs;
+
+  /// No description provided for @pendingDeliveries.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Deliveries'**
+  String get pendingDeliveries;
+
+  /// No description provided for @lowStockAlert.
+  ///
+  /// In en, this message translates to:
+  /// **'Low Stock Alert'**
+  String get lowStockAlert;
+
+  /// No description provided for @total.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get total;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
+
+  /// No description provided for @customer.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer'**
+  String get customer;
+
+  /// No description provided for @device.
+  ///
+  /// In en, this message translates to:
+  /// **'Device'**
+  String get device;
+
+  /// No description provided for @date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get date;
+
+  /// No description provided for @amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get amount;
+
+  /// No description provided for @actions.
+  ///
+  /// In en, this message translates to:
+  /// **'Actions'**
+  String get actions;
+
+  /// No description provided for @notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notes;
+
+  /// No description provided for @phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get phone;
+
+  /// No description provided for @address.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get address;
+
+  /// No description provided for @details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get details;
+
+  /// No description provided for @print.
+  ///
+  /// In en, this message translates to:
+  /// **'Print'**
+  String get print;
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @confirmLogout.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to logout?'**
+  String get confirmLogout;
+
+  /// No description provided for @loginSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to continue'**
+  String get loginSubtitle;
+
+  /// No description provided for @rememberMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember me'**
+  String get rememberMe;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @or.
+  ///
+  /// In en, this message translates to:
+  /// **'Or'**
+  String get or;
+
+  /// No description provided for @biometric.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric'**
+  String get biometric;
+
+  /// No description provided for @pinCode.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN Code'**
+  String get pinCode;
+
+  /// No description provided for @noAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account?'**
+  String get noAccount;
+
+  /// No description provided for @signupNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up now'**
+  String get signupNow;
+
+  /// No description provided for @enterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter password'**
+  String get enterPassword;
+
+  /// No description provided for @sessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Session expired. Please login with email or phone.'**
+  String get sessionExpired;
+
+  /// No description provided for @biometricFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric authentication failed'**
+  String get biometricFailed;
+
+  /// No description provided for @deviceBlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account linked to another device'**
+  String get deviceBlockedTitle;
+
+  /// No description provided for @deviceBlockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is active on another device. For your security, login is allowed from one device only.'**
+  String get deviceBlockedMessage;
+
+  /// No description provided for @currentDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently registered device'**
+  String get currentDevice;
+
+  /// No description provided for @unknownDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknownDevice;
+
+  /// No description provided for @platform.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform'**
+  String get platform;
+
+  /// No description provided for @lastSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen'**
+  String get lastSeen;
+
+  /// No description provided for @contactAdminHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact the shop manager to deactivate the old device.'**
+  String get contactAdminHint;
+
+  /// No description provided for @contactAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Manager'**
+  String get contactAdmin;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try logging in again'**
+  String get tryAgain;
+
+  /// No description provided for @now.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get now;
+
+  /// No description provided for @minutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} minutes ago'**
+  String minutesAgo(Object count);
+
+  /// No description provided for @hoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} hours ago'**
+  String hoursAgo(Object count);
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days ago'**
+  String daysAgo(Object count);
 }
 
 class _AppLocalizationsDelegate

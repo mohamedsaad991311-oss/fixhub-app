@@ -3,40 +3,28 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/inventory_service.dart';
 import '../../data/models/inventory_item.dart';
 import '../../data/models/inventory_variants.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// InventoryFormState — حالة نموذج الصنف (إضافة/تعديل)
-/// ═══════════════════════════════════════════════════════════
 class InventoryFormState {
-  /// لو null → وضع الإضافة، لو موجود → وضع التعديل
   final String? editingId;
-
-  // الحقول الأساسية
   final String name;
   final String? nameAr;
   final String? sku;
   final String? barcode;
   final InventoryCategory category;
+  final String? customCategory; // ✅ جديد
   final InventoryVariant variant;
   final String? description;
-
-  // المخزون
   final int quantity;
   final int minQuantity;
-
-  // التسعير
   final double costPrice;
   final double sellingPrice;
-
-  // إضافي
   final String? supplierId;
   final String? location;
   final String? imageUrl;
-
-  // حالة
   final bool isSaving;
   final String? errorMessage;
 
@@ -47,6 +35,7 @@ class InventoryFormState {
     this.sku,
     this.barcode,
     this.category = InventoryCategory.other,
+    this.customCategory,
     this.variant = InventoryVariant.aftermarket,
     this.description,
     this.quantity = 0,
@@ -65,6 +54,10 @@ class InventoryFormState {
   bool get hasError => errorMessage != null && errorMessage!.isNotEmpty;
 
   bool get isValid {
+    if (category == InventoryCategory.other &&
+        (customCategory == null || customCategory!.trim().isEmpty)) {
+      return false;
+    }
     return name.trim().isNotEmpty &&
         quantity >= 0 &&
         minQuantity >= 0 &&
@@ -83,6 +76,8 @@ class InventoryFormState {
     String? barcode,
     bool clearBarcode = false,
     InventoryCategory? category,
+    String? customCategory,
+    bool clearCustomCategory = false,
     InventoryVariant? variant,
     String? description,
     bool clearDescription = false,
@@ -107,6 +102,9 @@ class InventoryFormState {
       sku: clearSku ? null : (sku ?? this.sku),
       barcode: clearBarcode ? null : (barcode ?? this.barcode),
       category: category ?? this.category,
+      customCategory: clearCustomCategory
+          ? null
+          : (customCategory ?? this.customCategory),
       variant: variant ?? this.variant,
       description: clearDescription ? null : (description ?? this.description),
       quantity: quantity ?? this.quantity,
@@ -122,21 +120,12 @@ class InventoryFormState {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// InventoryFormNotifier
-/// ═══════════════════════════════════════════════════════════
 class InventoryFormNotifier extends StateNotifier<InventoryFormState> {
   InventoryFormNotifier(this._ref) : super(const InventoryFormState());
 
   final Ref _ref;
-
   InventoryService get _service => _ref.read(inventoryServiceProvider);
 
-  // ─────────────────────────────────────────────────────────
-  //  INIT
-  // ─────────────────────────────────────────────────────────
-
-  /// تحميل صنف للتعديل
   Future<void> loadForEdit(String id) async {
     state = state.copyWith(isSaving: true, clearError: true);
     try {
@@ -155,6 +144,7 @@ class InventoryFormNotifier extends StateNotifier<InventoryFormState> {
         sku: item.sku,
         barcode: item.barcode,
         category: item.category,
+        customCategory: item.customCategory,
         variant: item.variant,
         description: item.description,
         quantity: item.quantity,
@@ -174,60 +164,37 @@ class InventoryFormNotifier extends StateNotifier<InventoryFormState> {
     }
   }
 
-  /// إعادة تعيين النموذج (لوضع الإضافة)
   void reset() {
     state = const InventoryFormState();
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  SETTERS
-  // ─────────────────────────────────────────────────────────
-
   void setName(String v) => state = state.copyWith(name: v);
-
-  void setNameAr(String? v) => state =
-      v == null ? state.copyWith(clearNameAr: true) : state.copyWith(nameAr: v);
-
-  void setSku(String? v) => state =
-      v == null ? state.copyWith(clearSku: true) : state.copyWith(sku: v);
-
-  void setBarcode(String? v) => state = v == null
-      ? state.copyWith(clearBarcode: true)
-      : state.copyWith(barcode: v);
-
+  void setNameAr(String? v) =>
+      state = v == null ? state.copyWith(clearNameAr: true) : state.copyWith(nameAr: v);
+  void setSku(String? v) =>
+      state = v == null ? state.copyWith(clearSku: true) : state.copyWith(sku: v);
+  void setBarcode(String? v) => state =
+      v == null ? state.copyWith(clearBarcode: true) : state.copyWith(barcode: v);
   void setCategory(InventoryCategory c) => state = state.copyWith(category: c);
-
+  void setCustomCategory(String? v) => state = v == null
+      ? state.copyWith(clearCustomCategory: true)
+      : state.copyWith(customCategory: v);
   void setVariant(InventoryVariant v) => state = state.copyWith(variant: v);
-
   void setDescription(String? v) => state = v == null
       ? state.copyWith(clearDescription: true)
       : state.copyWith(description: v);
-
   void setQuantity(int v) => state = state.copyWith(quantity: v);
-
   void setMinQuantity(int v) => state = state.copyWith(minQuantity: v);
-
   void setCostPrice(double v) => state = state.copyWith(costPrice: v);
-
   void setSellingPrice(double v) => state = state.copyWith(sellingPrice: v);
-
   void setSupplierId(String? v) => state = v == null
       ? state.copyWith(clearSupplierId: true)
       : state.copyWith(supplierId: v);
+  void setLocation(String? v) => state =
+      v == null ? state.copyWith(clearLocation: true) : state.copyWith(location: v);
+  void setImageUrl(String? v) => state =
+      v == null ? state.copyWith(clearImageUrl: true) : state.copyWith(imageUrl: v);
 
-  void setLocation(String? v) => state = v == null
-      ? state.copyWith(clearLocation: true)
-      : state.copyWith(location: v);
-
-  void setImageUrl(String? v) => state = v == null
-      ? state.copyWith(clearImageUrl: true)
-      : state.copyWith(imageUrl: v);
-
-  // ─────────────────────────────────────────────────────────
-  //  SAVE
-  // ─────────────────────────────────────────────────────────
-
-  /// حفظ (إضافة أو تعديل)
   Future<InventoryItem?> save() async {
     if (!state.isValid) {
       state = state.copyWith(errorMessage: 'الرجاء إكمال البيانات المطلوبة');
@@ -237,14 +204,28 @@ class InventoryFormNotifier extends StateNotifier<InventoryFormState> {
     state = state.copyWith(isSaving: true, clearError: true);
 
     try {
+      final authService = _ref.read(authServiceProvider);
+      final tenantId = await authService.getUserTenantId() ?? '';
+
+      if (tenantId.isEmpty) {
+        state = state.copyWith(
+          isSaving: false,
+          errorMessage: 'فشل الحفظ — لا يوجد مستأجر',
+        );
+        return null;
+      }
+
       final item = InventoryItem(
         id: state.editingId ?? '',
-        tenantId: '',
+        tenantId: tenantId,
         name: state.name.trim(),
         nameAr: _nullIfEmpty(state.nameAr),
         sku: _nullIfEmpty(state.sku),
         barcode: _nullIfEmpty(state.barcode),
         category: state.category,
+        customCategory: state.category == InventoryCategory.other
+            ? _nullIfEmpty(state.customCategory)
+            : null,
         variant: state.variant,
         description: _nullIfEmpty(state.description),
         quantity: state.quantity,
@@ -281,24 +262,34 @@ class InventoryFormNotifier extends StateNotifier<InventoryFormState> {
     }
   }
 
-  /// حفظ مع variant مخصص
   Future<InventoryItem?> saveWithVariant(InventoryVariant variant) async {
     if (!state.isValid) {
       state = state.copyWith(errorMessage: 'الرجاء إكمال البيانات المطلوبة');
       return null;
     }
-
     state = state.copyWith(isSaving: true, clearError: true);
-
     try {
+      final authService = _ref.read(authServiceProvider);
+      final tenantId = await authService.getUserTenantId() ?? '';
+      if (tenantId.isEmpty) {
+        state = state.copyWith(
+          isSaving: false,
+          errorMessage: 'فشل الحفظ — لا يوجد مستأجر',
+        );
+        return null;
+      }
+
       final item = InventoryItem(
         id: state.editingId ?? '',
-        tenantId: '',
+        tenantId: tenantId,
         name: state.name.trim(),
         nameAr: _nullIfEmpty(state.nameAr),
         sku: _nullIfEmpty(state.sku),
         barcode: _nullIfEmpty(state.barcode),
         category: state.category,
+        customCategory: state.category == InventoryCategory.other
+            ? _nullIfEmpty(state.customCategory)
+            : null,
         variant: variant,
         description: _nullIfEmpty(state.description),
         quantity: state.quantity,
@@ -335,13 +326,7 @@ class InventoryFormNotifier extends StateNotifier<InventoryFormState> {
     }
   }
 
-  void clearError() {
-    state = state.copyWith(clearError: true);
-  }
-
-  // ─────────────────────────────────────────────────────────
-  //  HELPERS
-  // ─────────────────────────────────────────────────────────
+  void clearError() => state = state.copyWith(clearError: true);
 
   String? _nullIfEmpty(String? v) {
     if (v == null) return null;
@@ -350,26 +335,16 @@ class InventoryFormNotifier extends StateNotifier<InventoryFormState> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  RIVERPOD PROVIDERS
-// ═══════════════════════════════════════════════════════════
-
 final inventoryFormProvider =
     StateNotifierProvider<InventoryFormNotifier, InventoryFormState>((ref) {
   return InventoryFormNotifier(ref);
 });
 
-/// هل في وضع التعديل؟
-final inventoryFormIsEditingProvider = Provider<bool>((ref) {
-  return ref.watch(inventoryFormProvider).isEditing;
-});
+final inventoryFormIsEditingProvider = Provider<bool>((ref) =>
+    ref.watch(inventoryFormProvider).isEditing);
 
-/// هل الحفظ جاري؟
-final inventoryFormSavingProvider = Provider<bool>((ref) {
-  return ref.watch(inventoryFormProvider).isSaving;
-});
+final inventoryFormSavingProvider = Provider<bool>((ref) =>
+    ref.watch(inventoryFormProvider).isSaving);
 
-/// هل النموذج صالح؟
-final inventoryFormValidProvider = Provider<bool>((ref) {
-  return ref.watch(inventoryFormProvider).isValid;
-});
+final inventoryFormValidProvider = Provider<bool>((ref) =>
+    ref.watch(inventoryFormProvider).isValid);

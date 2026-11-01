@@ -32,6 +32,7 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
 
   final _nameController = TextEditingController();
   final _nameArController = TextEditingController();
+  final _customCategoryController = TextEditingController(); // ✅ جديد
   final _skuController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -67,6 +68,7 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
   void dispose() {
     _nameController.dispose();
     _nameArController.dispose();
+    _customCategoryController.dispose();
     _skuController.dispose();
     _barcodeController.dispose();
     _descriptionController.dispose();
@@ -82,6 +84,7 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
     final s = ref.read(inventoryFormProvider);
     _nameController.text = s.name;
     _nameArController.text = s.nameAr ?? '';
+    _customCategoryController.text = s.customCategory ?? '';
     _skuController.text = s.sku ?? '';
     _barcodeController.text = s.barcode ?? '';
     _descriptionController.text = s.description ?? '';
@@ -198,6 +201,24 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
                 },
                 scheme: scheme,
               ),
+              // ✅ حقل إدخال الفئة المخصصة (يظهر بس لو اختار "أخرى")
+              if (_selectedCategory == InventoryCategory.other) ...[
+                const SizedBox(height: AppSizes.spaceSm),
+                _text(
+                  controller: _customCategoryController,
+                  label: 'اسم الفئة المخصصة *',
+                  hint: 'مثال: لمبة فلاش',
+                  onChanged: (v) => ref
+                      .read(inventoryFormProvider.notifier)
+                      .setCustomCategory(v.isEmpty ? null : v),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'اسم الفئة المخصصة مطلوب';
+                    }
+                    return null;
+                  },
+                ),
+              ],
               const SizedBox(height: AppSizes.spaceSm),
               _VariantPicker(
                 selected: _selectedVariant,

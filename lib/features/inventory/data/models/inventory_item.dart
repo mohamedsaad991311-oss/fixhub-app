@@ -9,112 +9,62 @@ import 'inventory_variants.dart';
 
 /// فئة القطعة
 enum InventoryCategory {
-  screen, // شاشة
-  battery, // بطارية
-  chargingPort, // منفذ شحن
-  camera, // كاميرا
-  speaker, // سماعة
-  microphone, // مايك
-  backCover, // ظهر
-  flex, // فلاتة
-  motherboard, // بوردة
-  ic, // IC
-  accessory, // ملحق
-  tool, // أداة
-  other, // أخرى
+  screen, battery, chargingPort, camera, speaker, microphone,
+  backCover, flex, motherboard, ic, accessory, tool, other,
 }
 
 extension InventoryCategoryX on InventoryCategory {
   String get labelAr {
     switch (this) {
-      case InventoryCategory.screen:
-        return 'شاشة';
-      case InventoryCategory.battery:
-        return 'بطارية';
-      case InventoryCategory.chargingPort:
-        return 'منفذ شحن';
-      case InventoryCategory.camera:
-        return 'كاميرا';
-      case InventoryCategory.speaker:
-        return 'سماعة';
-      case InventoryCategory.microphone:
-        return 'مايك';
-      case InventoryCategory.backCover:
-        return 'ظهر';
-      case InventoryCategory.flex:
-        return 'فلاتة';
-      case InventoryCategory.motherboard:
-        return 'بوردة';
-      case InventoryCategory.ic:
-        return 'IC';
-      case InventoryCategory.accessory:
-        return 'ملحق';
-      case InventoryCategory.tool:
-        return 'أداة';
-      case InventoryCategory.other:
-        return 'أخرى';
+      case InventoryCategory.screen: return 'شاشة';
+      case InventoryCategory.battery: return 'بطارية';
+      case InventoryCategory.chargingPort: return 'منفذ شحن';
+      case InventoryCategory.camera: return 'كاميرا';
+      case InventoryCategory.speaker: return 'سماعة';
+      case InventoryCategory.microphone: return 'مايك';
+      case InventoryCategory.backCover: return 'ظهر';
+      case InventoryCategory.flex: return 'فلاتة';
+      case InventoryCategory.motherboard: return 'بوردة';
+      case InventoryCategory.ic: return 'IC';
+      case InventoryCategory.accessory: return 'ملحق';
+      case InventoryCategory.tool: return 'أداة';
+      case InventoryCategory.other: return 'أخرى';
     }
   }
 
   String get labelEn {
     switch (this) {
-      case InventoryCategory.screen:
-        return 'Screen';
-      case InventoryCategory.battery:
-        return 'Battery';
-      case InventoryCategory.chargingPort:
-        return 'Charging Port';
-      case InventoryCategory.camera:
-        return 'Camera';
-      case InventoryCategory.speaker:
-        return 'Speaker';
-      case InventoryCategory.microphone:
-        return 'Microphone';
-      case InventoryCategory.backCover:
-        return 'Back Cover';
-      case InventoryCategory.flex:
-        return 'Flex';
-      case InventoryCategory.motherboard:
-        return 'Motherboard';
-      case InventoryCategory.ic:
-        return 'IC';
-      case InventoryCategory.accessory:
-        return 'Accessory';
-      case InventoryCategory.tool:
-        return 'Tool';
-      case InventoryCategory.other:
-        return 'Other';
+      case InventoryCategory.screen: return 'Screen';
+      case InventoryCategory.battery: return 'Battery';
+      case InventoryCategory.chargingPort: return 'Charging Port';
+      case InventoryCategory.camera: return 'Camera';
+      case InventoryCategory.speaker: return 'Speaker';
+      case InventoryCategory.microphone: return 'Microphone';
+      case InventoryCategory.backCover: return 'Back Cover';
+      case InventoryCategory.flex: return 'Flex';
+      case InventoryCategory.motherboard: return 'Motherboard';
+      case InventoryCategory.ic: return 'IC';
+      case InventoryCategory.accessory: return 'Accessory';
+      case InventoryCategory.tool: return 'Tool';
+      case InventoryCategory.other: return 'Other';
     }
   }
 
   IconData get icon {
     switch (this) {
-      case InventoryCategory.screen:
-        return Icons.smartphone;
-      case InventoryCategory.battery:
-        return Icons.battery_full;
-      case InventoryCategory.chargingPort:
-        return Icons.power;
-      case InventoryCategory.camera:
-        return Icons.camera_alt;
-      case InventoryCategory.speaker:
-        return Icons.volume_up;
-      case InventoryCategory.microphone:
-        return Icons.mic;
-      case InventoryCategory.backCover:
-        return Icons.phone_iphone;
-      case InventoryCategory.flex:
-        return Icons.cable;
-      case InventoryCategory.motherboard:
-        return Icons.memory;
-      case InventoryCategory.ic:
-        return Icons.developer_board;
-      case InventoryCategory.accessory:
-        return Icons.headphones;
-      case InventoryCategory.tool:
-        return Icons.handyman;
-      case InventoryCategory.other:
-        return Icons.category;
+      case InventoryCategory.screen: return Icons.smartphone;
+      case InventoryCategory.battery: return Icons.battery_full;
+      case InventoryCategory.chargingPort: return Icons.power;
+      case InventoryCategory.camera: return Icons.camera_alt;
+      case InventoryCategory.speaker: return Icons.volume_up;
+      case InventoryCategory.microphone: return Icons.mic;
+      case InventoryCategory.backCover: return Icons.phone_iphone;
+      case InventoryCategory.flex: return Icons.cable;
+      case InventoryCategory.motherboard: return Icons.memory;
+      case InventoryCategory.ic: return Icons.developer_board;
+      case InventoryCategory.accessory: return Icons.headphones;
+      case InventoryCategory.tool: return Icons.handyman;
+      case InventoryCategory.other: return Icons.category;
     }
   }
 
@@ -126,50 +76,30 @@ extension InventoryCategoryX on InventoryCategory {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
 /// MovementType — نوع حركة المخزون
-/// ═══════════════════════════════════════════════════════════
 enum MovementType {
-  purchase, // شراء
-  sale, // بيع
-  usage, // استخدام في إصلاح
-  returnIn, // مرتجع داخل
-  returnOut, // مرتجع خارج
-  adjustment, // تسوية
-  damaged, // تالف
-  lost, // مفقود
-  transfer, // نقل
+  purchase, sale, usage, returnIn, returnOut, adjustment, damaged, lost, transfer,
 }
 
 extension MovementTypeX on MovementType {
   String get labelAr {
     switch (this) {
-      case MovementType.purchase:
-        return 'شراء';
-      case MovementType.sale:
-        return 'بيع';
-      case MovementType.usage:
-        return 'استخدام';
-      case MovementType.returnIn:
-        return 'مرتجع داخل';
-      case MovementType.returnOut:
-        return 'مرتجع خارج';
-      case MovementType.adjustment:
-        return 'تسوية';
-      case MovementType.damaged:
-        return 'تالف';
-      case MovementType.lost:
-        return 'مفقود';
-      case MovementType.transfer:
-        return 'نقل';
+      case MovementType.purchase: return 'شراء';
+      case MovementType.sale: return 'بيع';
+      case MovementType.usage: return 'استخدام';
+      case MovementType.returnIn: return 'مرتجع داخل';
+      case MovementType.returnOut: return 'مرتجع خارج';
+      case MovementType.adjustment: return 'تسوية';
+      case MovementType.damaged: return 'تالف';
+      case MovementType.lost: return 'مفقود';
+      case MovementType.transfer: return 'نقل';
     }
   }
 
-  bool get isIncrease {
-    return this == MovementType.purchase ||
-        this == MovementType.returnIn ||
-        this == MovementType.adjustment;
-  }
+  bool get isIncrease =>
+      this == MovementType.purchase ||
+      this == MovementType.returnIn ||
+      this == MovementType.adjustment;
 
   bool get isDecrease => !isIncrease;
 
@@ -181,9 +111,6 @@ extension MovementTypeX on MovementType {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// InventoryMovement — حركة مخزون
-/// ═══════════════════════════════════════════════════════════
 class InventoryMovement {
   final String id;
   final String tenantId;
@@ -251,7 +178,7 @@ class InventoryMovement {
 }
 
 /// ═══════════════════════════════════════════════════════════
-/// InventoryItem — النموذج الرئيسي
+/// InventoryItem
 /// ═══════════════════════════════════════════════════════════
 class InventoryItem {
   final String id;
@@ -261,27 +188,17 @@ class InventoryItem {
   final String? sku;
   final String? barcode;
   final InventoryCategory category;
+  final String? customCategory; // ✅ فئة مخصصة (لو category == other)
   final InventoryVariant variant;
   final String? description;
-  // ─── الكميات ───
   final int quantity;
   final int minQuantity;
-
-  // ─── الأسعار ───
   final double costPrice;
   final double sellingPrice;
-
-  // ─── المورد ───
   final String? supplierId;
-
-  // ─── الموقع ───
   final String? location;
   final String? imageUrl;
-
-  // ─── الحالة ───
   final bool isActive;
-
-  // ─── التواريخ ───
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -293,6 +210,7 @@ class InventoryItem {
     this.sku,
     this.barcode,
     this.category = InventoryCategory.other,
+    this.customCategory,
     this.variant = InventoryVariant.aftermarket,
     this.description,
     this.quantity = 0,
@@ -321,6 +239,8 @@ class InventoryItem {
     String? sku,
     String? barcode,
     InventoryCategory? category,
+    String? customCategory,
+    bool clearCustomCategory = false,
     InventoryVariant? variant,
     String? description,
     int? quantity,
@@ -342,6 +262,9 @@ class InventoryItem {
       sku: sku ?? this.sku,
       barcode: barcode ?? this.barcode,
       category: category ?? this.category,
+      customCategory: clearCustomCategory
+          ? null
+          : (customCategory ?? this.customCategory),
       variant: variant ?? this.variant,
       description: description ?? this.description,
       quantity: quantity ?? this.quantity,
@@ -366,6 +289,7 @@ class InventoryItem {
       sku: json['sku'] as String?,
       barcode: json['barcode'] as String?,
       category: InventoryCategoryX.fromString(json['category'] as String?),
+      customCategory: json['custom_category'] as String?,
       variant: InventoryVariantX.fromString(json['variant'] as String?),
       description: json['description'] as String?,
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
@@ -390,6 +314,7 @@ class InventoryItem {
       'sku': sku,
       'barcode': barcode,
       'category': category.name,
+      'custom_category': customCategory,
       'variant': variant.name,
       'description': description,
       'quantity': quantity,
@@ -413,43 +338,31 @@ class InventoryItem {
     return json;
   }
 
-  Map<String, dynamic> toMap() => toJson();
-
-  factory InventoryItem.fromMap(Map<dynamic, dynamic> map) {
-    return InventoryItem.fromJson(Map<String, dynamic>.from(map));
-  }
-
-  // ─── Getters ───
-
   String displayName({bool isArabic = true}) {
-    if (isArabic && nameAr != null && nameAr!.isNotEmpty) {
-      return nameAr!;
-    }
+    if (isArabic && nameAr != null && nameAr!.isNotEmpty) return nameAr!;
     return name;
   }
 
-  /// هل الكمية منخفضة؟
+  /// ✅ اسم الفئة للعرض (المخصصة لو موجودة، وإلا labelAr)
+  String get categoryLabel {
+    if (category == InventoryCategory.other &&
+        customCategory != null &&
+        customCategory!.trim().isNotEmpty) {
+      return customCategory!.trim();
+    }
+    return category.labelAr;
+  }
+
   bool get isLowStock => quantity <= minQuantity && quantity > 0;
-
-  /// هل خلصت؟
   bool get isOutOfStock => quantity <= 0;
-
-  /// هل متوفرة؟
   bool get isInStock => quantity > 0;
-
-  /// الربح للقطعة
   double get profit => sellingPrice - costPrice;
-
-  /// هامش الربح (%)
   double get profitMargin {
     if (costPrice <= 0) return 0;
     return ((sellingPrice - costPrice) / costPrice) * 100;
   }
-
-  /// قيمة المخزون (بسعر التكلفة)
   double get stockValue => costPrice * quantity;
 
-  /// حالة المخزون (نص + لون)
   String get stockStatusAr {
     if (isOutOfStock) return 'خلص';
     if (isLowStock) return 'منخفض';
@@ -475,24 +388,13 @@ class InventoryItem {
   }
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        tenantId,
-        name,
-        quantity,
-        costPrice,
-        sellingPrice,
-      );
+  int get hashCode =>
+      Object.hash(id, tenantId, name, quantity, costPrice, sellingPrice);
 
   @override
-  String toString() {
-    return 'InventoryItem($name, qty: $quantity, price: $sellingPrice)';
-  }
+  String toString() =>
+      'InventoryItem($name, qty: $quantity, price: $sellingPrice)';
 }
-
-// ═══════════════════════════════════════════════════════════
-// Helper Functions
-// ═══════════════════════════════════════════════════════════
 
 DateTime? _parseDate(dynamic value) {
   if (value == null) return null;

@@ -276,9 +276,12 @@ class InventoryService {
   Future<InventoryItem?> create(InventoryItem item) async {
     try {
       final tenantId = await _authService.getUserTenantId();
+      final userId = _authService.currentUser?.id;
       if (tenantId == null) return null;
 
-      final payload = item.toInsertJson()..['tenant_id'] = tenantId;
+      final payload = item.toInsertJson()
+        ..['tenant_id'] = tenantId
+        ..['created_by'] = userId; // ✅ إضافة created_by
 
       final inserted =
           await _client.from(_table).insert(payload).select().single();
@@ -583,10 +586,14 @@ class InventoryService {
     if (items.isEmpty) return 0;
     try {
       final tenantId = await _authService.getUserTenantId();
+      final userId = _authService.currentUser?.id;
       if (tenantId == null) return 0;
 
-      final payloads =
-          items.map((i) => i.toInsertJson()..['tenant_id'] = tenantId).toList();
+      final payloads = items
+          .map((i) => i.toInsertJson()
+            ..['tenant_id'] = tenantId
+            ..['created_by'] = userId) // ✅ إضافة created_by هنا كمان
+          .toList();
 
       final inserted = await _client.from(_table).insert(payloads).select('id');
 

@@ -87,12 +87,42 @@ class InventoryCard extends StatelessWidget {
                               color: scheme.onSurface,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            item.category.labelAr,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: scheme.onSurfaceVariant,
+                          const SizedBox(height: 4),
+                          // ✅ عرض الفئة (المخصصة أو الثابتة) بجانب اسم الصنف
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: scheme.primaryContainer
+                                  .withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(
+                                AppSizes.radiusSm,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  item.category.icon,
+                                  size: 10,
+                                  color: scheme.onPrimaryContainer,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    item.categoryLabel, // ✅ الفئة المخصصة أو labelAr
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: scheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
