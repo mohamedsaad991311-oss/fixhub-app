@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/l10n/l10n_ext.dart';
+import '../../../../core/localization/locale_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/services/biometric_service.dart';
 import '../../../../core/services/pin_lock_service.dart';
@@ -113,7 +115,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _handleBiometric() async {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n;
     setState(() => _isBiometricLoading = true);
 
     try {
@@ -138,7 +140,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         _showError(result.messageAr);
       }
     } catch (e) {
-      if (mounted) _showError(l10n.biometricFailed);
+      if (mounted) _showError(context.l10n.biometricFailed);
     } finally {
       if (mounted) setState(() => _isBiometricLoading = false);
     }
@@ -177,7 +179,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n;
     final authState = ref.watch(authProvider);
     final state = authState.valueOrNull;
     final isLoading = state?.isLoading ?? false;
@@ -203,6 +205,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // ─── Language Toggle ───
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: _LanguageButton(enabled: !isLoading),
+            ),
+            const SizedBox(height: AppSizes.spaceSm),
+
             // ─── Header ───
             AuthHeader(
               title: shopName,
@@ -374,6 +383,48 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  LANGUAGE TOGGLE BUTTON
+// ═══════════════════════════════════════════════════════════════
+
+class _LanguageButton extends ConsumerWidget {
+  const _LanguageButton({required this.enabled});
+
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final locale = ref.watch(localeProvider);
+    final isArabic = locale.languageCode == 'ar';
+
+    return Tooltip(
+      message: l10n.language,
+      child: TextButton.icon(
+        onPressed: enabled
+            ? () => ref.read(localeProvider.notifier).toggleLocale()
+            : null,
+        icon: Icon(
+          Icons.translate,
+          size: AppSizes.iconSm,
+        ),
+        label: Text(
+          isArabic ? l10n.english : l10n.arabic,
+          style: const TextStyle(fontSize: 13),
+        ),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.spaceSm,
+            vertical: AppSizes.spaceXs,
+          ),
+          minimumSize: const Size(0, 32),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  DEVICE BLOCKED PAGE
 // ═══════════════════════════════════════════════════════════════
 
@@ -388,7 +439,7 @@ class _DeviceBlockedPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -533,7 +584,6 @@ class _DeviceBlockedPage extends StatelessWidget {
     );
   }
 
-  // ✅ دالة مبسطة (بدون replaceAll)
   String _formatDate(BuildContext context, DateTime dt) {
     return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
   }
