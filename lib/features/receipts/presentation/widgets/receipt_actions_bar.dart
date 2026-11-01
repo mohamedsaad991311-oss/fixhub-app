@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../data/models/receipt.dart';
@@ -15,6 +16,9 @@ class ReceiptActionsBar extends ConsumerWidget {
   const ReceiptActionsBar({super.key, required this.receipt});
 
   final Receipt receipt;
+
+  // ⚠️ رابط مؤقت — نغيّره بعد النشر (Vercel / Firebase)
+  static const String _trackBaseUrl = 'https://fixhub-app.web.app/track.html';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -98,8 +102,7 @@ class ReceiptActionsBar extends ConsumerWidget {
             // ─── زر الرفض ───
             IconButton.filledTonal(
               tooltip: 'رفض الإيصال',
-              onPressed:
-                  isUpdating ? null : () => _confirmReject(context, ref),
+              onPressed: isUpdating ? null : () => _confirmReject(context, ref),
               icon: const Icon(Icons.cancel_outlined, size: 20),
               style: IconButton.styleFrom(
                 minimumSize: const Size(52, 52),
@@ -110,36 +113,25 @@ class ReceiptActionsBar extends ConsumerWidget {
             ),
           ],
 
-          // ─── إيصال مُسلّم/مرفوض: أزرار تانية ───
-          if (receipt.status.isFinal) ...[
-            Expanded(
-              flex: 3,
-              child: FilledButton.icon(
-                onPressed: () => _shareTracking(context),
-                icon: const Icon(Icons.share_outlined, size: 18),
-                label: const Text(
-                  'مشاركة رابط التتبع',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(0, AppSizes.buttonHeightLg),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-                  ),
-                ),
-              ),
+          // ─── زر المشاركة (دائماً) ───
+          const SizedBox(width: AppSizes.spaceSm),
+          IconButton.filledTonal(
+            tooltip: 'مشاركة رابط التتبع',
+            onPressed: () => _shareTracking(context),
+            icon: const Icon(Icons.share_outlined, size: 20),
+            style: IconButton.styleFrom(
+              minimumSize: const Size(52, 52),
+              backgroundColor: scheme.primary.withValues(alpha: 0.15),
+              foregroundColor: scheme.primary,
             ),
-          ],
+          ),
 
-          // ─── نسخ التوكن ───
-          if (receipt.trackingToken != null &&
-              receipt.trackingToken!.isNotEmpty) ...[
-            const SizedBox(width: AppSizes.spaceSm),
+          // ─── نسخ الرابط (اختياري) ───
+          if (receipt.customerPhone != null &&
+              receipt.customerPhone!.isNotEmpty) ...[
+            const SizedBox(width: AppSizes.spaceXs),
             IconButton.filledTonal(
-              tooltip: 'نسخ رابط التتبع',
+              tooltip: 'نسخ الرابط',
               onPressed: () => _copyTracking(context),
               icon: const Icon(Icons.link, size: 20),
               style: IconButton.styleFrom(
@@ -158,6 +150,17 @@ class ReceiptActionsBar extends ConsumerWidget {
     final next = receipt.status.next;
     if (next == null) return 'التالي';
     return next.labelAr;
+  }
+
+  /// بناء رابط التتبع (برقم الإيصال، أو رقم التليفون)
+  String? _buildTrackUrl() {
+    if (receipt.receiptNumber.isNotEmpty) {
+      return '$_trackBaseUrl?receipt=${receipt.receiptNumber}';
+    }
+    if (receipt.customerPhone != null && receipt.customerPhone!.isNotEmpty) {
+      return '$_trackBaseUrl?phone=${receipt.customerPhone}';
+    }
+    return null;
   }
 
   Future<void> _advanceStatus(BuildContext context, WidgetRef ref) async {
@@ -202,7 +205,6 @@ class ReceiptActionsBar extends ConsumerWidget {
     );
   }
 
-  /// تأكيد الرفض
   Future<void> _confirmReject(BuildContext context, WidgetRef ref) async {
     final scheme = Theme.of(context).colorScheme;
 
@@ -255,10 +257,18 @@ class ReceiptActionsBar extends ConsumerWidget {
   }
 
   Future<void> _copyTracking(BuildContext context) async {
-    final token = receipt.trackingToken;
-    if (token == null || token.isEmpty) return;
+    final url = _buildTrackUrl();
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لا يوجد رقم إيصال أو رقم تليفون للمشاركة'),
+          backgroundColor: Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-    final url = 'https://fixhub.app/track/$token';
     await Clipboard.setData(ClipboardData(text: url));
 
     if (!context.mounted) return;
@@ -274,8 +284,57 @@ class ReceiptActionsBar extends ConsumerWidget {
   }
 
   Future<void> _shareTracking(BuildContext context) async {
-    // TODO: share_plus - لاحقاً
-    await _copyTracking(context);
+    final url = _buildTrackUrl();
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لا يوجد رقم إيصال أو رقم تليفون للمشاركة'),
+          backgroundColor: Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // ─── لو فيه رقم تليفون، افتح واتساب مباشرة ───
+    final customerPhone = receipt.customerPhone;
+    if (customerPhone != null && customerPhone.isNotEmpty) {
+      final cleanedPhone = customerPhone.replaceAll(RegExp(r'\D'), '');
+      final message = Uri.encodeComponent(
+        '📱 متابعة حالة جهازك في FixHub:\n'
+        'رقم الإيصال: ${receipt.receiptNumber}\n'
+        'الرابط: $url\n\n'
+        'شكراً لتعاملك معنا 🌹',
+      );
+      final whatsappUrl = 'https://wa.me/$cleanedPhone?text=$message';
+
+      try {
+        final launched = await launchUrl(
+          Uri.parse(whatsappUrl),
+          mode: LaunchMode.externalApplication,
+        );
+        if (launched) return;
+      } catch (_) {
+        // fallback
+      }
+    }
+
+    // ─── fallback: نسخ الرابط ───
+    await Clipboard.setData(ClipboardData(text: url));
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          customerPhone != null && customerPhone.isNotEmpty
+              ? 'تم نسخ رابط التتبع (تعذّر فتح واتساب)'
+              : 'تم نسخ رابط التتبع',
+        ),
+        backgroundColor: const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 }
 
@@ -299,7 +358,6 @@ class _StatusPickerSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ─── Header ───
           Container(
             padding: const EdgeInsets.all(AppSizes.spaceMd),
             decoration: BoxDecoration(
@@ -324,8 +382,6 @@ class _StatusPickerSheet extends StatelessWidget {
               ],
             ),
           ),
-
-          // ─── Status list (scrollable) ───
           Flexible(
             child: SingleChildScrollView(
               child: Column(
@@ -338,8 +394,7 @@ class _StatusPickerSheet extends StatelessWidget {
                       height: 36,
                       decoration: BoxDecoration(
                         color: status.color.withValues(alpha: 0.15),
-                        borderRadius:
-                            BorderRadius.circular(AppSizes.radiusSm),
+                        borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                       ),
                       child: Icon(
                         status.icon,

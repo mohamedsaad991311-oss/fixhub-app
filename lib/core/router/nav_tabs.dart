@@ -3,35 +3,13 @@
 import 'package:flutter/material.dart';
 import 'route_names.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// NavTab — نموذج تاب واحد
-/// ═══════════════════════════════════════════════════════════
-///
-/// بيُستخدم في:
-/// - AdaptiveNavBar (Bottom + Rail)
-/// - AppSidebar (Desktop)
-/// - MainShell (للتنقل)
-///
 class NavTab {
-  /// المفتاح (للـ identification)
   final String key;
-
-  /// الاسم بالعربي
   final String labelAr;
-
-  /// الاسم بالإنجليزي
   final String labelEn;
-
-  /// الأيقونة (غير مفعّلة)
   final IconData icon;
-
-  /// الأيقونة (مفعّلة)
   final IconData activeIcon;
-
-  /// المسار
   final String route;
-
-  /// Badge (اختياري — للـ notifications)
   final int? badgeCount;
 
   const NavTab({
@@ -44,7 +22,6 @@ class NavTab {
     this.badgeCount,
   });
 
-  /// إرجاع الاسم حسب اللغة
   String label(String languageCode) {
     return languageCode == 'ar' ? labelAr : labelEn;
   }
@@ -62,19 +39,9 @@ class NavTab {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// NavTabs — قائمة التابات الرئيسية (5 تابات)
-/// ═══════════════════════════════════════════════════════════
-///
-/// الترتيب مهم! بيتطابق مع:
-/// - BottomNavigationBar
-/// - NavigationRail
-/// - Sidebar
-///
 class NavTabs {
-  NavTabs._(); // منع الإنشاء
+  NavTabs._();
 
-  /// التابات الرئيسية
   static const List<NavTab> main = [
     // ─── 1. الرئيسية ───
     NavTab(
@@ -85,7 +52,6 @@ class NavTabs {
       activeIcon: Icons.home,
       route: RouteNames.home,
     ),
-
     // ─── 2. الإيصالات ───
     NavTab(
       key: 'receipts',
@@ -95,7 +61,6 @@ class NavTabs {
       activeIcon: Icons.receipt_long,
       route: RouteNames.receipts,
     ),
-
     // ─── 3. المخزون ───
     NavTab(
       key: 'inventory',
@@ -105,8 +70,16 @@ class NavTabs {
       activeIcon: Icons.inventory_2,
       route: RouteNames.inventory,
     ),
-
-    // ─── 4. التقارير ───
+    // ─── 4. المصاريف (جديد) ───
+    NavTab(
+      key: 'expenses',
+      labelAr: 'المصاريف',
+      labelEn: 'Expenses',
+      icon: Icons.account_balance_wallet_outlined,
+      activeIcon: Icons.account_balance_wallet,
+      route: RouteNames.expenses,
+    ),
+    // ─── 5. التقارير ───
     NavTab(
       key: 'reports',
       labelAr: 'التقارير',
@@ -115,8 +88,7 @@ class NavTabs {
       activeIcon: Icons.bar_chart,
       route: RouteNames.reports,
     ),
-
-    // ─── 5. الإعدادات ───
+    // ─── 6. الإعدادات ───
     NavTab(
       key: 'settings',
       labelAr: 'الإعدادات',
@@ -127,7 +99,6 @@ class NavTabs {
     ),
   ];
 
-  /// إرجاع التاب حسب الـ key
   static NavTab? byKey(String key) {
     for (final tab in main) {
       if (tab.key == key) return tab;
@@ -135,7 +106,6 @@ class NavTabs {
     return null;
   }
 
-  /// إرجاع التاب حسب المسار
   static NavTab? byRoute(String route) {
     for (final tab in main) {
       if (tab.route == route) return tab;
@@ -143,7 +113,6 @@ class NavTabs {
     return null;
   }
 
-  /// إرجاع index التاب حسب المسار
   static int indexOfRoute(String route) {
     for (var i = 0; i < main.length; i++) {
       if (main[i].route == route) return i;

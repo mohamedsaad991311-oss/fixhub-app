@@ -444,12 +444,15 @@ class _ReviewSection extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: scheme.primary),
               const SizedBox(width: AppSizes.spaceSm),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: scheme.onSurface,
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -489,18 +492,22 @@ class _ReviewRowWidget extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 90,
+          // ✅ التعديل هنا: استخدمنا Expanded بدل الـ SizedBox الثابت
+          Expanded(
+            flex: 2,
             child: Text(
               row.label,
               style: TextStyle(
                 fontSize: 12,
                 color: scheme.onSurfaceVariant,
               ),
+              overflow: TextOverflow.ellipsis, // يقطع النص لو طال
             ),
           ),
           const SizedBox(width: AppSizes.spaceSm),
+          // ✅ التعديل هنا: حددنا مساحة الـ Value بنسبة أكبر شوية
           Expanded(
+            flex: 3,
             child: Text(
               row.value,
               textDirection: row.ltr ? TextDirection.ltr : null,
@@ -509,6 +516,7 @@ class _ReviewRowWidget extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 color: scheme.onSurface,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

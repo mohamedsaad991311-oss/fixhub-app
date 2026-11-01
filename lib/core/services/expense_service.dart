@@ -200,6 +200,9 @@ class ExpenseService {
         ..['tenant_id'] = tenantId
         ..['created_by'] = userId;
 
+      // ✅ سطر الطباعة للتأكد من الـ payload
+      print('ExpenseService.create payload: $payload');
+
       final inserted =
           await _client.from(_table).insert(payload).select().single();
 

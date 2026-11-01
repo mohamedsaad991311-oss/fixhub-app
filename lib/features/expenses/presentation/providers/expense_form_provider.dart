@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/expense_service.dart';
+import '../../../../core/services/auth_service.dart'; // ✅ استيراد auth_service
 import '../../data/models/expense.dart';
 
 class ExpenseFormState {
@@ -137,9 +138,24 @@ class ExpenseFormNotifier extends StateNotifier<ExpenseFormState> {
     state = state.copyWith(isSaving: true, clearError: true);
 
     try {
+      // ✅ جلب الـ tenantId من auth service
+      final authService = _ref.read(authServiceProvider);
+      final tenantId = await authService.getUserTenantId() ?? '';
+
+      // ✅ سطر الطباعة للتأكد من الـ tenantId
+      print('🔴 ExpenseFormProvider tenantId = $tenantId');
+
+      if (tenantId.isEmpty) {
+        state = state.copyWith(
+          isSaving: false,
+          errorMessage: 'فشل الحفظ — لا يوجد مستأجر',
+        );
+        return null;
+      }
+
       final expense = Expense(
         id: state.editingId ?? '',
-        tenantId: '',
+        tenantId: tenantId, // ✅ تم تعيين الـ tenantId هنا
         description: state.description.trim(),
         amount: state.amount,
         category: state.category,

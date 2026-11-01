@@ -324,7 +324,8 @@ class ReceiptService {
         'tax': draft.tax,
         'total': draft.total,
         'tracking_token': trackingToken,
-        'technician_id': draft.technicianId,
+        // التعديل هنا: تعيين الفني الحالي تلقائياً إن لم يتم اختياره
+        'technician_id': draft.technicianId ?? userId,
         'warranty_days': draft.warrantyDays,
         'notes': draft.notes,
         'internal_notes': draft.internalNotes,

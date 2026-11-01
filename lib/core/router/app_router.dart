@@ -27,10 +27,11 @@ import '../../features/staff/data/models/staff_member.dart';
 import '../../features/staff/presentation/pages/staff_detail_page.dart';
 import '../../features/staff/presentation/pages/staff_form_page.dart';
 import '../../features/staff/presentation/pages/staff_list_page.dart';
-import '../../features/expenses/data/models/expense.dart';
-import '../../features/expenses/presentation/pages/expense_detail_page.dart';
-import '../../features/expenses/presentation/pages/expense_form_page.dart';
-import '../../features/expenses/presentation/pages/expenses_list_page.dart';
+
+// ✅ Expenses (Screens جديدة)
+import '../../features/expenses/presentation/screens/expenses_list_screen.dart';
+import '../../features/expenses/presentation/screens/expense_form_screen.dart';
+
 import '../../features/reports/presentation/pages/reports_page.dart';
 import '../../features/scanner/presentation/pages/scanner_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
@@ -59,18 +60,12 @@ import 'route_names.dart';
 /// ═══════════════════════════════════════════════════════════
 /// AppRouter — الـ Router الرئيسي (GoRouter)
 /// ═══════════════════════════════════════════════════════════
-///
-/// يستخدم StatefulShellRoute.indexedStack للحفاظ على حالة كل تاب.
-/// + redirect للتحقق من auth + onboarding
-///
 class AppRouter {
   AppRouter._();
 
-  /// مفتاح الـ root navigator (للـ dialogs فوق كل حاجة)
   static final GlobalKey<NavigatorState> rootNavigatorKey =
       GlobalKey<NavigatorState>(debugLabel: 'root');
 
-  /// إنشاء الـ GoRouter (يحتاج ref من ProviderScope)
   static GoRouter create({
     required Ref ref,
     String initialLocation = RouteNames.splash,
@@ -85,17 +80,14 @@ class AppRouter {
       redirect: (context, state) {
         final location = state.matchedLocation;
 
-        // ─── 1) Splash → ما نعملش حاجة (الصفحة نفسها بتقرر) ───
         if (location == RouteNames.splash) return null;
 
-        // ─── 2) قراءة الحالة ───
         final onboardingDone = ref.read(onboardingProvider);
         final authState = ref.read(authProvider);
         final isLoggedIn = authState.valueOrNull?.isAuthenticated ?? false;
         final isAuthLoading =
             authState.isLoading || (authState.valueOrNull?.isLoading ?? false);
 
-        // ─── 3) Onboarding ───
         if (!onboardingDone) {
           if (location != RouteNames.onboarding) {
             return RouteNames.onboarding;
@@ -103,21 +95,18 @@ class AppRouter {
           return null;
         }
 
-        // لو خلّص onboarding وبيحاول يدخل onboarding تاني
         if (location == RouteNames.onboarding) {
           return isLoggedIn ? RouteNames.home : RouteNames.login;
         }
 
-        // ─── 4) أثناء تحميل الـ auth → ما نعملش redirect ───
         if (isAuthLoading) return null;
 
-        // ─── 4.b) لو رايح home والـ auth state لسه unknown → نسيبه يتحمّل ───
         if (location == RouteNames.home &&
             (authState.valueOrNull == null ||
                 authState.valueOrNull?.status == AuthStatus.unknown)) {
           return null;
         }
-        // ─── 5) Auth pages ───
+
         const authRoutes = <String>{
           RouteNames.login,
           RouteNames.signup,
@@ -127,16 +116,12 @@ class AppRouter {
         final isAuthRoute = authRoutes.contains(location);
         final isPinLock = location == RouteNames.pinLock;
 
-        // ─── 6) Not logged in ───
         if (!isLoggedIn) {
-          // PIN lock صفحة مش محتاجة login (بتستخدم PIN محلي)
           if (isPinLock) return null;
-          // أي صفحة تانية غير auth → روح login
           if (!isAuthRoute) return RouteNames.login;
           return null;
         }
 
-        // ─── 7) Logged in + في auth page → روح home ───
         if (isLoggedIn && isAuthRoute) {
           return RouteNames.home;
         }
@@ -146,12 +131,8 @@ class AppRouter {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // قائمة الـ Routes
-  // ═══════════════════════════════════════════════════════════
-
   static final List<RouteBase> _routes = [
-    // ─── Splash (root) ───
+    // ─── Splash ───
     GoRoute(
       path: RouteNames.splash,
       name: 'splash',
@@ -165,7 +146,7 @@ class AppRouter {
       builder: (context, state) => const OnboardingPage(),
     ),
 
-    // ─── Auth (بدون Shell) ───
+    // ─── Auth ───
     GoRoute(
       path: RouteNames.login,
       name: 'login',
@@ -193,15 +174,14 @@ class AppRouter {
     ),
 
     // ═══════════════════════════════════════════════════════
-    // Main Shell (StatefulShellRoute — 5 branches)
+    // Main Shell (التابات الستة)
     // ═══════════════════════════════════════════════════════
-
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return MainShellRailWrapper(navigationShell: navigationShell);
       },
       branches: [
-        // ─── Branch 1: Home ───
+        // Branch 0: Home
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -212,7 +192,7 @@ class AppRouter {
           ],
         ),
 
-        // ─── Branch 2: Receipts ───
+        // Branch 1: Receipts
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -226,7 +206,6 @@ class AppRouter {
                   builder: (context, state) =>
                       const ReceiptCreatePlaceholderPage(),
                 ),
-                // ⭐ Receiving Wizard
                 GoRoute(
                   path: 'receiving',
                   name: 'receivingWizard',
@@ -255,7 +234,7 @@ class AppRouter {
           ],
         ),
 
-        // ─── Branch 3: Inventory ───
+        // Branch 2: Inventory
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -263,12 +242,10 @@ class AppRouter {
               name: 'inventory',
               builder: (context, state) => const InventoryListPage(),
               routes: [
-                // إضافة/تعديل صنف (query: ?id=...)
                 GoRoute(
                   path: 'edit',
                   name: 'inventoryEdit',
                   builder: (context, state) {
-                    // نستقبل الصنف من extra أو من id في query
                     final item = state.extra;
                     return InventoryFormPage(
                       editingItem: item is InventoryItem ? item : null,
@@ -288,7 +265,33 @@ class AppRouter {
           ],
         ),
 
-        // ─── Branch 4: Reports ───
+        // Branch 3: Expenses (تم نقله هنا)
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RouteNames.expenses,
+              name: 'expenses',
+              builder: (context, state) => const ExpensesListScreen(),
+              routes: [
+                GoRoute(
+                  path: 'new',
+                  name: 'expenseNew',
+                  builder: (context, state) => const ExpenseFormScreen(),
+                ),
+                GoRoute(
+                  path: ':id',
+                  name: 'expenseEdit',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id'] ?? '';
+                    return ExpenseFormScreen(expenseId: id);
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        // Branch 4: Reports
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -299,7 +302,7 @@ class AppRouter {
           ],
         ),
 
-        // ─── Branch 5: Settings ───
+        // Branch 5: Settings
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -340,7 +343,8 @@ class AppRouter {
                 GoRoute(
                   path: 'subscription',
                   name: 'subscriptionSettings',
-                  builder: (context, state) => const SubscriptionSettingsPage(),
+                  builder: (context, state) =>
+                      const SubscriptionSettingsPage(),
                 ),
                 GoRoute(
                   path: 'about',
@@ -438,33 +442,6 @@ class AppRouter {
       ],
     ),
 
-    // ─── Expenses ───
-    GoRoute(
-      path: RouteNames.expenses,
-      name: 'expenses',
-      builder: (context, state) => const ExpensesListPage(),
-      routes: [
-        GoRoute(
-          path: 'edit',
-          name: 'expenseEdit',
-          builder: (context, state) {
-            final expense = state.extra;
-            return ExpenseFormPage(
-              editingExpense: expense is Expense ? expense : null,
-            );
-          },
-        ),
-        GoRoute(
-          path: ':id',
-          name: 'expenseDetail',
-          builder: (context, state) {
-            final id = state.pathParameters['id'] ?? '';
-            return ExpenseDetailPage(expenseId: id);
-          },
-        ),
-      ],
-    ),
-
     // ─── Delivery ───
     GoRoute(
       path: RouteNames.delivery,
@@ -473,9 +450,6 @@ class AppRouter {
     ),
 
     // ─── Scanner ───
-    // دعم وضعين:
-    // - Standalone: /scanner → يبحث في Supabase ويعرض النتيجة
-    // - Tool Mode: /scanner?popOnDetect=true → يرجّع القيمة فوراً
     GoRoute(
       path: RouteNames.scanner,
       name: 'scanner',
@@ -537,21 +511,21 @@ class AppRouter {
       builder: (context, state) => const AdminDashboardPage(),
     ),
 
-    // ─── Device Reset Request (للعميل) ───
+    // ─── Device Reset Request ───
     GoRoute(
       path: '/device-reset-request',
       name: 'deviceResetRequest',
       builder: (context, state) => const DeviceResetRequestPage(),
     ),
 
-    // ─── الأجهزة المرتبطة ───
+    // ─── Devices ───
     GoRoute(
       path: '/devices',
       name: 'devices',
       builder: (context, state) => const DevicesPage(),
     ),
 
-    // ─── دعوات الموظفين ───
+    // ─── Invitations ───
     GoRoute(
       path: '/invitations',
       name: 'invitations',
@@ -561,30 +535,18 @@ class AppRouter {
 }
 
 // ═══════════════════════════════════════════════════════════
-// Router Refresh — لربط Riverpod بـ GoRouter
+// Router Refresh
 // ═══════════════════════════════════════════════════════════
-
-/// يُخبر GoRouter إنه يعيد تقييم الـ redirect لما الـ providers تتغير
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
-    // راقب authProvider
-    ref.listen(
-      authProvider,
-      (_, __) => notifyListeners(),
-    );
-    // راقب onboardingProvider
-    ref.listen(
-      onboardingProvider,
-      (_, __) => notifyListeners(),
-    );
+    ref.listen(authProvider, (_, __) => notifyListeners());
+    ref.listen(onboardingProvider, (_, __) => notifyListeners());
   }
 }
 
 // ═══════════════════════════════════════════════════════════
-// Router Provider — يُبنى مرة واحدة
+// Router Provider
 // ═══════════════════════════════════════════════════════════
-
-/// Provider للـ GoRouter — يُبنى مرة واحدة ويُخزَّن
 final routerProvider = Provider<GoRouter>((ref) {
   return AppRouter.create(ref: ref);
 });
