@@ -2,6 +2,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import 'reports_provider.dart';
 
 /// ═══════════════════════════════════════════════════════════
@@ -21,9 +22,9 @@ class ReportsFilterState {
   bool get isCustom => period == ReportsPeriod.custom;
 
   /// نص عرض الفترة
-  String label() {
-    if (period != ReportsPeriod.custom) return period.labelAr;
-    if (customFrom == null || customTo == null) return 'مخصص';
+  String label(AppLocalizations l10n) {
+    if (period != ReportsPeriod.custom) return period.label(l10n);
+    if (customFrom == null || customTo == null) return l10n.custom;
     return '${_fmt(customFrom!)} → ${_fmt(customTo!)}';
   }
 
@@ -97,11 +98,6 @@ final reportsFilterProvider =
 /// اختصار: الفترة الحالية
 final currentReportsPeriodProvider = Provider<ReportsPeriod>((ref) {
   return ref.watch(reportsFilterProvider).period;
-});
-
-/// اختصار: نص عرض الفترة
-final reportsPeriodLabelProvider = Provider<String>((ref) {
-  return ref.watch(reportsFilterProvider).label();
 });
 
 /// اختصار: هل الفترة مخصصة؟

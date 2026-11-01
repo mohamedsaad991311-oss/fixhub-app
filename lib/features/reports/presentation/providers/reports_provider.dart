@@ -7,6 +7,7 @@ import '../../../../core/services/expense_service.dart';
 import '../../../../core/services/inventory_service.dart';
 import '../../../../core/services/receipt_service.dart';
 import '../../../../core/services/supplier_service.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../receipts/data/models/receipt.dart';
 import '../../../expenses/data/models/expense.dart';
 
@@ -22,24 +23,27 @@ enum ReportsPeriod {
 }
 
 extension ReportsPeriodX on ReportsPeriod {
-  String get labelAr {
+  /// التسمية حسب اللغة الحالية
+  String label(AppLocalizations l10n) {
     switch (this) {
       case ReportsPeriod.today:
-        return 'اليوم';
+        return l10n.today;
       case ReportsPeriod.week:
-        return 'آخر 7 أيام';
+        return l10n.last7Days;
       case ReportsPeriod.month:
-        return 'هذا الشهر';
+        return l10n.thisMonth;
       case ReportsPeriod.year:
-        return 'هذه السنة';
+        return l10n.thisYear;
       case ReportsPeriod.custom:
-        return 'مخصص';
+        return l10n.custom;
     }
   }
 
   /// حساب تواريخ البداية والنهاية
-  (DateTime from, DateTime to) range(
-      {DateTime? customFrom, DateTime? customTo}) {
+  (DateTime from, DateTime to) range({
+    DateTime? customFrom,
+    DateTime? customTo,
+  }) {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
@@ -161,7 +165,7 @@ class ReportsState {
   final DateTime? customTo;
   final ReportsStats stats;
   final bool isLoading;
-  final String? errorMessage;
+  final bool hasError;
 
   const ReportsState({
     this.period = ReportsPeriod.month,
@@ -169,10 +173,8 @@ class ReportsState {
     this.customTo,
     this.stats = ReportsStats.empty,
     this.isLoading = false,
-    this.errorMessage,
+    this.hasError = false,
   });
-
-  bool get hasError => errorMessage != null && errorMessage!.isNotEmpty;
 
   /// التواريخ الحالية
   (DateTime, DateTime) get dateRange =>
@@ -184,8 +186,7 @@ class ReportsState {
     DateTime? customTo,
     ReportsStats? stats,
     bool? isLoading,
-    String? errorMessage,
-    bool clearError = false,
+    bool? hasError,
   }) {
     return ReportsState(
       period: period ?? this.period,
@@ -193,7 +194,7 @@ class ReportsState {
       customTo: customTo ?? this.customTo,
       stats: stats ?? this.stats,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      hasError: hasError ?? this.hasError,
     );
   }
 }
@@ -218,7 +219,7 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
   // ─────────────────────────────────────────────────────────
 
   Future<void> load() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: true, hasError: false);
     try {
       final (from, to) = state.dateRange;
 
@@ -289,12 +290,15 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
         topReceipts: topReceipts,
       );
 
-      state = state.copyWith(stats: stats, isLoading: false);
+      state = state.copyWith(
+        stats: stats,
+        isLoading: false,
+      );
     } catch (e) {
       debugPrint('ReportsNotifier.load error: $e');
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'فشل تحميل التقارير',
+        hasError: true,
       );
     }
   }
@@ -323,7 +327,7 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
   }
 
   void clearError() {
-    state = state.copyWith(clearError: true);
+    state = state.copyWith(hasError: false);
   }
 }
 

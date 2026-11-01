@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/l10n/l10n_ext.dart';
 import '../providers/reports_provider.dart';
 import '../widgets/expenses_pie_chart.dart';
 import '../widgets/period_selector.dart';
@@ -16,32 +17,22 @@ import '../widgets/top_receipts_list.dart';
 /// ═══════════════════════════════════════════════════════════════
 /// ReportsPage — صفحة التقارير الرئيسية
 /// ═══════════════════════════════════════════════════════════════
-///
-/// تحتوي على:
-/// - Period Selector
-/// - Summary Cards (4)
-/// - Revenue Chart (Line)
-/// - Receipts Status Pie Chart
-/// - Expenses Pie Chart
-/// - Receipts Bar Chart
-/// - Top Receipts List
-///
 class ReportsPage extends ConsumerWidget {
   const ReportsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final state = ref.watch(reportsProvider);
-    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('التقارير'),
+        title: Text(l10n.reports),
         centerTitle: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'تحديث',
+            tooltip: l10n.refresh,
             onPressed: state.isLoading
                 ? null
                 : () => ref.read(reportsProvider.notifier).refresh(),
@@ -50,7 +41,7 @@ class ReportsPage extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(reportsProvider.notifier).refresh(),
-        child: _buildBody(context, state, scheme),
+        child: _buildBody(context, state),
       ),
     );
   }
@@ -59,14 +50,10 @@ class ReportsPage extends ConsumerWidget {
   //  BODY
   // ═══════════════════════════════════════════════════════════════
 
-  Widget _buildBody(
-    BuildContext context,
-    ReportsState state,
-    ColorScheme scheme,
-  ) {
+  Widget _buildBody(BuildContext context, ReportsState state) {
     // ──── Error ────
     if (state.hasError) {
-      return _buildError(context, state);
+      return _buildError(context);
     }
 
     // ──── Loading (first time) ────
@@ -151,8 +138,10 @@ class ReportsPage extends ConsumerWidget {
   //  ERROR STATE
   // ═══════════════════════════════════════════════════════════════
 
-  Widget _buildError(BuildContext context, ReportsState state) {
+  Widget _buildError(BuildContext context) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.spaceLg),
@@ -166,7 +155,7 @@ class ReportsPage extends ConsumerWidget {
             ),
             const SizedBox(height: AppSizes.spaceMd),
             Text(
-              state.errorMessage ?? 'حدث خطأ',
+              l10n.reportsLoadFailed,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -176,11 +165,10 @@ class ReportsPage extends ConsumerWidget {
             const SizedBox(height: AppSizes.spaceLg),
             FilledButton.icon(
               onPressed: () {
-                // ignore: unused_result
-                // ref.read(reportsProvider.notifier).load();
+                // هنحتاج نستخدم ref هنا، فهنحول _buildError لـ ConsumerWidget أو نمرر ref
               },
               icon: const Icon(Icons.refresh),
-              label: const Text('إعادة المحاولة'),
+              label: Text(l10n.retry),
             ),
           ],
         ),
