@@ -311,4 +311,103 @@ class AppLocalizationsEn extends AppLocalizations {
   String daysAgo(Object count) {
     return '$count days ago';
   }
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get last7Days => 'Last 7 days';
+
+  @override
+  String get thisMonth => 'This month';
+
+  @override
+  String get thisYear => 'This year';
+
+  @override
+  String get custom => 'Custom';
+
+  @override
+  String get selectPeriod => 'Select period';
+
+  @override
+  String get fromDate => 'From date';
+
+  @override
+  String get toDate => 'To date';
+
+  @override
+  String get reportsLoadFailed => 'Failed to load reports';
+
+  @override
+  String get reportsNoData => 'No data for the selected period';
+
+  @override
+  String get reportsTotalRevenue => 'Total Revenue';
+
+  @override
+  String get reportsTotalExpenses => 'Total Expenses';
+
+  @override
+  String get reportsNetProfit => 'Net Profit';
+
+  @override
+  String get reportsTotalReceipts => 'Total Receipts';
+
+  @override
+  String get reportsDeliveredReceipts => 'Delivered';
+
+  @override
+  String get reportsActiveReceipts => 'Active';
+
+  @override
+  String get reportsRejectedReceipts => 'Rejected';
+
+  @override
+  String get reportsTotalDeposits => 'Total Deposits';
+
+  @override
+  String get reportsPendingAmount => 'Pending Collection';
+
+  @override
+  String get reportsProfitMargin => 'Profit Margin';
+
+  @override
+  String get reportsAvgPerReceipt => 'Avg per Receipt';
+
+  @override
+  String get reportsDeliveryRate => 'Delivery Rate';
+
+  @override
+  String get reportsExpensesByCategory => 'Expenses by Category';
+
+  @override
+  String get reportsRevenueChart => 'Revenue';
+
+  @override
+  String get reportsExpensesChart => 'Expenses';
+
+  @override
+  String get reportsTopReceipts => 'Top Receipts';
+
+  @override
+  String get reportsStockValue => 'Stock Value';
+
+  @override
+  String get reportsLowStock => 'Low Stock';
+
+  @override
+  String get reportsOutOfStock => 'Out of Stock';
+
+  @override
+  String get reportsTotalSuppliers => 'Suppliers';
+
+  @override
+  String get reportsTotalDebt => 'Total Debt';
+
+  @override
+  String get reportsTotalOwed => 'Total Owed';
 }

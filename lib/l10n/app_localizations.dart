@@ -67,8 +67,8 @@ abstract class AppLocalizations {
 
   final String localeName;
 
-  static AppLocalizations? of(BuildContext context) {
-    return Localizations.of<AppLocalizations>(context, AppLocalizations);
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
   }
 
   static const LocalizationsDelegate<AppLocalizations> delegate =
@@ -685,6 +685,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} days ago'**
   String daysAgo(Object count);
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @last7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get last7Days;
+
+  /// No description provided for @thisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get thisMonth;
+
+  /// No description provided for @thisYear.
+  ///
+  /// In en, this message translates to:
+  /// **'This year'**
+  String get thisYear;
+
+  /// No description provided for @custom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get custom;
+
+  /// No description provided for @selectPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Select period'**
+  String get selectPeriod;
+
+  /// No description provided for @fromDate.
+  ///
+  /// In en, this message translates to:
+  /// **'From date'**
+  String get fromDate;
+
+  /// No description provided for @toDate.
+  ///
+  /// In en, this message translates to:
+  /// **'To date'**
+  String get toDate;
+
+  /// No description provided for @reportsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load reports'**
+  String get reportsLoadFailed;
+
+  /// No description provided for @reportsNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data for the selected period'**
+  String get reportsNoData;
+
+  /// No description provided for @reportsTotalRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Revenue'**
+  String get reportsTotalRevenue;
+
+  /// No description provided for @reportsTotalExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Expenses'**
+  String get reportsTotalExpenses;
+
+  /// No description provided for @reportsNetProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Net Profit'**
+  String get reportsNetProfit;
+
+  /// No description provided for @reportsTotalReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Receipts'**
+  String get reportsTotalReceipts;
+
+  /// No description provided for @reportsDeliveredReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get reportsDeliveredReceipts;
+
+  /// No description provided for @reportsActiveReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get reportsActiveReceipts;
+
+  /// No description provided for @reportsRejectedReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get reportsRejectedReceipts;
+
+  /// No description provided for @reportsTotalDeposits.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Deposits'**
+  String get reportsTotalDeposits;
+
+  /// No description provided for @reportsPendingAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Collection'**
+  String get reportsPendingAmount;
+
+  /// No description provided for @reportsProfitMargin.
+  ///
+  /// In en, this message translates to:
+  /// **'Profit Margin'**
+  String get reportsProfitMargin;
+
+  /// No description provided for @reportsAvgPerReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg per Receipt'**
+  String get reportsAvgPerReceipt;
+
+  /// No description provided for @reportsDeliveryRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery Rate'**
+  String get reportsDeliveryRate;
+
+  /// No description provided for @reportsExpensesByCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses by Category'**
+  String get reportsExpensesByCategory;
+
+  /// No description provided for @reportsRevenueChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue'**
+  String get reportsRevenueChart;
+
+  /// No description provided for @reportsExpensesChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses'**
+  String get reportsExpensesChart;
+
+  /// No description provided for @reportsTopReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Top Receipts'**
+  String get reportsTopReceipts;
+
+  /// No description provided for @reportsStockValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock Value'**
+  String get reportsStockValue;
+
+  /// No description provided for @reportsLowStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Low Stock'**
+  String get reportsLowStock;
+
+  /// No description provided for @reportsOutOfStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of Stock'**
+  String get reportsOutOfStock;
+
+  /// No description provided for @reportsTotalSuppliers.
+  ///
+  /// In en, this message translates to:
+  /// **'Suppliers'**
+  String get reportsTotalSuppliers;
+
+  /// No description provided for @reportsTotalDebt.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Debt'**
+  String get reportsTotalDebt;
+
+  /// No description provided for @reportsTotalOwed.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Owed'**
+  String get reportsTotalOwed;
 }
 
 class _AppLocalizationsDelegate

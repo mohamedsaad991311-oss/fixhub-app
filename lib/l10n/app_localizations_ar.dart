@@ -310,4 +310,103 @@ class AppLocalizationsAr extends AppLocalizations {
   String daysAgo(Object count) {
     return 'منذ $count يوم';
   }
+
+  @override
+  String get today => 'اليوم';
+
+  @override
+  String get yesterday => 'أمس';
+
+  @override
+  String get last7Days => 'آخر 7 أيام';
+
+  @override
+  String get thisMonth => 'هذا الشهر';
+
+  @override
+  String get thisYear => 'هذه السنة';
+
+  @override
+  String get custom => 'مخصص';
+
+  @override
+  String get selectPeriod => 'اختر الفترة';
+
+  @override
+  String get fromDate => 'من تاريخ';
+
+  @override
+  String get toDate => 'إلى تاريخ';
+
+  @override
+  String get reportsLoadFailed => 'فشل تحميل التقارير';
+
+  @override
+  String get reportsNoData => 'لا توجد بيانات للفترة المحددة';
+
+  @override
+  String get reportsTotalRevenue => 'إجمالي الإيرادات';
+
+  @override
+  String get reportsTotalExpenses => 'إجمالي المصروفات';
+
+  @override
+  String get reportsNetProfit => 'صافي الربح';
+
+  @override
+  String get reportsTotalReceipts => 'عدد الإيصالات';
+
+  @override
+  String get reportsDeliveredReceipts => 'تم التسليم';
+
+  @override
+  String get reportsActiveReceipts => 'قيد العمل';
+
+  @override
+  String get reportsRejectedReceipts => 'مرفوضة';
+
+  @override
+  String get reportsTotalDeposits => 'إجمالي العربون';
+
+  @override
+  String get reportsPendingAmount => 'متبقي للتحصيل';
+
+  @override
+  String get reportsProfitMargin => 'هامش الربح';
+
+  @override
+  String get reportsAvgPerReceipt => 'متوسط الإيصال';
+
+  @override
+  String get reportsDeliveryRate => 'نسبة التسليم';
+
+  @override
+  String get reportsExpensesByCategory => 'المصروفات حسب الفئة';
+
+  @override
+  String get reportsRevenueChart => 'الإيرادات';
+
+  @override
+  String get reportsExpensesChart => 'المصروفات';
+
+  @override
+  String get reportsTopReceipts => 'أعلى الإيصالات';
+
+  @override
+  String get reportsStockValue => 'قيمة المخزون';
+
+  @override
+  String get reportsLowStock => 'مخزون منخفض';
+
+  @override
+  String get reportsOutOfStock => 'غير متوفر';
+
+  @override
+  String get reportsTotalSuppliers => 'الموردين';
+
+  @override
+  String get reportsTotalDebt => 'مستحقات الموردين';
+
+  @override
+  String get reportsTotalOwed => 'دفعات مقدمة';
 }
