@@ -3,19 +3,16 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/l10n/l10n_ext.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../providers/reports_provider.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// RevenueChart — رسم بياني خطي للإيرادات والمصروفات عبر الزمن
 /// ═══════════════════════════════════════════════════════════════
-///
-/// - Line Chart بـ fl_chart
-/// - خطّين: الإيرادات (أخضر) + المصروفات (أحمر)
-/// - Responsive: 200 ارتفاع على الموبايل، 300 على التابلت
-///
 class RevenueChart extends ConsumerWidget {
   const RevenueChart({super.key, required this.stats});
 
@@ -23,6 +20,7 @@ class RevenueChart extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isNarrow = MediaQuery.sizeOf(context).width < 600;
@@ -93,7 +91,7 @@ class RevenueChart extends ConsumerWidget {
               ),
               const SizedBox(width: AppSizes.spaceXs),
               Text(
-                'الإيرادات والمصروفات',
+                '${l10n.reportsRevenueChart} & ${l10n.reportsExpensesChart}',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -102,9 +100,15 @@ class RevenueChart extends ConsumerWidget {
               ),
               const Spacer(),
               // ──── Legend ────
-              _LegendDot(color: const Color(0xFF10B981), label: 'إيرادات'),
+              _LegendDot(
+                color: const Color(0xFF10B981),
+                label: l10n.reportsRevenueChart,
+              ),
               const SizedBox(width: AppSizes.spaceSmMd),
-              _LegendDot(color: const Color(0xFFEF4444), label: 'مصروفات'),
+              _LegendDot(
+                color: const Color(0xFFEF4444),
+                label: l10n.reportsExpensesChart,
+              ),
             ],
           ),
 
@@ -174,10 +178,14 @@ class RevenueChart extends ConsumerWidget {
                             : 1;
                         if (i % step != 0) return const SizedBox.shrink();
                         final d = allDates[i];
+                        // استخدام DateFormat حسب لغة التطبيق
+                        final locale =
+                            Localizations.localeOf(context).languageCode;
+                        final fmt = DateFormat.Md(locale);
                         return Padding(
                           padding: const EdgeInsets.only(top: AppSizes.spaceXs),
                           child: Text(
-                            '${d.day}/${d.month}',
+                            fmt.format(d),
                             style: TextStyle(
                               fontSize: 10,
                               color: scheme.onSurfaceVariant,
@@ -213,9 +221,15 @@ class RevenueChart extends ConsumerWidget {
                         if (i < 0 || i >= allDates.length) return null;
                         final d = allDates[i];
                         final isRevenue = spot.barIndex == 0;
+                        final locale =
+                            Localizations.localeOf(context).languageCode;
+                        final dateStr = DateFormat.yMd(locale).format(d);
+                        final label = isRevenue
+                            ? l10n.reportsRevenueChart
+                            : l10n.reportsExpensesChart;
                         return LineTooltipItem(
-                          '${d.day}/${d.month}/${d.year}\n'
-                          '${isRevenue ? "إيرادات" : "مصروفات"}: '
+                          '$dateStr\n'
+                          '$label: '
                           '${CurrencyFormatter.format(spot.y)}',
                           TextStyle(
                             color: isRevenue
@@ -290,6 +304,7 @@ class RevenueChart extends ConsumerWidget {
   // ═══════════════════════════════════════════════════════════════
 
   Widget _buildEmptyState(BuildContext context, double height) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     return Container(
       height: height,
@@ -313,7 +328,7 @@ class RevenueChart extends ConsumerWidget {
             ),
             const SizedBox(height: AppSizes.spaceSm),
             Text(
-              'لا توجد بيانات في هذه الفترة',
+              l10n.reportsNoData,
               style: TextStyle(
                 fontSize: 13,
                 color: scheme.onSurfaceVariant,
