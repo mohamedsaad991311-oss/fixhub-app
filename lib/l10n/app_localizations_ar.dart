@@ -409,4 +409,21 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get reportsTotalOwed => 'دفعات مقدمة';
+
+  @override
+  String get reportsDuringPeriod => 'خلال الفترة';
+
+  @override
+  String get reportsProfit => 'ربح';
+
+  @override
+  String get reportsLoss => 'خسارة';
+
+  @override
+  String get reportsOfRevenue => 'من الإيرادات';
+
+  @override
+  String reportsReceiptDeliveredCount(Object count) {
+    return '$count إيصال مسلَّم';
+  }
 }

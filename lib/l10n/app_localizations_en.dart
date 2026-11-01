@@ -410,4 +410,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportsTotalOwed => 'Total Owed';
+
+  @override
+  String get reportsDuringPeriod => 'During period';
+
+  @override
+  String get reportsProfit => 'Profit';
+
+  @override
+  String get reportsLoss => 'Loss';
+
+  @override
+  String get reportsOfRevenue => 'Of revenue';
+
+  @override
+  String reportsReceiptDeliveredCount(Object count) {
+    return '$count receipts delivered';
+  }
 }

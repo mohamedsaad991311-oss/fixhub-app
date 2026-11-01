@@ -1,28 +1,25 @@
 // lib/features/reports/presentation/widgets/summary_cards.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/l10n/l10n_ext.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../providers/reports_provider.dart';
 
 /// ═══════════════════════════════════════════════════════════
 /// SummaryCards — كروت ملخص الأداء المالي
 /// ═══════════════════════════════════════════════════════════
-///
-/// بتعرض 4 كروت:
-/// - الإيرادات
-/// - المصروفات
-/// - صافي الربح
-/// - هامش الربح
-///
-class SummaryCards extends StatelessWidget {
+class SummaryCards extends ConsumerWidget {
   const SummaryCards({super.key, required this.stats});
 
   final ReportsStats stats;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 600;
@@ -36,27 +33,28 @@ class SummaryCards extends StatelessWidget {
             crossAxisCount: columns,
             crossAxisSpacing: AppSizes.spaceSmMd,
             mainAxisSpacing: AppSizes.spaceSmMd,
-            // ✅ ارتفاع ثابت يضمن ظهور كل المحتوى بدون Overflow
             mainAxisExtent: isNarrow ? 120 : 135,
           ),
           itemBuilder: (context, index) {
             return [
               _SummaryCard(
-                label: 'الإيرادات',
+                label: l10n.reportsTotalRevenue,
                 value: CurrencyFormatter.formatCompact(stats.totalRevenue),
                 icon: Icons.trending_up,
                 color: const Color(0xFF10B981),
-                subtitle: '${stats.deliveredReceipts} إيصال مسلَّم',
+                subtitle: l10n.reportsReceiptDeliveredCount(
+                  stats.deliveredReceipts,
+                ),
               ),
               _SummaryCard(
-                label: 'المصروفات',
+                label: l10n.reportsTotalExpenses,
                 value: CurrencyFormatter.formatCompact(stats.totalExpenses),
                 icon: Icons.trending_down,
                 color: const Color(0xFFEF4444),
-                subtitle: 'خلال الفترة',
+                subtitle: l10n.reportsDuringPeriod,
               ),
               _SummaryCard(
-                label: 'صافي الربح',
+                label: l10n.reportsNetProfit,
                 value: CurrencyFormatter.formatCompact(stats.netProfit),
                 icon: stats.netProfit >= 0
                     ? Icons.account_balance_wallet
@@ -64,14 +62,16 @@ class SummaryCards extends StatelessWidget {
                 color: stats.netProfit >= 0
                     ? const Color(0xFF3B82F6)
                     : const Color(0xFFEF4444),
-                subtitle: stats.netProfit >= 0 ? 'ربح' : 'خسارة',
+                subtitle: stats.netProfit >= 0
+                    ? l10n.reportsProfit
+                    : l10n.reportsLoss,
               ),
               _SummaryCard(
-                label: 'هامش الربح',
+                label: l10n.reportsProfitMargin,
                 value: '${stats.profitMargin.toStringAsFixed(1)}%',
                 icon: Icons.percent,
                 color: const Color(0xFFF59E0B),
-                subtitle: 'من الإيرادات',
+                subtitle: l10n.reportsOfRevenue,
               ),
             ][index];
           },

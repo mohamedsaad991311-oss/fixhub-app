@@ -130,5 +130,10 @@
   "reportsOutOfStock": "غير متوفر",
   "reportsTotalSuppliers": "الموردين",
   "reportsTotalDebt": "مستحقات الموردين",
-  "reportsTotalOwed": "دفعات مقدمة"
+  "reportsTotalOwed": "دفعات مقدمة",
+  "reportsDuringPeriod": "خلال الفترة",
+  "reportsProfit": "ربح",
+  "reportsLoss": "خسارة",
+  "reportsOfRevenue": "من الإيرادات",
+  "reportsReceiptDeliveredCount": "{count} إيصال مسلَّم"
 }

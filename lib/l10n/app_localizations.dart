@@ -883,6 +883,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total Owed'**
   String get reportsTotalOwed;
+
+  /// No description provided for @reportsDuringPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'During period'**
+  String get reportsDuringPeriod;
+
+  /// No description provided for @reportsProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Profit'**
+  String get reportsProfit;
+
+  /// No description provided for @reportsLoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Loss'**
+  String get reportsLoss;
+
+  /// No description provided for @reportsOfRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Of revenue'**
+  String get reportsOfRevenue;
+
+  /// No description provided for @reportsReceiptDeliveredCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} receipts delivered'**
+  String reportsReceiptDeliveredCount(Object count);
 }
 
 class _AppLocalizationsDelegate

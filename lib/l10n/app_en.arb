@@ -130,5 +130,10 @@
   "reportsOutOfStock": "Out of Stock",
   "reportsTotalSuppliers": "Suppliers",
   "reportsTotalDebt": "Total Debt",
-  "reportsTotalOwed": "Total Owed"
+  "reportsTotalOwed": "Total Owed",
+  "reportsDuringPeriod": "During period",
+  "reportsProfit": "Profit",
+  "reportsLoss": "Loss",
+  "reportsOfRevenue": "Of revenue",
+  "reportsReceiptDeliveredCount": "{count} receipts delivered"
 }
