@@ -2,26 +2,25 @@
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/l10n/l10n_ext.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../receipts/data/models/receipt.dart';
 import '../providers/reports_provider.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// ReceiptsBarChart — توزيع الإيصالات حسب الحالة (Bar Chart)
 /// ═══════════════════════════════════════════════════════════════
-///
-/// - Bar Chart بـ fl_chart
-/// - 6 أعمدة (حالة لكل عمود)
-/// - Responsive
-///
-class ReceiptsBarChart extends StatelessWidget {
+class ReceiptsBarChart extends ConsumerWidget {
   const ReceiptsBarChart({super.key, required this.stats});
 
   final ReportsStats stats;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isNarrow = MediaQuery.sizeOf(context).width < 600;
@@ -68,7 +67,7 @@ class ReceiptsBarChart extends StatelessWidget {
               ),
               const SizedBox(width: AppSizes.spaceXs),
               Text(
-                'الإيصالات حسب الحالة',
+                l10n.reportsReceiptsByStatus,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -77,7 +76,7 @@ class ReceiptsBarChart extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                'الإجمالي: ${stats.totalReceipts}',
+                '${l10n.total}: ${stats.totalReceipts}',
                 style: TextStyle(
                   fontSize: 11,
                   color: scheme.onSurfaceVariant,
@@ -104,7 +103,7 @@ class ReceiptsBarChart extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSizes.spaceSm),
                     Text(
-                      'لا توجد إيصالات في هذه الفترة',
+                      l10n.reportsNoReceiptsInPeriod,
                       style: TextStyle(
                         fontSize: 13,
                         color: scheme.onSurfaceVariant,
@@ -182,7 +181,7 @@ class ReceiptsBarChart extends StatelessWidget {
                               top: AppSizes.spaceXs,
                             ),
                             child: Text(
-                              entries[i].labelShortAr,
+                              entries[i].labelShort(l10n),
                               style: TextStyle(
                                 fontSize: 9,
                                 color: scheme.onSurfaceVariant,
@@ -204,7 +203,7 @@ class ReceiptsBarChart extends StatelessWidget {
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         final e = entries[group.x];
                         return BarTooltipItem(
-                          '${e.labelAr}\n${e.count}',
+                          '${e.label(l10n)}\n${e.count}',
                           TextStyle(
                             color: e.color,
                             fontWeight: FontWeight.bold,
@@ -267,38 +266,38 @@ class _StatusBarEntry {
     }
   }
 
-  String get labelAr {
+  String label(AppLocalizations l10n) {
     switch (status) {
       case ReceiptStatus.received:
-        return 'تم الاستلام';
+        return l10n.receiptStatusReceived;
       case ReceiptStatus.inProgress:
-        return 'قيد الإصلاح';
+        return l10n.receiptStatusInProgress;
       case ReceiptStatus.waitingParts:
-        return 'بانتظار قطع';
+        return l10n.receiptStatusWaitingParts;
       case ReceiptStatus.ready:
-        return 'جاهز للتسليم';
+        return l10n.receiptStatusReady;
       case ReceiptStatus.delivered:
-        return 'تم التسليم';
+        return l10n.receiptStatusDelivered;
       case ReceiptStatus.rejected:
-        return 'مرفوض';
+        return l10n.receiptStatusRejected;
     }
   }
 
   /// نسخة مختصرة للـ X axis
-  String get labelShortAr {
+  String labelShort(AppLocalizations l10n) {
     switch (status) {
       case ReceiptStatus.received:
-        return 'استلام';
+        return l10n.receiptStatusReceivedShort;
       case ReceiptStatus.inProgress:
-        return 'إصلاح';
+        return l10n.receiptStatusInProgressShort;
       case ReceiptStatus.waitingParts:
-        return 'انتظار';
+        return l10n.receiptStatusWaitingPartsShort;
       case ReceiptStatus.ready:
-        return 'جاهز';
+        return l10n.receiptStatusReadyShort;
       case ReceiptStatus.delivered:
-        return 'تسليم';
+        return l10n.receiptStatusDeliveredShort;
       case ReceiptStatus.rejected:
-        return 'مرفوض';
+        return l10n.receiptStatusRejectedShort;
     }
   }
 }

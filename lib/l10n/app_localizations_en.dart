@@ -451,4 +451,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get receiptStatusRejected => 'Rejected';
+
+  @override
+  String get reportsReceiptsByStatus => 'Receipts by Status';
+
+  @override
+  String get receiptStatusReceivedShort => 'Received';
+
+  @override
+  String get receiptStatusInProgressShort => 'Repair';
+
+  @override
+  String get receiptStatusWaitingPartsShort => 'Waiting';
+
+  @override
+  String get receiptStatusReadyShort => 'Ready';
+
+  @override
+  String get receiptStatusDeliveredShort => 'Delivered';
+
+  @override
+  String get receiptStatusRejectedShort => 'Rejected';
 }

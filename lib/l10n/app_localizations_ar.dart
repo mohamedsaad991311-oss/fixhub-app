@@ -450,4 +450,25 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get receiptStatusRejected => 'مرفوض';
+
+  @override
+  String get reportsReceiptsByStatus => 'الإيصالات حسب الحالة';
+
+  @override
+  String get receiptStatusReceivedShort => 'استلام';
+
+  @override
+  String get receiptStatusInProgressShort => 'إصلاح';
+
+  @override
+  String get receiptStatusWaitingPartsShort => 'انتظار';
+
+  @override
+  String get receiptStatusReadyShort => 'جاهز';
+
+  @override
+  String get receiptStatusDeliveredShort => 'تسليم';
+
+  @override
+  String get receiptStatusRejectedShort => 'مرفوض';
 }

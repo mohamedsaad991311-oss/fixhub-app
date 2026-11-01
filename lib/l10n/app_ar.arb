@@ -143,5 +143,12 @@
   "receiptStatusWaitingParts": "بانتظار قطع",
   "receiptStatusReady": "جاهز للتسليم",
   "receiptStatusDelivered": "تم التسليم",
-  "receiptStatusRejected": "مرفوض"
+    "receiptStatusRejected": "مرفوض",
+  "reportsReceiptsByStatus": "الإيصالات حسب الحالة",
+  "receiptStatusReceivedShort": "استلام",
+  "receiptStatusInProgressShort": "إصلاح",
+  "receiptStatusWaitingPartsShort": "انتظار",
+  "receiptStatusReadyShort": "جاهز",
+  "receiptStatusDeliveredShort": "تسليم",
+  "receiptStatusRejectedShort": "مرفوض"
 }

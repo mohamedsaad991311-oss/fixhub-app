@@ -961,6 +961,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rejected'**
   String get receiptStatusRejected;
+
+  /// No description provided for @reportsReceiptsByStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipts by Status'**
+  String get reportsReceiptsByStatus;
+
+  /// No description provided for @receiptStatusReceivedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get receiptStatusReceivedShort;
+
+  /// No description provided for @receiptStatusInProgressShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair'**
+  String get receiptStatusInProgressShort;
+
+  /// No description provided for @receiptStatusWaitingPartsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get receiptStatusWaitingPartsShort;
+
+  /// No description provided for @receiptStatusReadyShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get receiptStatusReadyShort;
+
+  /// No description provided for @receiptStatusDeliveredShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get receiptStatusDeliveredShort;
+
+  /// No description provided for @receiptStatusRejectedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get receiptStatusRejectedShort;
 }
 
 class _AppLocalizationsDelegate

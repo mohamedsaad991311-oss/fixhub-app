@@ -143,5 +143,12 @@
   "receiptStatusWaitingParts": "Waiting for Parts",
   "receiptStatusReady": "Ready",
   "receiptStatusDelivered": "Delivered",
-  "receiptStatusRejected": "Rejected"
+    "receiptStatusRejected": "Rejected",
+  "reportsReceiptsByStatus": "Receipts by Status",
+  "receiptStatusReceivedShort": "Received",
+  "receiptStatusInProgressShort": "Repair",
+  "receiptStatusWaitingPartsShort": "Waiting",
+  "receiptStatusReadyShort": "Ready",
+  "receiptStatusDeliveredShort": "Delivered",
+  "receiptStatusRejectedShort": "Rejected"
 }
