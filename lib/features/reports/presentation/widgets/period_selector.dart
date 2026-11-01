@@ -4,23 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/l10n/l10n_ext.dart';
 import '../providers/reports_filter_provider.dart';
 import '../providers/reports_provider.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// PeriodSelector — اختيار فترة التقرير
 /// ═══════════════════════════════════════════════════════════════
-///
-/// خيارات:
-/// - اليوم / أسبوع / شهر / سنة / مخصص
-///
-/// عند اختيار "مخصص" → يفتح DateRangePicker
-///
 class PeriodSelector extends ConsumerWidget {
   const PeriodSelector({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final filterState = ref.watch(reportsFilterProvider);
     final scheme = Theme.of(context).colorScheme;
     final isNarrow = MediaQuery.sizeOf(context).width < 600;
@@ -43,7 +39,7 @@ class PeriodSelector extends ConsumerWidget {
               ),
               const SizedBox(width: AppSizes.spaceXs),
               Text(
-                'الفترة',
+                l10n.selectPeriod,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -54,7 +50,7 @@ class PeriodSelector extends ConsumerWidget {
               // ──── Current label ────
               Expanded(
                 child: Text(
-                  filterState.label(),
+                  filterState.label(l10n),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
@@ -93,39 +89,41 @@ class PeriodSelector extends ConsumerWidget {
     WidgetRef ref,
     ReportsFilterState filterState,
   ) {
+    final l10n = context.l10n;
+
     return SegmentedButton<ReportsPeriod>(
-      segments: const [
+      segments: [
         ButtonSegment(
           value: ReportsPeriod.today,
-          label: Text('اليوم'),
-          icon: Icon(Icons.today, size: AppSizes.iconXs),
+          label: Text(l10n.today),
+          icon: const Icon(Icons.today, size: AppSizes.iconXs),
         ),
         ButtonSegment(
           value: ReportsPeriod.week,
-          label: Text('أسبوع'),
-          icon: Icon(Icons.view_week, size: AppSizes.iconXs),
+          label: Text(l10n.last7Days),
+          icon: const Icon(Icons.view_week, size: AppSizes.iconXs),
         ),
         ButtonSegment(
           value: ReportsPeriod.month,
-          label: Text('شهر'),
-          icon: Icon(Icons.calendar_view_month, size: AppSizes.iconXs),
+          label: Text(l10n.thisMonth),
+          icon: const Icon(Icons.calendar_view_month, size: AppSizes.iconXs),
         ),
         ButtonSegment(
           value: ReportsPeriod.year,
-          label: Text('سنة'),
-          icon: Icon(Icons.calendar_today, size: AppSizes.iconXs),
+          label: Text(l10n.thisYear),
+          icon: const Icon(Icons.calendar_today, size: AppSizes.iconXs),
         ),
         ButtonSegment(
           value: ReportsPeriod.custom,
-          label: Text('مخصص'),
-          icon: Icon(Icons.date_range, size: AppSizes.iconXs),
+          label: Text(l10n.custom),
+          icon: const Icon(Icons.date_range, size: AppSizes.iconXs),
         ),
       ],
       selected: {filterState.period},
       onSelectionChanged: (selection) =>
           _onPeriodSelected(context, ref, selection.first),
       showSelectedIcon: false,
-      style: ButtonStyle(
+      style: const ButtonStyle(
         visualDensity: VisualDensity.compact,
         textStyle: WidgetStatePropertyAll(
           TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -143,6 +141,7 @@ class PeriodSelector extends ConsumerWidget {
     WidgetRef ref,
     ReportsFilterState filterState,
   ) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -174,7 +173,7 @@ class PeriodSelector extends ConsumerWidget {
                     color: scheme.primary,
                   ),
                   const SizedBox(width: AppSizes.spaceSm),
-                  Text(_labelForPeriod(p)),
+                  Text(p.label(l10n)),
                 ],
               ),
             );
@@ -197,6 +196,7 @@ class PeriodSelector extends ConsumerWidget {
     WidgetRef ref,
     ReportsFilterState filterState,
   ) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -218,7 +218,7 @@ class PeriodSelector extends ConsumerWidget {
           const SizedBox(width: AppSizes.spaceSm),
           Expanded(
             child: Text(
-              'من ${_fmtDate(filterState.customFrom!)} إلى ${_fmtDate(filterState.customTo!)}',
+              '${l10n.fromDate} ${_fmtDate(filterState.customFrom!)} ${l10n.toDate} ${_fmtDate(filterState.customTo!)}',
               style: TextStyle(
                 fontSize: 12,
                 color: scheme.onPrimaryContainer,
@@ -285,6 +285,8 @@ class PeriodSelector extends ConsumerWidget {
     DateTime? initialTo,
   }) async {
     final now = DateTime.now();
+    final l10n = context.l10n;
+
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(now.year - 3),
@@ -295,7 +297,9 @@ class PeriodSelector extends ConsumerWidget {
               start: now.subtract(const Duration(days: 30)),
               end: now,
             ),
-      locale: const Locale('ar'),
+      locale: Localizations.localeOf(context), // ديناميكي
+      helpText: l10n.selectPeriod, // عنوان أعلى منتقي التاريخ
+      saveText: l10n.confirm,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -341,21 +345,6 @@ class PeriodSelector extends ConsumerWidget {
         return Icons.calendar_today;
       case ReportsPeriod.custom:
         return Icons.date_range;
-    }
-  }
-
-  String _labelForPeriod(ReportsPeriod p) {
-    switch (p) {
-      case ReportsPeriod.today:
-        return 'اليوم';
-      case ReportsPeriod.week:
-        return 'آخر 7 أيام';
-      case ReportsPeriod.month:
-        return 'هذا الشهر';
-      case ReportsPeriod.year:
-        return 'هذه السنة';
-      case ReportsPeriod.custom:
-        return 'فترة مخصصة';
     }
   }
 
