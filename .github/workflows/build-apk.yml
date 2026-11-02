@@ -44,38 +44,10 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      # 🔐 فك تشفير الـ keystore من GitHub Secret
-      - name: Decode Keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/upload-keystore.jks
-
-      # 🔐 إنشاء key.properties من GitHub Secrets
-      - name: Create key.properties
-        run: |
-          cat > android/key.properties <<EOF
-          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword=${{ secrets.KEY_PASSWORD }}
-          keyAlias=${{ secrets.KEY_ALIAS }}
-          storeFile=upload-keystore.jks
-          EOF
-
-      - name: Build APK Release
-        run: flutter build apk --release
-
-      - name: Build APK Debug (fallback)
-        if: failure()
+      - name: Build APK
         run: flutter build apk --debug
 
-      - name: Upload Release APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: fixhub-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
-
-      - name: Upload Debug APK (fallback)
-        if: failure()
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: fixhub-debug-apk
