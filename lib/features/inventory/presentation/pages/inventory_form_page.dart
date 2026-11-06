@@ -12,27 +12,21 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../shared/widgets/searchable_dropdown.dart';
 import '../../data/models/inventory_item.dart';
 import '../../data/models/inventory_variants.dart';
+import '../../data/models/supplier_simple.dart';
 import '../providers/inventory_form_provider.dart';
 import '../providers/inventory_list_provider.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// InventoryFormPage — إضافة/تعديل صنف
-/// ═══════════════════════════════════════════════════════════
 class InventoryFormPage extends ConsumerStatefulWidget {
   const InventoryFormPage({super.key, this.editingItem});
-
   final InventoryItem? editingItem;
-
   @override
   ConsumerState<InventoryFormPage> createState() => _InventoryFormPageState();
 }
 
 class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
   final _formKey = GlobalKey<FormState>();
-
   final _nameController = TextEditingController();
   final _nameArController = TextEditingController();
-  final _customCategoryController = TextEditingController(); // ✅ جديد
   final _skuController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -68,7 +62,6 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
   void dispose() {
     _nameController.dispose();
     _nameArController.dispose();
-    _customCategoryController.dispose();
     _skuController.dispose();
     _barcodeController.dispose();
     _descriptionController.dispose();
@@ -84,12 +77,11 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
     final s = ref.read(inventoryFormProvider);
     _nameController.text = s.name;
     _nameArController.text = s.nameAr ?? '';
-    _customCategoryController.text = s.customCategory ?? '';
     _skuController.text = s.sku ?? '';
     _barcodeController.text = s.barcode ?? '';
     _descriptionController.text = s.description ?? '';
     _quantityController.text = s.quantity > 0 ? s.quantity.toString() : '';
-    _minQtyController.text = s.minQuantity > 0 ? s.minQuantity.toString() : '';
+    _minQtyController.text = s.minQuantity > 0 ? s.minQuantity.toString() : '1';
     _costPriceController.text = s.costPrice > 0 ? s.costPrice.toString() : '';
     _sellingPriceController.text =
         s.sellingPrice > 0 ? s.sellingPrice.toString() : '';
@@ -118,10 +110,8 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
         backgroundColor: scheme.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
-        title: Text(
-          _isEditing ? 'تعديل الصنف' : 'صنف جديد',
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-        ),
+        title: Text(_isEditing ? 'تعديل الصنف' : 'صنف جديد',
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
@@ -169,14 +159,20 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
                 onChanged: (model) {
                   setState(() => _selectedModel = model);
                   if (model != null) {
-                    _nameController.text = model;
-                    ref.read(inventoryFormProvider.notifier).setName(model);
+                    // ✅ السطر ده هو اللي بيكتب اسم الماركة مع الموديل
+                    final fullName = '${_selectedBrand!.nameEn} $model';
+                    _nameController.text = fullName;
+                    ref.read(inventoryFormProvider.notifier).setName(fullName);
                   }
                 },
                 onManualInput: (value) {
                   setState(() => _selectedModel = value);
-                  _nameController.text = value;
-                  ref.read(inventoryFormProvider.notifier).setName(value);
+                  // ✅ السطر ده بيغطي حالة لو إنت كتبت الموديل بإيدك
+                  final fullName = _selectedBrand != null
+                      ? '${_selectedBrand!.nameEn} $value'
+                      : value;
+                  _nameController.text = fullName;
+                  ref.read(inventoryFormProvider.notifier).setName(fullName);
                 },
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'الاسم مطلوب';
@@ -201,24 +197,6 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
                 },
                 scheme: scheme,
               ),
-              // ✅ حقل إدخال الفئة المخصصة (يظهر بس لو اختار "أخرى")
-              if (_selectedCategory == InventoryCategory.other) ...[
-                const SizedBox(height: AppSizes.spaceSm),
-                _text(
-                  controller: _customCategoryController,
-                  label: 'اسم الفئة المخصصة *',
-                  hint: 'مثال: لمبة فلاش',
-                  onChanged: (v) => ref
-                      .read(inventoryFormProvider.notifier)
-                      .setCustomCategory(v.isEmpty ? null : v),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return 'اسم الفئة المخصصة مطلوب';
-                    }
-                    return null;
-                  },
-                ),
-              ],
               const SizedBox(height: AppSizes.spaceSm),
               _VariantPicker(
                 selected: _selectedVariant,
@@ -226,6 +204,42 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
                   setState(() => _selectedVariant = v);
                 },
                 scheme: scheme,
+              ),
+              const SizedBox(height: AppSizes.spaceSm),
+              // ✅ اختيار المورد (اختياري فعلاً)
+              Consumer(
+                builder: (context, ref, child) {
+                  final suppliersAsync = ref.watch(suppliersProvider);
+                  return suppliersAsync.when(
+                    loading: () => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: LinearProgressIndicator(),
+                    ),
+                    error: (err, stack) => Text('خطأ في تحميل الموردين: $err'),
+                    data: (suppliers) {
+                      return DropdownButtonFormField<String?>(
+                        decoration: _deco(scheme, label: 'المورد (اختياري)'),
+                        value: formState.supplierId,
+                        hint: const Text('بدون مورد'),
+                        items: [
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('بدون مورد'),
+                          ),
+                          ...suppliers.map((s) => DropdownMenuItem<String?>(
+                                value: s.id,
+                                child: Text(s.name),
+                              )),
+                        ],
+                        onChanged: (val) {
+                          ref
+                              .read(inventoryFormProvider.notifier)
+                              .setSupplierId(val);
+                        },
+                      );
+                    },
+                  );
+                },
               ),
               const SizedBox(height: AppSizes.spaceSm),
               Row(
@@ -279,9 +293,8 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
                           .read(inventoryFormProvider.notifier)
                           .setQuantity(int.tryParse(v) ?? 0),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
+                        if (v == null || v.trim().isEmpty)
                           return 'الكمية مطلوبة';
-                        }
                         final n = int.tryParse(v);
                         if (n == null || n < 0) return 'رقم غير صحيح';
                         return null;
@@ -293,10 +306,10 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
                     child: _number(
                       controller: _minQtyController,
                       label: 'الحد الأدنى',
-                      hint: 'مثال: 5',
+                      hint: '1', // ✅ 1
                       onChanged: (v) => ref
                           .read(inventoryFormProvider.notifier)
-                          .setMinQuantity(int.tryParse(v) ?? 0),
+                          .setMinQuantity(int.tryParse(v) ?? 1),
                     ),
                   ),
                 ],
@@ -325,9 +338,7 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
                           .read(inventoryFormProvider.notifier)
                           .setCostPrice(double.tryParse(v) ?? 0),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'مطلوب';
-                        }
+                        if (v == null || v.trim().isEmpty) return 'مطلوب';
                         final n = double.tryParse(v);
                         if (n == null || n < 0) return 'رقم غير صحيح';
                         return null;
@@ -338,20 +349,12 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
                   Expanded(
                     child: _number(
                       controller: _sellingPriceController,
-                      label: 'سعر البيع *',
+                      label: 'سعر البيع (اختياري)',
                       hint: '0',
                       decimal: true,
                       onChanged: (v) => ref
                           .read(inventoryFormProvider.notifier)
                           .setSellingPrice(double.tryParse(v) ?? 0),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'مطلوب';
-                        }
-                        final n = double.tryParse(v);
-                        if (n == null || n < 0) return 'رقم غير صحيح';
-                        return null;
-                      },
                     ),
                   ),
                 ],
@@ -370,10 +373,9 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
+                            strokeWidth: 2.5,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white)),
                       )
                     : const Icon(Icons.check),
                 label: Text(
@@ -381,15 +383,12 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
                       ? 'جاري الحفظ...'
                       : (_isEditing ? 'حفظ التعديلات' : 'إضافة الصنف'),
                   style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
+                      fontSize: 15, fontWeight: FontWeight.w700),
                 ),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(0, AppSizes.buttonHeightLg),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-                  ),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusLg)),
                 ),
               ),
               const SizedBox(height: AppSizes.spaceMd),
@@ -402,7 +401,6 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
 
   Future<void> _handleSave() async {
     FocusScope.of(context).unfocus();
-
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final notifier = ref.read(inventoryFormProvider.notifier);
@@ -412,7 +410,6 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
 
     if (result != null) {
       ref.read(inventoryListProvider.notifier).refresh();
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_isEditing ? 'تم تعديل الصنف' : 'تم إضافة الصنف'),
@@ -420,7 +417,6 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-
       context.pop();
     } else {
       final error = ref.read(inventoryFormProvider).errorMessage;
@@ -493,21 +489,17 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
       filled: true,
       fillColor: scheme.surfaceContainerLow,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        borderSide: BorderSide.none,
-      ),
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+          borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        borderSide: BorderSide(
-          color: scheme.outlineVariant.withValues(alpha: 0.5),
-        ),
+        borderSide:
+            BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        borderSide: BorderSide(
-          color: scheme.primary,
-          width: AppSizes.borderMedium,
-        ),
+        borderSide:
+            BorderSide(color: scheme.primary, width: AppSizes.borderMedium),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
@@ -515,18 +507,12 @@ class _InventoryFormPageState extends ConsumerState<InventoryFormPage> {
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        borderSide: BorderSide(
-          color: scheme.error,
-          width: AppSizes.borderMedium,
-        ),
+        borderSide:
+            BorderSide(color: scheme.error, width: AppSizes.borderMedium),
       ),
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════
-//  SECTION TITLE
-// ═══════════════════════════════════════════════════════════
 
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({required this.title, required this.scheme});
@@ -541,34 +527,22 @@ class _SectionTitle extends StatelessWidget {
           width: 4,
           height: 18,
           decoration: BoxDecoration(
-            color: scheme.primary,
-            borderRadius: BorderRadius.circular(2),
-          ),
+              color: scheme.primary, borderRadius: BorderRadius.circular(2)),
         ),
         const SizedBox(width: AppSizes.spaceSm),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: scheme.onSurface,
-          ),
-        ),
+        Text(title,
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface)),
       ],
     );
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  CATEGORY PICKER
-// ═══════════════════════════════════════════════════════════
-
 class _CategoryPicker extends StatelessWidget {
-  const _CategoryPicker({
-    required this.selected,
-    required this.onChanged,
-    required this.scheme,
-  });
+  const _CategoryPicker(
+      {required this.selected, required this.onChanged, required this.scheme});
   final InventoryCategory selected;
   final ValueChanged<InventoryCategory> onChanged;
   final ColorScheme scheme;
@@ -580,10 +554,8 @@ class _CategoryPicker extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: AppSizes.spaceSm),
-          child: Text(
-            'الفئة *',
-            style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-          ),
+          child: Text('الفئة *',
+              style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
         ),
         Wrap(
           spacing: 6,
@@ -594,10 +566,8 @@ class _CategoryPicker extends StatelessWidget {
               onTap: () => onChanged(c),
               borderRadius: BorderRadius.circular(AppSizes.radiusPill),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? scheme.primary.withValues(alpha: 0.15)
@@ -613,12 +583,11 @@ class _CategoryPicker extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      c.icon,
-                      size: 14,
-                      color:
-                          isSelected ? scheme.primary : scheme.onSurfaceVariant,
-                    ),
+                    Icon(c.icon,
+                        size: 14,
+                        color: isSelected
+                            ? scheme.primary
+                            : scheme.onSurfaceVariant),
                     const SizedBox(width: 4),
                     Text(
                       c.labelAr,
@@ -642,16 +611,9 @@ class _CategoryPicker extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  VARIANT PICKER
-// ═══════════════════════════════════════════════════════════
-
 class _VariantPicker extends StatelessWidget {
-  const _VariantPicker({
-    required this.selected,
-    required this.onChanged,
-    required this.scheme,
-  });
+  const _VariantPicker(
+      {required this.selected, required this.onChanged, required this.scheme});
   final InventoryVariant selected;
   final ValueChanged<InventoryVariant> onChanged;
   final ColorScheme scheme;
@@ -663,10 +625,8 @@ class _VariantPicker extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: AppSizes.spaceSm),
-          child: Text(
-            'النوع *',
-            style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-          ),
+          child: Text('النوع *',
+              style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
         ),
         Row(
           children: InventoryVariant.values.map((v) {
@@ -679,10 +639,8 @@ class _VariantPicker extends StatelessWidget {
                   onTap: () => onChanged(v),
                   borderRadius: BorderRadius.circular(AppSizes.radiusLg),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 10,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? color.withValues(alpha: 0.15)
@@ -720,25 +678,18 @@ class _VariantPicker extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  PROFIT PREVIEW
-// ═══════════════════════════════════════════════════════════
-
 class _ProfitPreview extends StatelessWidget {
-  const _ProfitPreview({
-    required this.costPrice,
-    required this.sellingPrice,
-    required this.scheme,
-  });
+  const _ProfitPreview(
+      {required this.costPrice,
+      required this.sellingPrice,
+      required this.scheme});
   final double costPrice;
   final double sellingPrice;
   final ColorScheme scheme;
 
   @override
   Widget build(BuildContext context) {
-    if (costPrice <= 0 || sellingPrice <= 0) {
-      return const SizedBox.shrink();
-    }
+    if (costPrice <= 0 || sellingPrice <= 0) return const SizedBox.shrink();
 
     final profit = sellingPrice - costPrice;
     final margin = sellingPrice > 0 ? (profit / sellingPrice) * 100 : 0.0;
@@ -772,13 +723,9 @@ class _ProfitPreview extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'الربح المتوقع للوحدة',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
+                Text('الربح المتوقع للوحدة',
+                    style: TextStyle(
+                        fontSize: 11, color: scheme.onSurfaceVariant)),
                 const SizedBox(height: 2),
                 Row(
                   children: [
@@ -795,9 +742,7 @@ class _ProfitPreview extends StatelessWidget {
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: scheme.onSurfaceVariant.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppSizes.radiusSm),
@@ -805,10 +750,9 @@ class _ProfitPreview extends StatelessWidget {
                       child: Text(
                         '${margin.toStringAsFixed(1)}%',
                         style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurfaceVariant,
-                        ),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: scheme.onSurfaceVariant),
                       ),
                     ),
                   ],

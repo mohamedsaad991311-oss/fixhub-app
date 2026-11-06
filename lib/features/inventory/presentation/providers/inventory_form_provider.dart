@@ -39,7 +39,7 @@ class InventoryFormState {
     this.variant = InventoryVariant.aftermarket,
     this.description,
     this.quantity = 0,
-    this.minQuantity = 5,
+    this.minQuantity = 1,
     this.costPrice = 0,
     this.sellingPrice = 0,
     this.supplierId,
@@ -102,9 +102,8 @@ class InventoryFormState {
       sku: clearSku ? null : (sku ?? this.sku),
       barcode: clearBarcode ? null : (barcode ?? this.barcode),
       category: category ?? this.category,
-      customCategory: clearCustomCategory
-          ? null
-          : (customCategory ?? this.customCategory),
+      customCategory:
+          clearCustomCategory ? null : (customCategory ?? this.customCategory),
       variant: variant ?? this.variant,
       description: clearDescription ? null : (description ?? this.description),
       quantity: quantity ?? this.quantity,
@@ -169,12 +168,13 @@ class InventoryFormNotifier extends StateNotifier<InventoryFormState> {
   }
 
   void setName(String v) => state = state.copyWith(name: v);
-  void setNameAr(String? v) =>
-      state = v == null ? state.copyWith(clearNameAr: true) : state.copyWith(nameAr: v);
-  void setSku(String? v) =>
-      state = v == null ? state.copyWith(clearSku: true) : state.copyWith(sku: v);
-  void setBarcode(String? v) => state =
-      v == null ? state.copyWith(clearBarcode: true) : state.copyWith(barcode: v);
+  void setNameAr(String? v) => state =
+      v == null ? state.copyWith(clearNameAr: true) : state.copyWith(nameAr: v);
+  void setSku(String? v) => state =
+      v == null ? state.copyWith(clearSku: true) : state.copyWith(sku: v);
+  void setBarcode(String? v) => state = v == null
+      ? state.copyWith(clearBarcode: true)
+      : state.copyWith(barcode: v);
   void setCategory(InventoryCategory c) => state = state.copyWith(category: c);
   void setCustomCategory(String? v) => state = v == null
       ? state.copyWith(clearCustomCategory: true)
@@ -190,10 +190,12 @@ class InventoryFormNotifier extends StateNotifier<InventoryFormState> {
   void setSupplierId(String? v) => state = v == null
       ? state.copyWith(clearSupplierId: true)
       : state.copyWith(supplierId: v);
-  void setLocation(String? v) => state =
-      v == null ? state.copyWith(clearLocation: true) : state.copyWith(location: v);
-  void setImageUrl(String? v) => state =
-      v == null ? state.copyWith(clearImageUrl: true) : state.copyWith(imageUrl: v);
+  void setLocation(String? v) => state = v == null
+      ? state.copyWith(clearLocation: true)
+      : state.copyWith(location: v);
+  void setImageUrl(String? v) => state = v == null
+      ? state.copyWith(clearImageUrl: true)
+      : state.copyWith(imageUrl: v);
 
   Future<InventoryItem?> save() async {
     if (!state.isValid) {
@@ -340,11 +342,11 @@ final inventoryFormProvider =
   return InventoryFormNotifier(ref);
 });
 
-final inventoryFormIsEditingProvider = Provider<bool>((ref) =>
-    ref.watch(inventoryFormProvider).isEditing);
+final inventoryFormIsEditingProvider =
+    Provider<bool>((ref) => ref.watch(inventoryFormProvider).isEditing);
 
-final inventoryFormSavingProvider = Provider<bool>((ref) =>
-    ref.watch(inventoryFormProvider).isSaving);
+final inventoryFormSavingProvider =
+    Provider<bool>((ref) => ref.watch(inventoryFormProvider).isSaving);
 
-final inventoryFormValidProvider = Provider<bool>((ref) =>
-    ref.watch(inventoryFormProvider).isValid);
+final inventoryFormValidProvider =
+    Provider<bool>((ref) => ref.watch(inventoryFormProvider).isValid);

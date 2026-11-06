@@ -12,9 +12,6 @@ import '../providers/inventory_list_provider.dart';
 import '../widgets/inventory_card.dart';
 import '../widgets/inventory_filters_bar.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// InventoryListPage — صفحة قائمة المخزون
-/// ═══════════════════════════════════════════════════════════
 class InventoryListPage extends ConsumerStatefulWidget {
   const InventoryListPage({super.key});
 
@@ -24,6 +21,7 @@ class InventoryListPage extends ConsumerStatefulWidget {
 
 class _InventoryListPageState extends ConsumerState<InventoryListPage> {
   final _searchController = TextEditingController();
+  InventoryViewMode _viewMode = InventoryViewMode.grid;
 
   @override
   void dispose() {
@@ -42,11 +40,13 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
         backgroundColor: scheme.surface,
         elevation: 0,
         scrolledUnderElevation: 1,
-        title: const Text(
-          'المخزون',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
+        title: const Text('المخزون',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         actions: [
+          _ViewModeToggle(
+            currentMode: _viewMode,
+            onChanged: (mode) => setState(() => _viewMode = mode),
+          ),
           IconButton(
             tooltip: 'تحديث',
             icon: const Icon(Icons.refresh),
@@ -56,10 +56,7 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
       ),
       body: Column(
         children: [
-          // ─── Stats Bar ───
           _StatsBar(stats: state.stats),
-
-          // ─── Filters ───
           InventoryFiltersBar(
             filter: state.filter,
             searchController: _searchController,
@@ -70,6 +67,16 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
             },
             onCategoryChanged: (c) {
               ref.read(inventoryListProvider.notifier).filterByCategory(c);
+            },
+            onSupplierChanged: (supplierId) {
+              // ✅ ربط فلتر الموردين
+              ref
+                  .read(inventoryListProvider.notifier)
+                  .filterBySupplier(supplierId);
+            },
+            onBrandChanged: (brandName) {
+              // ✅ ربط فلتر الماركة
+              ref.read(inventoryListProvider.notifier).filterByBrand(brandName);
             },
             onToggleLowStock: () {
               ref.read(inventoryListProvider.notifier).toggleLowStock();
@@ -83,8 +90,6 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
               setState(() {});
             },
           ),
-
-          // ─── Content ───
           Expanded(child: _buildContent(state)),
         ],
       ),
@@ -97,20 +102,19 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
   }
 
   Widget _buildContent(InventoryListState state) {
-    if (state.isLoading) {
+    if (state.isLoading)
       return const Center(child: CircularProgressIndicator());
-    }
-
     if (state.hasError) {
       return _ErrorState(
         message: state.errorMessage!,
         onRetry: () => ref.read(inventoryListProvider.notifier).load(),
       );
     }
-
     if (state.isEmpty) {
       return _EmptyState(
         hasFilters: state.filter.category != null ||
+            state.filter.supplierId != null ||
+            state.filter.brandName != null ||
             state.filter.onlyLowStock ||
             state.filter.onlyOutOfStock ||
             (state.filter.search != null && state.filter.search!.isNotEmpty),
@@ -123,29 +127,110 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
       );
     }
 
+    if (_viewMode == InventoryViewMode.table) {
+      return RefreshIndicator(
+        onRefresh: () => ref.read(inventoryListProvider.notifier).refresh(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.5),
+                  border: Border(
+                      bottom: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant)),
+                ),
+                child: const Row(
+                  children: [
+                    Expanded(
+                        flex: 3,
+                        child: Text('الصنف',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 12))),
+                    Expanded(
+                        flex: 2,
+                        child: Text('الفئة',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 12))),
+                    Expanded(
+                        flex: 2,
+                        child: Text('النوع',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 12))),
+                    Expanded(
+                        flex: 2,
+                        child: Text('التكلفة',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 12))),
+                    SizedBox(
+                        width: 50,
+                        child: Text('الكمية',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 12))),
+                  ],
+                ),
+              ),
+              ...state.items.map((item) => InventoryCard(
+                    item: item,
+                    viewMode: _viewMode,
+                    onTap: () =>
+                        context.push(RouteNames.inventoryDetailOf(item.id)),
+                    onLongPress: () => _showContextMenu(item),
+                  )),
+            ],
+          ),
+        ),
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: () => ref.read(inventoryListProvider.notifier).refresh(),
-      child: GridView.builder(
-        padding: const EdgeInsets.all(AppSizes.spaceMd),
-        physics: const AlwaysScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 380,
-          crossAxisSpacing: AppSizes.spaceSmMd,
-          mainAxisSpacing: AppSizes.spaceSmMd,
-          childAspectRatio: 1.4,
-        ),
-        itemCount: state.items.length,
-        itemBuilder: (context, index) {
-          final item = state.items[index];
-          return InventoryCard(
-            item: item,
-            onTap: () => context.push(
-              RouteNames.inventoryDetailOf(item.id),
+      child: _viewMode == InventoryViewMode.grid
+          ? GridView.builder(
+              padding: const EdgeInsets.all(AppSizes.spaceMd),
+              physics: const AlwaysScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 380,
+                crossAxisSpacing: AppSizes.spaceSmMd,
+                mainAxisSpacing: AppSizes.spaceSmMd,
+                childAspectRatio: 1.8,
+              ),
+              itemCount: state.items.length,
+              itemBuilder: (context, index) {
+                final item = state.items[index];
+                return InventoryCard(
+                  item: item,
+                  viewMode: _viewMode,
+                  onTap: () =>
+                      context.push(RouteNames.inventoryDetailOf(item.id)),
+                  onLongPress: () => _showContextMenu(item),
+                );
+              },
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.all(AppSizes.spaceMd),
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: state.items.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: AppSizes.spaceSm),
+              itemBuilder: (context, index) {
+                final item = state.items[index];
+                return InventoryCard(
+                  item: item,
+                  viewMode: _viewMode,
+                  onTap: () =>
+                      context.push(RouteNames.inventoryDetailOf(item.id)),
+                  onLongPress: () => _showContextMenu(item),
+                );
+              },
             ),
-            onLongPress: () => _showContextMenu(item),
-          );
-        },
-      ),
     );
   }
 
@@ -194,14 +279,11 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('حذف الصنف؟'),
-        content: Text(
-          'هل أنت متأكد من حذف "${item.displayName()}"؟',
-        ),
+        content: Text('هل أنت متأكد من حذف "${item.displayName()}"؟'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
-          ),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('إلغاء')),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: scheme.error),
             onPressed: () => Navigator.pop(ctx, true),
@@ -212,11 +294,8 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
     );
 
     if (confirmed != true || !mounted) return;
-
     final ok = await ref.read(inventoryListProvider.notifier).delete(item.id);
-
     if (!mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(ok ? 'تم الحذف' : 'فشل الحذف'),
@@ -227,68 +306,115 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  STATS BAR
-// ═══════════════════════════════════════════════════════════
+class _ViewModeToggle extends StatelessWidget {
+  const _ViewModeToggle({required this.currentMode, required this.onChanged});
+  final InventoryViewMode currentMode;
+  final ValueChanged<InventoryViewMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return PopupMenuButton<InventoryViewMode>(
+      icon: Icon(
+        currentMode == InventoryViewMode.grid
+            ? Icons.grid_view
+            : (currentMode == InventoryViewMode.list
+                ? Icons.view_list
+                : Icons.table_chart),
+      ),
+      tooltip: 'تغيير شكل العرض',
+      onSelected: onChanged,
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: InventoryViewMode.grid,
+          child: Row(
+            children: [
+              Icon(Icons.grid_view,
+                  color: currentMode == InventoryViewMode.grid
+                      ? scheme.primary
+                      : null),
+              const SizedBox(width: 12),
+              const Text('عرض كارت'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: InventoryViewMode.list,
+          child: Row(
+            children: [
+              Icon(Icons.view_list,
+                  color: currentMode == InventoryViewMode.list
+                      ? scheme.primary
+                      : null),
+              const SizedBox(width: 12),
+              const Text('عرض قائمة'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: InventoryViewMode.table,
+          child: Row(
+            children: [
+              Icon(Icons.table_chart,
+                  color: currentMode == InventoryViewMode.table
+                      ? scheme.primary
+                      : null),
+              const SizedBox(width: 12),
+              const Text('عرض جدول'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _StatsBar extends StatelessWidget {
   const _StatsBar({required this.stats});
-
   final dynamic stats;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spaceMd,
-        vertical: AppSizes.spaceSmMd,
-      ),
+          horizontal: AppSizes.spaceMd, vertical: AppSizes.spaceSmMd),
       decoration: BoxDecoration(
-        color:
-            isDark ? scheme.surfaceContainerHigh : scheme.surfaceContainerLow,
-      ),
+          color: isDark
+              ? scheme.surfaceContainerHigh
+              : scheme.surfaceContainerLow),
       child: Row(
         children: [
           Expanded(
-            child: _StatItem(
-              icon: Icons.inventory_2_outlined,
-              label: 'أصناف',
-              value: '${stats.totalItems}',
-              color: scheme.primary,
-              scheme: scheme,
-            ),
-          ),
+              child: _StatItem(
+                  icon: Icons.inventory_2_outlined,
+                  label: 'أصناف',
+                  value: '${stats.totalItems}',
+                  color: scheme.primary,
+                  scheme: scheme)),
           Container(
-            width: 1,
-            height: 32,
-            color: scheme.outlineVariant.withValues(alpha: 0.5),
-          ),
+              width: 1,
+              height: 32,
+              color: scheme.outlineVariant.withValues(alpha: 0.5)),
           Expanded(
-            child: _StatItem(
-              icon: Icons.warehouse_outlined,
-              label: 'الكمية',
-              value: '${stats.totalQuantity}',
-              color: const Color(0xFF3B82F6),
-              scheme: scheme,
-            ),
-          ),
+              child: _StatItem(
+                  icon: Icons.warehouse_outlined,
+                  label: 'الكمية',
+                  value: '${stats.totalQuantity}',
+                  color: const Color(0xFF3B82F6),
+                  scheme: scheme)),
           Container(
-            width: 1,
-            height: 32,
-            color: scheme.outlineVariant.withValues(alpha: 0.5),
-          ),
+              width: 1,
+              height: 32,
+              color: scheme.outlineVariant.withValues(alpha: 0.5)),
           Expanded(
-            child: _StatItem(
-              icon: Icons.attach_money,
-              label: 'قيمة',
-              value: CurrencyFormatter.formatCompact(stats.totalStockValue),
-              color: const Color(0xFF10B981),
-              scheme: scheme,
-            ),
-          ),
+              child: _StatItem(
+                  icon: Icons.attach_money,
+                  label: 'قيمة',
+                  value: CurrencyFormatter.formatCompact(stats.totalStockValue),
+                  color: const Color(0xFF10B981),
+                  scheme: scheme)),
         ],
       ),
     );
@@ -296,14 +422,12 @@ class _StatsBar extends StatelessWidget {
 }
 
 class _StatItem extends StatelessWidget {
-  const _StatItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.scheme,
-  });
-
+  const _StatItem(
+      {required this.icon,
+      required this.label,
+      required this.value,
+      required this.color,
+      required this.scheme});
   final IconData icon;
   final String label;
   final String value;
@@ -317,37 +441,21 @@ class _StatItem extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: color),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
+        Text(value,
+            style: TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w800, color: color)),
+        Text(label,
+            style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant)),
       ],
     );
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  EMPTY STATE (قابل للـ Scroll عشان نمنع Overflow)
-// ═══════════════════════════════════════════════════════════
-
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({
-    required this.hasFilters,
-    required this.onClearFilters,
-    required this.onAddNew,
-  });
-
+  const _EmptyState(
+      {required this.hasFilters,
+      required this.onClearFilters,
+      required this.onAddNew});
   final bool hasFilters;
   final VoidCallback onClearFilters;
   final VoidCallback onAddNew;
@@ -355,7 +463,6 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
@@ -363,55 +470,47 @@ class _EmptyState extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.spaceLg),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: constraints.maxHeight - AppSizes.spaceLg * 2,
-            ),
+                minHeight: constraints.maxHeight - AppSizes.spaceLg * 2),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  hasFilters
-                      ? Icons.filter_list_off
-                      : Icons.inventory_2_outlined,
-                  size: 72,
-                  color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
-                ),
+                    hasFilters
+                        ? Icons.filter_list_off
+                        : Icons.inventory_2_outlined,
+                    size: 72,
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.4)),
                 const SizedBox(height: AppSizes.spaceMd),
                 Text(
-                  hasFilters
-                      ? 'مفيش نتائج للفلتر الحالي'
-                      : 'مفيش أصناف في المخزون',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+                    hasFilters
+                        ? 'مفيش نتائج للفلتر الحالي'
+                        : 'مفيش أصناف في المخزون',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurface),
+                    textAlign: TextAlign.center),
                 const SizedBox(height: AppSizes.spaceSm),
                 Text(
-                  hasFilters
-                      ? 'جرب تغير الفلتر أو امسحه'
-                      : 'ابدأ بإضافة أول صنف',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: scheme.onSurfaceVariant,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+                    hasFilters
+                        ? 'جرب تغير الفلتر أو امسحه'
+                        : 'ابدأ بإضافة أول صنف',
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: scheme.onSurfaceVariant,
+                        height: 1.5),
+                    textAlign: TextAlign.center),
                 const SizedBox(height: AppSizes.spaceLg),
                 if (hasFilters)
                   OutlinedButton.icon(
-                    onPressed: onClearFilters,
-                    icon: const Icon(Icons.clear_all),
-                    label: const Text('مسح الفلاتر'),
-                  )
+                      onPressed: onClearFilters,
+                      icon: const Icon(Icons.clear_all),
+                      label: const Text('مسح الفلاتر'))
                 else
                   FilledButton.icon(
-                    onPressed: onAddNew,
-                    icon: const Icon(Icons.add),
-                    label: const Text('صنف جديد'),
-                  ),
+                      onPressed: onAddNew,
+                      icon: const Icon(Icons.add),
+                      label: const Text('صنف جديد')),
               ],
             ),
           ),
@@ -421,20 +520,14 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  ERROR STATE
-// ═══════════════════════════════════════════════════════════
-
 class _ErrorState extends StatelessWidget {
   const _ErrorState({required this.message, required this.onRetry});
-
   final String message;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
@@ -442,24 +535,20 @@ class _ErrorState extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.spaceLg),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: constraints.maxHeight - AppSizes.spaceLg * 2,
-            ),
+                minHeight: constraints.maxHeight - AppSizes.spaceLg * 2),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.error_outline, size: 64, color: scheme.error),
                 const SizedBox(height: AppSizes.spaceMd),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: scheme.onSurface),
-                ),
+                Text(message,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: scheme.onSurface)),
                 const SizedBox(height: AppSizes.spaceLg),
                 FilledButton.icon(
-                  onPressed: onRetry,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('حاول تاني'),
-                ),
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('حاول تاني')),
               ],
             ),
           ),

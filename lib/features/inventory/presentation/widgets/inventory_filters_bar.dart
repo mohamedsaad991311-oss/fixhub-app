@@ -1,15 +1,15 @@
 // lib/features/inventory/presentation/widgets/inventory_filters_bar.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/device_brands.dart';
 import '../../../../core/services/inventory_service.dart';
 import '../../data/models/inventory_item.dart';
+import '../../data/models/supplier_simple.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// InventoryFiltersBar — شريط فلاتر المخزون
-/// ═══════════════════════════════════════════════════════════
-class InventoryFiltersBar extends StatelessWidget {
+class InventoryFiltersBar extends ConsumerWidget {
   const InventoryFiltersBar({
     super.key,
     required this.filter,
@@ -20,6 +20,8 @@ class InventoryFiltersBar extends StatelessWidget {
     required this.onToggleLowStock,
     required this.onToggleOutOfStock,
     required this.onClearFilters,
+    required this.onSupplierChanged,
+    required this.onBrandChanged,
   });
 
   final InventoryFilter filter;
@@ -30,15 +32,19 @@ class InventoryFiltersBar extends StatelessWidget {
   final VoidCallback onToggleLowStock;
   final VoidCallback onToggleOutOfStock;
   final VoidCallback onClearFilters;
+  final ValueChanged<String?> onSupplierChanged;
+  final ValueChanged<String?> onBrandChanged;
 
   bool get _hasAnyFilter =>
       filter.category != null ||
+      filter.supplierId != null ||
+      filter.brandName != null ||
       filter.onlyLowStock ||
       filter.onlyOutOfStock ||
       (filter.search != null && filter.search!.isNotEmpty);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -65,11 +71,8 @@ class InventoryFiltersBar extends StatelessWidget {
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               hintText: 'ابحث بالاسم، SKU، أو الباركود',
-              prefixIcon: Icon(
-                Icons.search,
-                size: 20,
-                color: scheme.onSurfaceVariant,
-              ),
+              prefixIcon:
+                  Icon(Icons.search, size: 20, color: scheme.onSurfaceVariant),
               suffixIcon: searchController.text.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear, size: 18),
@@ -94,22 +97,19 @@ class InventoryFiltersBar extends StatelessWidget {
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSizes.radiusLg),
                 borderSide: BorderSide(
-                  color: scheme.outlineVariant.withValues(alpha: 0.5),
-                ),
+                    color: scheme.outlineVariant.withValues(alpha: 0.5)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSizes.radiusLg),
                 borderSide: BorderSide(
-                  color: scheme.primary,
-                  width: AppSizes.borderMedium,
-                ),
+                    color: scheme.primary, width: AppSizes.borderMedium),
               ),
               isDense: true,
             ),
           ),
           const SizedBox(height: AppSizes.spaceSm),
 
-          // ─── Category chips (Wrap) ───
+          // ─── Category chips ───
           Wrap(
             spacing: 6,
             runSpacing: 6,
@@ -133,7 +133,6 @@ class InventoryFiltersBar extends StatelessWidget {
           // ─── Toggles + Clear ───
           Row(
             children: [
-              // منخفض
               _FilterToggle(
                 label: 'منخفض (${stats.lowStockCount})',
                 icon: Icons.warning_amber_outlined,
@@ -143,8 +142,6 @@ class InventoryFiltersBar extends StatelessWidget {
                 color: const Color(0xFFF59E0B),
               ),
               const SizedBox(width: 6),
-
-              // خلص
               _FilterToggle(
                 label: 'خلص (${stats.outOfStockCount})',
                 icon: Icons.remove_circle_outline,
@@ -153,18 +150,12 @@ class InventoryFiltersBar extends StatelessWidget {
                 scheme: scheme,
                 color: const Color(0xFFEF4444),
               ),
-
               const Spacer(),
-
-              // مسح
               if (_hasAnyFilter)
                 TextButton.icon(
                   onPressed: onClearFilters,
                   icon: const Icon(Icons.clear_all, size: 16),
-                  label: const Text(
-                    'مسح',
-                    style: TextStyle(fontSize: 12),
-                  ),
+                  label: const Text('مسح', style: TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     minimumSize: const Size(0, 28),
@@ -173,6 +164,77 @@ class InventoryFiltersBar extends StatelessWidget {
                 ),
             ],
           ),
+
+          const SizedBox(height: AppSizes.spaceSm),
+
+          // ─── فلتر الموردين ───
+          Consumer(
+            builder: (context, ref, child) {
+              final suppliersAsync = ref.watch(suppliersProvider);
+              return suppliersAsync.when(
+                loading: () => const SizedBox(height: 40),
+                error: (err, _) => const SizedBox.shrink(),
+                data: (suppliers) => DropdownButtonFormField<String?>(
+                  decoration: InputDecoration(
+                    isDense: true,
+                    prefixIcon: const Icon(Icons.store_outlined, size: 18),
+                    hintText: 'كل الموردين',
+                    filled: true,
+                    fillColor: isDark
+                        ? scheme.surfaceContainerHigh
+                        : scheme.surfaceContainerLow,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  value: filter.supplierId,
+                  items: [
+                    const DropdownMenuItem<String?>(
+                        value: null, child: Text('كل الموردين')),
+                    ...suppliers.map((s) => DropdownMenuItem<String?>(
+                          value: s.id,
+                          child: Text(s.name),
+                        )),
+                  ],
+                  onChanged: onSupplierChanged,
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: AppSizes.spaceSm),
+
+          // ─── فلتر الماركة ───
+          DropdownButtonFormField<String?>(
+            decoration: InputDecoration(
+              isDense: true,
+              prefixIcon: const Icon(Icons.phone_iphone, size: 18),
+              hintText: 'كل الماركات',
+              filled: true,
+              fillColor: isDark
+                  ? scheme.surfaceContainerHigh
+                  : scheme.surfaceContainerLow,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            value: filter.brandName,
+            items: [
+              const DropdownMenuItem<String?>(
+                  value: null, child: Text('كل الماركات')),
+              ...deviceBrands.map((b) => DropdownMenuItem<String?>(
+                    value: b.nameEn,
+                    child: Text(b.nameAr),
+                  )),
+            ],
+            onChanged: onBrandChanged,
+          ),
         ],
       ),
     );
@@ -180,16 +242,12 @@ class InventoryFiltersBar extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  CHIPS
+//  CHIPS (الكلاسات المساعدة اللي كانت ناقصة)
 // ═══════════════════════════════════════════════════════════
 
 class _AllChip extends StatelessWidget {
-  const _AllChip({
-    required this.isSelected,
-    required this.onTap,
-    required this.scheme,
-  });
-
+  const _AllChip(
+      {required this.isSelected, required this.onTap, required this.scheme});
   final bool isSelected;
   final VoidCallback onTap;
   final ColorScheme scheme;
@@ -215,7 +273,6 @@ class _CategoryChip extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
   });
-
   final InventoryCategory category;
   final int count;
   final bool isSelected;
@@ -224,7 +281,6 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-
     return _BaseChip(
       icon: category.icon,
       label: category.labelAr,
@@ -280,11 +336,9 @@ class _BaseChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 14,
-                color: isSelected ? color : scheme.onSurfaceVariant,
-              ),
+              Icon(icon,
+                  size: 14,
+                  color: isSelected ? color : scheme.onSurfaceVariant),
               const SizedBox(width: 4),
               Text(
                 label,
@@ -297,10 +351,8 @@ class _BaseChip extends StatelessWidget {
               if (count != null && count! > 0) ...[
                 const SizedBox(width: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 1,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? color
@@ -325,10 +377,6 @@ class _BaseChip extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════
-//  FILTER TOGGLE
-// ═══════════════════════════════════════════════════════════
 
 class _FilterToggle extends StatelessWidget {
   const _FilterToggle({
@@ -371,11 +419,8 @@ class _FilterToggle extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 14,
-                color: isActive ? color : scheme.onSurfaceVariant,
-              ),
+              Icon(icon,
+                  size: 14, color: isActive ? color : scheme.onSurfaceVariant),
               const SizedBox(width: 4),
               Text(
                 label,

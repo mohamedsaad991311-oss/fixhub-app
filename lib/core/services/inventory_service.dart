@@ -14,6 +14,7 @@ class InventoryFilter {
   const InventoryFilter({
     this.category,
     this.supplierId,
+    this.brandName, // ✅ جديد
     this.search,
     this.onlyLowStock = false,
     this.onlyOutOfStock = false,
@@ -26,7 +27,8 @@ class InventoryFilter {
 
   final InventoryCategory? category;
   final String? supplierId;
-  final String? search; // يبحث في name + nameAr + sku + barcode
+  final String? brandName; // ✅ جديد
+  final String? search;
   final bool onlyLowStock;
   final bool onlyOutOfStock;
   final bool onlyActive;
@@ -40,6 +42,8 @@ class InventoryFilter {
     bool clearCategory = false,
     String? supplierId,
     bool clearSupplier = false,
+    String? brandName, // ✅ جديد
+    bool clearBrand = false, // ✅ جديد
     String? search,
     bool? onlyLowStock,
     bool? onlyOutOfStock,
@@ -52,6 +56,7 @@ class InventoryFilter {
     return InventoryFilter(
       category: clearCategory ? null : (category ?? this.category),
       supplierId: clearSupplier ? null : (supplierId ?? this.supplierId),
+      brandName: clearBrand ? null : (brandName ?? this.brandName), // ✅ جديد
       search: search ?? this.search,
       onlyLowStock: onlyLowStock ?? this.onlyLowStock,
       onlyOutOfStock: onlyOutOfStock ?? this.onlyOutOfStock,
@@ -120,29 +125,30 @@ class InventoryService {
   //  READ
   // ─────────────────────────────────────────────────────────────
 
-  /// قائمة الأصناف مع فلترة كاملة
   Future<List<InventoryItem>> list([
     InventoryFilter filter = const InventoryFilter(),
   ]) async {
     try {
       var query = _client.from(_table).select();
 
-      // active
       if (filter.onlyActive) {
         query = query.eq('is_active', true);
       }
 
-      // category
       if (filter.category != null) {
         query = query.eq('category', filter.category!.name);
       }
 
-      // supplier
       if (filter.supplierId != null) {
         query = query.eq('supplier_id', filter.supplierId!);
       }
 
-      // search
+      // ✅ فلتر الماركة (يدور في الاسم الإنجليزي أو العربي)
+      if (filter.brandName != null && filter.brandName!.isNotEmpty) {
+        final brand = filter.brandName!;
+        query = query.or('name.ilike.%$brand%,name_ar.ilike.%$brand%');
+      }
+
       if (filter.search != null && filter.search!.trim().isNotEmpty) {
         final s = filter.search!.trim();
         query = query.or(
@@ -153,14 +159,12 @@ class InventoryService {
         );
       }
 
-      // low stock / out of stock
       if (filter.onlyLowStock) {
-        // Supabase مايدعمش مقارنة عمودين مباشرة
+        // client-side
       } else if (filter.onlyOutOfStock) {
         query = query.lte('quantity', 0);
       }
 
-      // sort + pagination
       final column = _sortColumn(filter.sortBy);
       final data = await query
           .order(column, ascending: filter.sortAscending)
@@ -170,7 +174,6 @@ class InventoryService {
           .map((e) => InventoryItem.fromJson(Map<String, dynamic>.from(e)))
           .toList();
 
-      // client-side filter لـ low stock
       if (filter.onlyLowStock) {
         items = items.where((i) => i.isLowStock).toList();
       }
@@ -185,7 +188,6 @@ class InventoryService {
     }
   }
 
-  /// جلب صنف واحد بالـ id
   Future<InventoryItem?> getById(String id) async {
     try {
       final data =
@@ -193,15 +195,11 @@ class InventoryService {
       if (data == null) return null;
       return InventoryItem.fromJson(Map<String, dynamic>.from(data));
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('InventoryService.getById error: $e');
-      }
+      if (kDebugMode) print('InventoryService.getById error: $e');
       return null;
     }
   }
 
-  /// البحث بالـ barcode (للـ Scanner)
   Future<InventoryItem?> getByBarcode(String barcode) async {
     try {
       final data = await _client
@@ -216,7 +214,6 @@ class InventoryService {
     }
   }
 
-  /// البحث بالـ SKU
   Future<InventoryItem?> getBySku(String sku) async {
     try {
       final data =
@@ -228,7 +225,6 @@ class InventoryService {
     }
   }
 
-  /// جلب الأصناف المنخفضة فقط
   Future<List<InventoryItem>> getLowStockItems({int limit = 50}) async {
     try {
       final data = await _client
@@ -249,7 +245,6 @@ class InventoryService {
     }
   }
 
-  /// الأصناف اللي خلصت
   Future<List<InventoryItem>> getOutOfStockItems({int limit = 50}) async {
     try {
       final data = await _client
@@ -271,7 +266,6 @@ class InventoryService {
   //  CREATE / UPDATE / DELETE
   // ─────────────────────────────────────────────────────────────
 
-  /// إنشاء صنف جديد
   Future<InventoryItem?> create(InventoryItem item) async {
     try {
       final tenantId = await _authService.getUserTenantId();
@@ -282,14 +276,11 @@ class InventoryService {
         ..['tenant_id'] = tenantId
         ..['created_by'] = userId;
 
-      // 🔥 إصلاح باج 4: لو الأعمدة مش موجودة في الداتابيز، منبعتهاش عشان متعملش Error
-      // (لو أنت ضفت الأعمدة في Supabase زي ما قلنا، الكومنت ده مش هيأثر)
       try {
         final inserted =
             await _client.from(_table).insert(payload).select().single();
         return InventoryItem.fromJson(Map<String, dynamic>.from(inserted));
       } catch (e) {
-        // لو الخطأ بسبب عمود ناقص (variant / custom_category)
         if (e.toString().contains('variant') ||
             e.toString().contains('custom_category')) {
           payload.remove('variant');
@@ -301,15 +292,11 @@ class InventoryService {
         rethrow;
       }
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('InventoryService.create error: $e');
-      }
+      if (kDebugMode) print('InventoryService.create error: $e');
       return null;
     }
   }
 
-  /// تحديث بيانات صنف (بدون تغيير الكمية)
   Future<InventoryItem?> update(InventoryItem item) async {
     try {
       final payload = item.toJson()
@@ -317,7 +304,7 @@ class InventoryService {
         ..remove('tenant_id')
         ..remove('created_at')
         ..remove('updated_at')
-        ..remove('quantity'); // الكمية تتغير فقط عبر stockIn/stockOut
+        ..remove('quantity');
 
       final updated = await _client
           .from(_table)
@@ -328,29 +315,21 @@ class InventoryService {
 
       return InventoryItem.fromJson(Map<String, dynamic>.from(updated));
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('InventoryService.update error: $e');
-      }
+      if (kDebugMode) print('InventoryService.update error: $e');
       return null;
     }
   }
 
-  /// حذف صنف
   Future<bool> delete(String id) async {
     try {
       await _client.from(_table).delete().eq('id', id);
       return true;
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('InventoryService.delete error: $e');
-      }
+      if (kDebugMode) print('InventoryService.delete error: $e');
       return false;
     }
   }
 
-  /// تفعيل/إلغاء تفعيل
   Future<bool> setActive(String id, {required bool isActive}) async {
     try {
       await _client.from(_table).update({'is_active': isActive}).eq('id', id);
@@ -364,7 +343,6 @@ class InventoryService {
   //  STOCK MOVEMENTS
   // ─────────────────────────────────────────────────────────────
 
-  /// إدخال كمية (شراء / مرتجع داخل / تسوية)
   Future<InventoryItem?> stockIn({
     required String inventoryId,
     required int quantity,
@@ -374,12 +352,9 @@ class InventoryService {
     String? referenceType,
     String? notes,
   }) async {
-    if (quantity <= 0) {
-      throw Exception('الكمية يجب أن تكون أكبر من صفر');
-    }
-    if (!type.isIncrease) {
+    if (quantity <= 0) throw Exception('الكمية يجب أن تكون أكبر من صفر');
+    if (!type.isIncrease)
       throw Exception('نوع الحركة (${type.labelAr}) لا يصلح للإدخال');
-    }
     return await _applyMovement(
       inventoryId: inventoryId,
       type: type,
@@ -391,7 +366,6 @@ class InventoryService {
     );
   }
 
-  /// إخراج كمية (بيع / استخدام / مرتجع خارج / تالف / مفقود)
   Future<InventoryItem?> stockOut({
     required String inventoryId,
     required int quantity,
@@ -400,23 +374,19 @@ class InventoryService {
     String? referenceType,
     String? notes,
   }) async {
-    if (quantity <= 0) {
-      throw Exception('الكمية يجب أن تكون أكبر من صفر');
-    }
-    if (!type.isDecrease) {
+    if (quantity <= 0) throw Exception('الكمية يجب أن تكون أكبر من صفر');
+    if (!type.isDecrease)
       throw Exception('نوع الحركة (${type.labelAr}) لا يصلح للإخراج');
-    }
     return await _applyMovement(
       inventoryId: inventoryId,
       type: type,
-      quantity: -quantity, // سالب
+      quantity: -quantity,
       referenceId: referenceId,
       referenceType: referenceType,
       notes: notes,
     );
   }
 
-  /// تسوية مباشرة للكمية (تعيين قيمة جديدة)
   Future<InventoryItem?> adjustStock({
     required String inventoryId,
     required int newQuantity,
@@ -436,21 +406,15 @@ class InventoryService {
         notes: notes ?? 'تسوية: ${current.quantity} → $newQuantity',
       );
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('adjustStock error: $e');
-      }
+      if (kDebugMode) print('adjustStock error: $e');
       rethrow;
     }
   }
 
-  /// تطبيق حركة (المحرّك الداخلي)
-  /// التعديل: 1. نسجل الحركة الأول (عشان لو فشلت متتغيرش الكمية)
-  ///          2. بنرمي الخطأ الحقيقي عشان يظهر في الواجهة
   Future<InventoryItem?> _applyMovement({
     required String inventoryId,
     required MovementType type,
-    required int quantity, // موجب = زيادة، سالب = نقص
+    required int quantity,
     double? unitCost,
     String? referenceId,
     String? referenceType,
@@ -458,22 +422,16 @@ class InventoryService {
   }) async {
     final tenantId = await _authService.getUserTenantId();
     final userId = _authService.currentUser?.id;
-    if (tenantId == null) {
+    if (tenantId == null)
       throw Exception('لا يوجد مستأجر (Tenant) مرتبط بالمستخدم');
-    }
 
-    // 1. اجلب العنصر الحالي
     final current = await getById(inventoryId);
-    if (current == null) {
-      throw Exception('الصنف غير موجود في قاعدة البيانات');
-    }
+    if (current == null) throw Exception('الصنف غير موجود في قاعدة البيانات');
 
     final newQuantity = current.quantity + quantity;
-    if (newQuantity < 0) {
+    if (newQuantity < 0)
       throw Exception('الكمية غير كافية (المتاح: ${current.quantity})');
-    }
 
-    // 2. سجّل الحركة أولاً (Atomic)
     try {
       await _client.from(_movementsTable).insert({
         'tenant_id': tenantId,
@@ -492,7 +450,6 @@ class InventoryService {
       throw Exception('فشل تسجيل حركة المخزون: $e');
     }
 
-    // 3. لو الحركة نجحت → حدّث الكمية
     try {
       final updated = await _client
           .from(_table)
@@ -507,7 +464,6 @@ class InventoryService {
     }
   }
 
-  /// جلب حركات صنف معيّن
   Future<List<InventoryMovement>> getMovements({
     String? inventoryId,
     MovementType? type,
@@ -518,18 +474,12 @@ class InventoryService {
     try {
       var query = _client.from(_movementsTable).select();
 
-      if (inventoryId != null) {
-        query = query.eq('inventory_id', inventoryId);
-      }
-      if (type != null) {
-        query = query.eq('movement_type', type.name);
-      }
-      if (fromDate != null) {
+      if (inventoryId != null) query = query.eq('inventory_id', inventoryId);
+      if (type != null) query = query.eq('movement_type', type.name);
+      if (fromDate != null)
         query = query.gte('created_at', fromDate.toIso8601String());
-      }
-      if (toDate != null) {
+      if (toDate != null)
         query = query.lte('created_at', toDate.toIso8601String());
-      }
 
       final data =
           await query.order('created_at', ascending: false).limit(limit);
@@ -538,10 +488,7 @@ class InventoryService {
           .map((e) => InventoryMovement.fromJson(Map<String, dynamic>.from(e)))
           .toList();
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('InventoryService.getMovements error: $e');
-      }
+      if (kDebugMode) print('InventoryService.getMovements error: $e');
       return const [];
     }
   }
@@ -550,7 +497,6 @@ class InventoryService {
   //  STATS
   // ─────────────────────────────────────────────────────────────
 
-  /// إحصائيات المخزون
   Future<InventoryStats> getStats() async {
     try {
       final data = await _client
@@ -568,7 +514,7 @@ class InventoryService {
 
       for (final r in rows) {
         final qty = _toInt(r['quantity']);
-        final minQty = _toInt(r['min_quantity'], fallback: 5);
+        final minQty = _toInt(r['min_quantity'], fallback: 1); // ✅ 1
         final cost = _toDouble(r['cost_price']);
         final cat = InventoryCategoryX.fromString(r['category'] as String?);
 
@@ -592,10 +538,7 @@ class InventoryService {
         byCategory: byCategory,
       );
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('InventoryService.getStats error: $e');
-      }
+      if (kDebugMode) print('InventoryService.getStats error: $e');
       return InventoryStats.empty;
     }
   }
@@ -604,7 +547,6 @@ class InventoryService {
   //  BULK OPERATIONS
   // ─────────────────────────────────────────────────────────────
 
-  /// استيراد مجموعة أصناف دفعة واحدة
   Future<int> bulkImport(List<InventoryItem> items) async {
     if (items.isEmpty) return 0;
     try {
@@ -622,10 +564,7 @@ class InventoryService {
 
       return (inserted as List).length;
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('InventoryService.bulkImport error: $e');
-      }
+      if (kDebugMode) print('InventoryService.bulkImport error: $e');
       return 0;
     }
   }
@@ -675,7 +614,6 @@ final inventoryServiceProvider = Provider<InventoryService>((ref) {
   return InventoryService(client: client, authService: authService);
 });
 
-/// Stream لمراقبة المخزون (auto-refresh كل 30 ثانية)
 final inventoryStreamProvider = StreamProvider.autoDispose
     .family<List<InventoryItem>, InventoryFilter>((ref, filter) async* {
   final service = ref.watch(inventoryServiceProvider);

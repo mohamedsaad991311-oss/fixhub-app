@@ -9,62 +9,112 @@ import 'inventory_variants.dart';
 
 /// فئة القطعة
 enum InventoryCategory {
-  screen, battery, chargingPort, camera, speaker, microphone,
-  backCover, flex, motherboard, ic, accessory, tool, other,
+  screen,
+  battery,
+  chargingPort,
+  camera,
+  speaker,
+  microphone,
+  backCover,
+  flex,
+  motherboard,
+  ic,
+  accessory,
+  tool,
+  other,
 }
 
 extension InventoryCategoryX on InventoryCategory {
   String get labelAr {
     switch (this) {
-      case InventoryCategory.screen: return 'شاشة';
-      case InventoryCategory.battery: return 'بطارية';
-      case InventoryCategory.chargingPort: return 'منفذ شحن';
-      case InventoryCategory.camera: return 'كاميرا';
-      case InventoryCategory.speaker: return 'سماعة';
-      case InventoryCategory.microphone: return 'مايك';
-      case InventoryCategory.backCover: return 'ظهر';
-      case InventoryCategory.flex: return 'فلاتة';
-      case InventoryCategory.motherboard: return 'بوردة';
-      case InventoryCategory.ic: return 'IC';
-      case InventoryCategory.accessory: return 'ملحق';
-      case InventoryCategory.tool: return 'أداة';
-      case InventoryCategory.other: return 'أخرى';
+      case InventoryCategory.screen:
+        return 'شاشة';
+      case InventoryCategory.battery:
+        return 'بطارية';
+      case InventoryCategory.chargingPort:
+        return 'منفذ شحن';
+      case InventoryCategory.camera:
+        return 'كاميرا';
+      case InventoryCategory.speaker:
+        return 'سماعة';
+      case InventoryCategory.microphone:
+        return 'مايك';
+      case InventoryCategory.backCover:
+        return 'ظهر';
+      case InventoryCategory.flex:
+        return 'فلاتة';
+      case InventoryCategory.motherboard:
+        return 'بوردة';
+      case InventoryCategory.ic:
+        return 'IC';
+      case InventoryCategory.accessory:
+        return 'ملحق';
+      case InventoryCategory.tool:
+        return 'أداة';
+      case InventoryCategory.other:
+        return 'أخرى';
     }
   }
 
   String get labelEn {
     switch (this) {
-      case InventoryCategory.screen: return 'Screen';
-      case InventoryCategory.battery: return 'Battery';
-      case InventoryCategory.chargingPort: return 'Charging Port';
-      case InventoryCategory.camera: return 'Camera';
-      case InventoryCategory.speaker: return 'Speaker';
-      case InventoryCategory.microphone: return 'Microphone';
-      case InventoryCategory.backCover: return 'Back Cover';
-      case InventoryCategory.flex: return 'Flex';
-      case InventoryCategory.motherboard: return 'Motherboard';
-      case InventoryCategory.ic: return 'IC';
-      case InventoryCategory.accessory: return 'Accessory';
-      case InventoryCategory.tool: return 'Tool';
-      case InventoryCategory.other: return 'Other';
+      case InventoryCategory.screen:
+        return 'Screen';
+      case InventoryCategory.battery:
+        return 'Battery';
+      case InventoryCategory.chargingPort:
+        return 'Charging Port';
+      case InventoryCategory.camera:
+        return 'Camera';
+      case InventoryCategory.speaker:
+        return 'Speaker';
+      case InventoryCategory.microphone:
+        return 'Microphone';
+      case InventoryCategory.backCover:
+        return 'Back Cover';
+      case InventoryCategory.flex:
+        return 'Flex';
+      case InventoryCategory.motherboard:
+        return 'Motherboard';
+      case InventoryCategory.ic:
+        return 'IC';
+      case InventoryCategory.accessory:
+        return 'Accessory';
+      case InventoryCategory.tool:
+        return 'Tool';
+      case InventoryCategory.other:
+        return 'Other';
     }
   }
 
   IconData get icon {
     switch (this) {
-      case InventoryCategory.screen: return Icons.smartphone;
-      case InventoryCategory.battery: return Icons.battery_full;
-      case InventoryCategory.chargingPort: return Icons.power;
-      case InventoryCategory.camera: return Icons.camera_alt;
-      case InventoryCategory.speaker: return Icons.volume_up;
-      case InventoryCategory.microphone: return Icons.mic;
-      case InventoryCategory.backCover: return Icons.phone_iphone;
-      case InventoryCategory.flex: return Icons.cable;
-      case InventoryCategory.motherboard: return Icons.memory;
-      case InventoryCategory.ic: return Icons.developer_board;
-      case InventoryCategory.accessory: return Icons.headphones;
-      case InventoryCategory.tool: return Icons.handyman;
-      case InventoryCategory.other: return Icons.category;
+      case InventoryCategory.screen:
+        return Icons.smartphone;
+      case InventoryCategory.battery:
+        return Icons.battery_full;
+      case InventoryCategory.chargingPort:
+        return Icons.power;
+      case InventoryCategory.camera:
+        return Icons.camera_alt;
+      case InventoryCategory.speaker:
+        return Icons.volume_up;
+      case InventoryCategory.microphone:
+        return Icons.mic;
+      case InventoryCategory.backCover:
+        return Icons.phone_iphone;
+      case InventoryCategory.flex:
+        return Icons.cable;
+      case InventoryCategory.motherboard:
+        return Icons.memory;
+      case InventoryCategory.ic:
+        return Icons.developer_board;
+      case InventoryCategory.accessory:
+        return Icons.headphones;
+      case InventoryCategory.tool:
+        return Icons.handyman;
+      case InventoryCategory.other:
+        return Icons.category;
     }
   }
 
@@ -78,21 +128,38 @@ extension InventoryCategoryX on InventoryCategory {
 
 /// MovementType — نوع حركة المخزون
 enum MovementType {
-  purchase, sale, usage, returnIn, returnOut, adjustment, damaged, lost, transfer,
+  purchase,
+  sale,
+  usage,
+  returnIn,
+  returnOut,
+  adjustment,
+  damaged,
+  lost,
+  transfer,
 }
 
 extension MovementTypeX on MovementType {
   String get labelAr {
     switch (this) {
-      case MovementType.purchase: return 'شراء';
-      case MovementType.sale: return 'بيع';
-      case MovementType.usage: return 'استخدام';
-      case MovementType.returnIn: return 'مرتجع داخل';
-      case MovementType.returnOut: return 'مرتجع خارج';
-      case MovementType.adjustment: return 'تسوية';
-      case MovementType.damaged: return 'تالف';
-      case MovementType.lost: return 'مفقود';
-      case MovementType.transfer: return 'نقل';
+      case MovementType.purchase:
+        return 'شراء';
+      case MovementType.sale:
+        return 'بيع';
+      case MovementType.usage:
+        return 'استخدام';
+      case MovementType.returnIn:
+        return 'مرتجع داخل';
+      case MovementType.returnOut:
+        return 'مرتجع خارج';
+      case MovementType.adjustment:
+        return 'تسوية';
+      case MovementType.damaged:
+        return 'تالف';
+      case MovementType.lost:
+        return 'مفقود';
+      case MovementType.transfer:
+        return 'نقل';
     }
   }
 
@@ -214,7 +281,7 @@ class InventoryItem {
     this.variant = InventoryVariant.aftermarket,
     this.description,
     this.quantity = 0,
-    this.minQuantity = 5,
+    this.minQuantity = 1,
     this.costPrice = 0,
     this.sellingPrice = 0,
     this.supplierId,
@@ -262,9 +329,8 @@ class InventoryItem {
       sku: sku ?? this.sku,
       barcode: barcode ?? this.barcode,
       category: category ?? this.category,
-      customCategory: clearCustomCategory
-          ? null
-          : (customCategory ?? this.customCategory),
+      customCategory:
+          clearCustomCategory ? null : (customCategory ?? this.customCategory),
       variant: variant ?? this.variant,
       description: description ?? this.description,
       quantity: quantity ?? this.quantity,
@@ -293,7 +359,7 @@ class InventoryItem {
       variant: InventoryVariantX.fromString(json['variant'] as String?),
       description: json['description'] as String?,
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
-      minQuantity: (json['min_quantity'] as num?)?.toInt() ?? 5,
+      minQuantity: (json['min_quantity'] as num?)?.toInt() ?? 1,
       costPrice: _parseDouble(json['cost_price']),
       sellingPrice: _parseDouble(json['selling_price']),
       supplierId: json['supplier_id'] as String?,
@@ -361,6 +427,7 @@ class InventoryItem {
     if (costPrice <= 0) return 0;
     return ((sellingPrice - costPrice) / costPrice) * 100;
   }
+
   double get stockValue => costPrice * quantity;
 
   String get stockStatusAr {
