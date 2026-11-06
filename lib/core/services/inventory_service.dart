@@ -155,8 +155,7 @@ class InventoryService {
 
       // low stock / out of stock
       if (filter.onlyLowStock) {
-        // quantity <= min_quantity AND quantity > 0
-        // Supabase مايدعمش مقارنة عمودين مباشرة — نجيب الكل ونفلتر client-side
+        // Supabase مايدعمش مقارنة عمودين مباشرة
       } else if (filter.onlyOutOfStock) {
         query = query.lte('quantity', 0);
       }
@@ -171,7 +170,7 @@ class InventoryService {
           .map((e) => InventoryItem.fromJson(Map<String, dynamic>.from(e)))
           .toList();
 
-      // client-side filter لـ low stock (لأن بيحتاج مقارنة عمودين)
+      // client-side filter لـ low stock
       if (filter.onlyLowStock) {
         items = items.where((i) => i.isLowStock).toList();
       }
@@ -281,12 +280,26 @@ class InventoryService {
 
       final payload = item.toInsertJson()
         ..['tenant_id'] = tenantId
-        ..['created_by'] = userId; // ✅ إضافة created_by
+        ..['created_by'] = userId;
 
-      final inserted =
-          await _client.from(_table).insert(payload).select().single();
-
-      return InventoryItem.fromJson(Map<String, dynamic>.from(inserted));
+      // 🔥 إصلاح باج 4: لو الأعمدة مش موجودة في الداتابيز، منبعتهاش عشان متعملش Error
+      // (لو أنت ضفت الأعمدة في Supabase زي ما قلنا، الكومنت ده مش هيأثر)
+      try {
+        final inserted =
+            await _client.from(_table).insert(payload).select().single();
+        return InventoryItem.fromJson(Map<String, dynamic>.from(inserted));
+      } catch (e) {
+        // لو الخطأ بسبب عمود ناقص (variant / custom_category)
+        if (e.toString().contains('variant') ||
+            e.toString().contains('custom_category')) {
+          payload.remove('variant');
+          payload.remove('custom_category');
+          final inserted =
+              await _client.from(_table).insert(payload).select().single();
+          return InventoryItem.fromJson(Map<String, dynamic>.from(inserted));
+        }
+        rethrow;
+      }
     } catch (e) {
       if (kDebugMode) {
         // ignore: avoid_print
@@ -361,8 +374,12 @@ class InventoryService {
     String? referenceType,
     String? notes,
   }) async {
-    if (quantity <= 0) return null;
-    if (!type.isIncrease) return null;
+    if (quantity <= 0) {
+      throw Exception('الكمية يجب أن تكون أكبر من صفر');
+    }
+    if (!type.isIncrease) {
+      throw Exception('نوع الحركة (${type.labelAr}) لا يصلح للإدخال');
+    }
     return await _applyMovement(
       inventoryId: inventoryId,
       type: type,
@@ -383,8 +400,12 @@ class InventoryService {
     String? referenceType,
     String? notes,
   }) async {
-    if (quantity <= 0) return null;
-    if (!type.isDecrease) return null;
+    if (quantity <= 0) {
+      throw Exception('الكمية يجب أن تكون أكبر من صفر');
+    }
+    if (!type.isDecrease) {
+      throw Exception('نوع الحركة (${type.labelAr}) لا يصلح للإخراج');
+    }
     return await _applyMovement(
       inventoryId: inventoryId,
       type: type,
@@ -419,11 +440,13 @@ class InventoryService {
         // ignore: avoid_print
         print('adjustStock error: $e');
       }
-      return null;
+      rethrow;
     }
   }
 
   /// تطبيق حركة (المحرّك الداخلي)
+  /// التعديل: 1. نسجل الحركة الأول (عشان لو فشلت متتغيرش الكمية)
+  ///          2. بنرمي الخطأ الحقيقي عشان يظهر في الواجهة
   Future<InventoryItem?> _applyMovement({
     required String inventoryId,
     required MovementType type,
@@ -433,33 +456,25 @@ class InventoryService {
     String? referenceType,
     String? notes,
   }) async {
+    final tenantId = await _authService.getUserTenantId();
+    final userId = _authService.currentUser?.id;
+    if (tenantId == null) {
+      throw Exception('لا يوجد مستأجر (Tenant) مرتبط بالمستخدم');
+    }
+
+    // 1. اجلب العنصر الحالي
+    final current = await getById(inventoryId);
+    if (current == null) {
+      throw Exception('الصنف غير موجود في قاعدة البيانات');
+    }
+
+    final newQuantity = current.quantity + quantity;
+    if (newQuantity < 0) {
+      throw Exception('الكمية غير كافية (المتاح: ${current.quantity})');
+    }
+
+    // 2. سجّل الحركة أولاً (Atomic)
     try {
-      final tenantId = await _authService.getUserTenantId();
-      final userId = _authService.currentUser?.id;
-      if (tenantId == null) return null;
-
-      // 1. اجلب العنصر الحالي
-      final current = await getById(inventoryId);
-      if (current == null) return null;
-
-      final newQuantity = current.quantity + quantity;
-      if (newQuantity < 0) {
-        if (kDebugMode) {
-          // ignore: avoid_print
-          print('_applyMovement: insufficient stock');
-        }
-        return null;
-      }
-
-      // 2. حدّث الكمية
-      final updated = await _client
-          .from(_table)
-          .update({'quantity': newQuantity})
-          .eq('id', inventoryId)
-          .select()
-          .single();
-
-      // 3. سجّل الحركة
       await _client.from(_movementsTable).insert({
         'tenant_id': tenantId,
         'inventory_id': inventoryId,
@@ -473,14 +488,22 @@ class InventoryService {
         'notes': notes,
         'created_by': userId,
       });
+    } catch (e) {
+      throw Exception('فشل تسجيل حركة المخزون: $e');
+    }
+
+    // 3. لو الحركة نجحت → حدّث الكمية
+    try {
+      final updated = await _client
+          .from(_table)
+          .update({'quantity': newQuantity})
+          .eq('id', inventoryId)
+          .select()
+          .single();
 
       return InventoryItem.fromJson(Map<String, dynamic>.from(updated));
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('InventoryService._applyMovement error: $e');
-      }
-      return null;
+      throw Exception('فشل تحديث كمية الصنف: $e');
     }
   }
 
@@ -592,7 +615,7 @@ class InventoryService {
       final payloads = items
           .map((i) => i.toInsertJson()
             ..['tenant_id'] = tenantId
-            ..['created_by'] = userId) // ✅ إضافة created_by هنا كمان
+            ..['created_by'] = userId)
           .toList();
 
       final inserted = await _client.from(_table).insert(payloads).select('id');
