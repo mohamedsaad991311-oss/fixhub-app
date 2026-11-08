@@ -2,14 +2,15 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../../inventory/data/models/inventory_item.dart';
+import '../../../../core/services/inventory_service.dart';
 import '../../../../core/services/receipt_service.dart';
 import '../../../receipts/data/models/receipt.dart';
 import 'receiving_form_provider.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// WizardStep — خطوات الـ Wizard
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  WizardStep — خطوات الـ Wizard
+// ═══════════════════════════════════════════════════════════
 enum WizardStep {
   customer, // 0 — بيانات العميل
   device, // 1 — بيانات الجهاز + الأعطال
@@ -57,9 +58,9 @@ extension WizardStepX on WizardStep {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// ReceivingWizardState — حالة الـ Wizard
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  ReceivingWizardState — حالة الـ Wizard
+// ═══════════════════════════════════════════════════════════
 class ReceivingWizardState {
   final WizardStep currentStep;
   final bool isSubmitting;
@@ -97,9 +98,9 @@ class ReceivingWizardState {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// ReceivingWizardNotifier — إدارة الخطوات + الحفظ
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  ReceivingWizardNotifier — إدارة الخطوات + الحفظ
+// ═══════════════════════════════════════════════════════════
 class ReceivingWizardNotifier extends StateNotifier<ReceivingWizardState> {
   ReceivingWizardNotifier(this._ref) : super(const ReceivingWizardState());
 
@@ -107,7 +108,6 @@ class ReceivingWizardNotifier extends StateNotifier<ReceivingWizardState> {
 
   // ─── Navigation ───
 
-  /// الانتقال للخطوة التالية
   void next() {
     if (state.currentStep == WizardStep.review) return;
     state = state.copyWith(
@@ -115,7 +115,6 @@ class ReceivingWizardNotifier extends StateNotifier<ReceivingWizardState> {
     );
   }
 
-  /// الرجوع للخطوة السابقة
   void back() {
     if (state.currentStep == WizardStep.customer) return;
     state = state.copyWith(
@@ -123,9 +122,7 @@ class ReceivingWizardNotifier extends StateNotifier<ReceivingWizardState> {
     );
   }
 
-  /// الانتقال لخطوة محددة (لو مسموح)
   void goTo(WizardStep step) {
-    // مش مسموح تروح review قبل ما تكمّل الخطوتين
     if (step.index > state.currentIndex) {
       final form = _ref.read(receivingFormProvider);
       if (step.index >= 1 && !form.isStep1Valid) return;
@@ -136,7 +133,6 @@ class ReceivingWizardNotifier extends StateNotifier<ReceivingWizardState> {
 
   // ─── Submit ───
 
-  /// حفظ الإيصال في Supabase
   Future<bool> submit() async {
     final form = _ref.read(receivingFormProvider);
 
@@ -163,6 +159,27 @@ class ReceivingWizardNotifier extends StateNotifier<ReceivingWizardState> {
         return false;
       }
 
+      // ✅ خصم القطع من المخزون (الباج 2)
+      final usedItems = form.usedItems;
+      if (usedItems.isNotEmpty) {
+        final inventoryService = _ref.read(inventoryServiceProvider);
+        for (final used in usedItems) {
+          try {
+            await inventoryService.stockOut(
+              inventoryId: used.inventoryId,
+              quantity: used.quantity,
+              type: MovementType.usage,
+              referenceId: created.id,
+              referenceType: 'receipt',
+              notes: 'استخدام في إيصال ${created.receiptNumber}',
+            );
+          } catch (e) {
+            // لو فشل خصم قطعة، نسجل الخطأ بس منوقفش العملية
+            debugPrint('فشل خصم القطعة ${used.itemName}: $e');
+          }
+        }
+      }
+
       state = state.copyWith(
         isSubmitting: false,
         createdReceipt: created,
@@ -170,7 +187,6 @@ class ReceivingWizardNotifier extends StateNotifier<ReceivingWizardState> {
       return true;
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
         print('ReceivingWizardNotifier.submit error: $e');
       }
       state = state.copyWith(
@@ -183,20 +199,18 @@ class ReceivingWizardNotifier extends StateNotifier<ReceivingWizardState> {
 
   // ─── Reset ───
 
-  /// إعادة تعيين كل شيء
   void reset() {
     _ref.read(receivingFormProvider.notifier).reset();
     state = const ReceivingWizardState();
   }
 
-  /// مسح الخطأ فقط
   void clearError() {
     state = state.copyWith(clearError: true);
   }
 }
 
 // ═══════════════════════════════════════════════════════════
-// PROVIDER
+//  PROVIDER
 // ═══════════════════════════════════════════════════════════
 
 final receivingWizardProvider =

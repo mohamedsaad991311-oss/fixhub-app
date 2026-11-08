@@ -8,9 +8,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'supabase_service.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// AuthService — إدارة المصادقة
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// AuthService — إدارة المصادقة
+// ═══════════════════════════════════════════════════════════
 class AuthService {
   AuthService(this._supabase);
 
@@ -44,18 +44,14 @@ class AuthService {
 
   String normalizePhone(String phone) {
     var cleaned = phone.replaceAll(RegExp(r'[\s\-()]'), '');
-
     if (cleaned.startsWith('+')) return cleaned;
     if (cleaned.startsWith('00')) return '+${cleaned.substring(2)}';
-
     if (cleaned.startsWith('0') && cleaned.length == 11) {
       return '+20${cleaned.substring(1)}';
     }
-
     if (cleaned.length == 10 && cleaned.startsWith('1')) {
       return '+20$cleaned';
     }
-
     return '+$cleaned';
   }
 
@@ -75,49 +71,32 @@ class AuthService {
   Future<String> resolveIdentifier(String identifier) async {
     final trimmed = identifier.trim();
 
-    // 1. إيميل → يرجّعه
     if (isEmail(trimmed)) {
       return trimmed.toLowerCase();
     }
 
-    // 2. تليفون → ابحث في staff عبر RPC
     if (isPhone(trimmed)) {
       final normalized = normalizePhone(trimmed);
-      debugPrint(
-          '🔍 [resolveIdentifier] trimmed="$trimmed" normalized="$normalized"');
-
       try {
         final data = await _supabase.client.rpc(
           'lookup_staff_by_phone',
           params: {'p_phone': normalized},
         );
-
         final dataList = data as List;
-
         if (dataList.isNotEmpty) {
           final row = dataList.first as Map<String, dynamic>;
           final email = row['email'] as String?;
-
           if (email != null && email.isNotEmpty) {
             return email.toLowerCase();
           }
         }
-
-        // ✅ الحل: fallback للإيميل الوهمي لو الـ RPC ملقاش
-        final fallbackEmail = phoneToAuthEmail(normalized);
-        debugPrint('🟡 [resolveIdentifier] fallback to $fallbackEmail');
-        return fallbackEmail;
+        return phoneToAuthEmail(normalized);
       } catch (e) {
         if (e is AuthException) rethrow;
         debugPrint('🔴 [resolveIdentifier] RPC error: $e');
-
-        // ✅ fallback برضه لو فيه خطأ
-        final fallbackEmail = phoneToAuthEmail(normalized);
-        debugPrint('🟡 [resolveIdentifier] fallback (catch) to $fallbackEmail');
-        return fallbackEmail;
+        return phoneToAuthEmail(normalized);
       }
     }
-
     throw const AuthException('أدخل بريد إلكتروني صحيح أو رقم تليفون.');
   }
 
@@ -152,7 +131,6 @@ class AuthService {
   }) async {
     final normalized = normalizePhone(phone);
     final authEmail = phoneToAuthEmail(normalized);
-
     return await _supabase.auth.signUp(
       email: authEmail,
       password: password,
@@ -301,7 +279,6 @@ class AuthService {
   Future<bool> ensureValidSession() async {
     if (!isLoggedIn) return false;
     if (!isSessionExpired) return true;
-
     try {
       await refreshSession();
       return true;
@@ -368,6 +345,22 @@ class AuthService {
     }
   }
 
+  // ✅ جديد: جلب صلاحية المستخدم (role)
+  Future<String?> getUserRole() async {
+    if (!isLoggedIn) return null;
+    try {
+      final data = await _supabase.client
+          .from('staff')
+          .select('role')
+          .eq('user_id', userId!)
+          .maybeSingle();
+      return data?['role'] as String?;
+    } catch (e) {
+      debugPrint('🔴 [getUserRole] error: $e');
+      return null;
+    }
+  }
+
   bool get isEmailVerified => currentUser?.emailConfirmedAt != null;
   bool get isPhoneVerified => currentUser?.phoneConfirmedAt != null;
 }
@@ -394,4 +387,10 @@ final currentUserStreamProvider = StreamProvider<User?>((ref) {
 final isLoggedInProvider = Provider<bool>((ref) {
   final auth = ref.watch(authServiceProvider);
   return auth.isLoggedIn;
+});
+
+// ✅ جديد: Provider لجلب الصلاحية
+final userRoleProvider = FutureProvider<String?>((ref) async {
+  final auth = ref.watch(authServiceProvider);
+  return auth.getUserRole();
 });

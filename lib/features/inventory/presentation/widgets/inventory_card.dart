@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../data/models/inventory_item.dart';
 import '../../data/models/inventory_variants.dart';
@@ -11,7 +12,7 @@ import '../../data/models/supplier_simple.dart';
 
 enum InventoryViewMode { grid, list, table }
 
-class InventoryCard extends StatelessWidget {
+class InventoryCard extends ConsumerWidget {
   const InventoryCard({
     super.key,
     required this.item,
@@ -26,16 +27,26 @@ class InventoryCard extends StatelessWidget {
   final InventoryViewMode viewMode;
 
   @override
-  Widget build(BuildContext context) {
-    if (viewMode == InventoryViewMode.table) return _buildTableRow(context);
-    if (viewMode == InventoryViewMode.list) return _buildListItem(context);
-    return _buildGridCard(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final roleAsync = ref.watch(userRoleProvider);
+    final isTechnician = roleAsync.maybeWhen(
+      data: (role) => role == 'technician' || role == 'فني',
+      orElse: () => false,
+    );
+
+    if (viewMode == InventoryViewMode.table) {
+      return _buildTableRow(context, isTechnician);
+    }
+    if (viewMode == InventoryViewMode.list) {
+      return _buildListItem(context, isTechnician);
+    }
+    return _buildGridCard(context, isTechnician);
   }
 
   // ─────────────────────────────────────────────────────────
   //  1. عرض الشبكة (Grid Card)
   // ─────────────────────────────────────────────────────────
-  Widget _buildGridCard(BuildContext context) {
+  Widget _buildGridCard(BuildContext context, bool hideCost) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final alertColor = _alertColor();
@@ -175,16 +186,18 @@ class InventoryCard extends StatelessWidget {
                 const SizedBox(height: AppSizes.spaceSm),
                 Row(
                   children: [
-                    Icon(Icons.shopping_cart_outlined,
-                        size: 14, color: scheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text(
-                      CurrencyFormatter.format(item.costPrice),
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: scheme.onSurfaceVariant),
-                    ),
+                    if (!hideCost) ...[
+                      Icon(Icons.shopping_cart_outlined,
+                          size: 14, color: scheme.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text(
+                        CurrencyFormatter.format(item.costPrice),
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: scheme.onSurfaceVariant),
+                      ),
+                    ],
                     const Spacer(),
                     if (item.supplierId != null)
                       Consumer(
@@ -232,9 +245,9 @@ class InventoryCard extends StatelessWidget {
   }
 
   // ─────────────────────────────────────────────────────────
-  //  2. عرض القائمة (List Item) — تم إضافة الأزرار هنا ✅
+  //  2. عرض القائمة (List Item)
   // ─────────────────────────────────────────────────────────
-  Widget _buildListItem(BuildContext context) {
+  Widget _buildListItem(BuildContext context, bool hideCost) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final variantColor = Color(item.variant.colorValue);
@@ -283,7 +296,6 @@ class InventoryCard extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ✅ أزرار التعديل والحذف
           IconButton(
             icon: const Icon(Icons.edit_outlined, size: 18),
             color: scheme.primary,
@@ -299,20 +311,21 @@ class InventoryCard extends StatelessWidget {
             onPressed: onLongPress,
           ),
           const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(CurrencyFormatter.format(item.costPrice),
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: scheme.primary)),
-              Text('تكلفة',
-                  style:
-                      TextStyle(fontSize: 9, color: scheme.onSurfaceVariant)),
-            ],
-          ),
+          if (!hideCost)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(CurrencyFormatter.format(item.costPrice),
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: scheme.primary)),
+                Text('تكلفة',
+                    style:
+                        TextStyle(fontSize: 9, color: scheme.onSurfaceVariant)),
+              ],
+            ),
           const SizedBox(width: 12),
           _QuantityBadge(item: item),
         ],
@@ -321,9 +334,9 @@ class InventoryCard extends StatelessWidget {
   }
 
   // ─────────────────────────────────────────────────────────
-  //  3. عرض الجدول (Table Row) — تم إضافة الأزرار هنا ✅
+  //  3. عرض الجدول (Table Row)
   // ─────────────────────────────────────────────────────────
-  Widget _buildTableRow(BuildContext context) {
+  Widget _buildTableRow(BuildContext context, bool hideCost) {
     final scheme = Theme.of(context).colorScheme;
     final variantColor = Color(item.variant.colorValue);
 
@@ -368,12 +381,13 @@ class InventoryCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: variantColor)),
             ),
-            Expanded(
-              flex: 2,
-              child: Text(CurrencyFormatter.format(item.costPrice),
-                  style:
-                      TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-            ),
+            if (!hideCost)
+              Expanded(
+                flex: 2,
+                child: Text(CurrencyFormatter.format(item.costPrice),
+                    style: TextStyle(
+                        fontSize: 12, color: scheme.onSurfaceVariant)),
+              ),
             SizedBox(
               width: 50,
               child: Text(
@@ -388,7 +402,6 @@ class InventoryCard extends StatelessWidget {
                 ),
               ),
             ),
-            // ✅ أزرار التعديل والحذف في الجدول
             SizedBox(
               width: 80,
               child: Row(

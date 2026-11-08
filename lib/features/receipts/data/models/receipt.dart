@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// Helper Functions — دوال مساعدة عامة
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// Helper Functions
+// ═══════════════════════════════════════════════════════════
 
 DateTime? _parseDate(dynamic value) {
   if (value == null) return null;
@@ -42,9 +42,9 @@ List<String> _parseStringList(dynamic value) {
   return [];
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// ReceiptStatus — حالات الإيصال (5 حالات + رفض)
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// ReceiptStatus — حالات الإيصال
+// ═══════════════════════════════════════════════════════════
 enum ReceiptStatus {
   received,
   inProgress,
@@ -183,9 +183,9 @@ extension ReceiptStatusX on ReceiptStatus {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// ReceiptPriority — الأولوية
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// ReceiptPriority — الأولوية
+// ═══════════════════════════════════════════════════════════
 enum ReceiptPriority {
   low,
   normal,
@@ -247,20 +247,22 @@ extension ReceiptPriorityX on ReceiptPriority {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// ReceiptIssue — مشكلة واحدة
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// ReceiptIssue — مشكلة واحدة
+// ═══════════════════════════════════════════════════════════
 class ReceiptIssue {
   final String title;
   final String? description;
   final double? cost;
   final bool isResolved;
+  final String? categoryId; // ✅ جديد
 
   const ReceiptIssue({
     required this.title,
     this.description,
     this.cost,
     this.isResolved = false,
+    this.categoryId, // ✅ جديد
   });
 
   ReceiptIssue copyWith({
@@ -268,12 +270,14 @@ class ReceiptIssue {
     String? description,
     double? cost,
     bool? isResolved,
+    String? categoryId, // ✅ جديد
   }) {
     return ReceiptIssue(
       title: title ?? this.title,
       description: description ?? this.description,
       cost: cost ?? this.cost,
       isResolved: isResolved ?? this.isResolved,
+      categoryId: categoryId ?? this.categoryId, // ✅ جديد
     );
   }
 
@@ -282,6 +286,7 @@ class ReceiptIssue {
         'description': description,
         'cost': cost,
         'is_resolved': isResolved,
+        'category_id': categoryId, // ✅ جديد
       };
 
   factory ReceiptIssue.fromJson(Map<String, dynamic> json) {
@@ -290,13 +295,14 @@ class ReceiptIssue {
       description: json['description'] as String?,
       cost: (json['cost'] as num?)?.toDouble(),
       isResolved: json['is_resolved'] as bool? ?? false,
+      categoryId: json['category_id'] as String?, // ✅ جديد
     );
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// ReceiptAccessory — ملحق واحد
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// ReceiptAccessory — ملحق واحد
+// ═══════════════════════════════════════════════════════════
 class ReceiptAccessory {
   final String name;
   final bool isIncluded;
@@ -323,9 +329,9 @@ class ReceiptAccessory {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// StatusChange — تغيير حالة
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// StatusChange — تغيير حالة
+// ═══════════════════════════════════════════════════════════
 class StatusChange {
   final ReceiptStatus status;
   final DateTime changedAt;
@@ -356,9 +362,9 @@ class StatusChange {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// Receipt — النموذج الرئيسي
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// Receipt — النموذج الرئيسي
+// ═══════════════════════════════════════════════════════════
 class Receipt {
   final String id;
   final String tenantId;
@@ -551,16 +557,10 @@ class Receipt {
       devicePassword: json['device_password'] as String?,
       conditionNotes: json['condition_notes'] as String?,
       issues: _parseList(json['issues'], ReceiptIssue.fromJson),
-      accessories: _parseList(
-        json['accessories'],
-        ReceiptAccessory.fromJson,
-      ),
+      accessories: _parseList(json['accessories'], ReceiptAccessory.fromJson),
       images: _parseStringList(json['images']),
       status: ReceiptStatusX.fromString(json['status'] as String?),
-      statusHistory: _parseList(
-        json['status_history'],
-        StatusChange.fromJson,
-      ),
+      statusHistory: _parseList(json['status_history'], StatusChange.fromJson),
       priority: ReceiptPriorityX.fromString(json['priority'] as String?),
       estimatedCost: _parseDouble(json['estimated_cost']),
       finalCost: _parseDouble(json['final_cost']),

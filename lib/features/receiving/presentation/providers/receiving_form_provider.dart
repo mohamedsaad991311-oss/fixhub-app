@@ -1,20 +1,49 @@
 // lib/features/receiving/presentation/providers/receiving_form_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../../inventory/data/models/inventory_item.dart';
 import '../../../receipts/data/models/receipt.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// ReceivingFormState — حالة النموذج
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  UsedInventoryItem — قطعة غيار مستخدمة
+// ═══════════════════════════════════════════════════════════
+class UsedInventoryItem {
+  final String inventoryId;
+  final String itemName;
+  final int quantity;
+  final double unitCost;
+
+  const UsedInventoryItem({
+    required this.inventoryId,
+    required this.itemName,
+    required this.quantity,
+    this.unitCost = 0,
+  });
+
+  UsedInventoryItem copyWith({
+    String? inventoryId,
+    String? itemName,
+    int? quantity,
+    double? unitCost,
+  }) {
+    return UsedInventoryItem(
+      inventoryId: inventoryId ?? this.inventoryId,
+      itemName: itemName ?? this.itemName,
+      quantity: quantity ?? this.quantity,
+      unitCost: unitCost ?? this.unitCost,
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ReceivingFormState — حالة النموذج
+// ═══════════════════════════════════════════════════════════
 class ReceivingFormState {
-  // ─── Customer ───
   final String customerName;
   final String customerPhone;
   final String? customerEmail;
   final String? customerNotes;
 
-  // ─── Device ───
   final String? deviceType;
   final String? deviceBrand;
   final String? deviceModel;
@@ -24,11 +53,10 @@ class ReceivingFormState {
   final String? devicePassword;
   final String? conditionNotes;
 
-  // ─── Issues + Accessories ───
   final List<ReceiptIssue> issues;
   final List<ReceiptAccessory> accessories;
+  final List<UsedInventoryItem> usedItems; // ✅ جديد
 
-  // ─── Pricing + Priority ───
   final ReceiptPriority priority;
   final double estimatedCost;
   final double deposit;
@@ -52,6 +80,7 @@ class ReceivingFormState {
     this.conditionNotes,
     this.issues = const [],
     this.accessories = const [],
+    this.usedItems = const [], // ✅ جديد
     this.priority = ReceiptPriority.normal,
     this.estimatedCost = 0,
     this.deposit = 0,
@@ -61,13 +90,9 @@ class ReceivingFormState {
     this.expectedDeliveryDate,
   });
 
-  /// صافي الإجمالي = (التقديري - خصم) + ضريبة (0 مؤقتاً)
   double get total => estimatedCost - discount;
-
-  /// المتبقي = total - deposit
   double get remainingAmount => total - deposit;
 
-  /// جهاز كامل الاسم
   String get deviceFullName {
     final parts = [deviceBrand, deviceModel]
         .where((e) => e != null && e.isNotEmpty)
@@ -75,17 +100,14 @@ class ReceivingFormState {
     return parts.isEmpty ? 'جهاز غير محدد' : parts.join(' ');
   }
 
-  /// هل الخطوة 1 صالحة؟ (بيانات العميل)
   bool get isStep1Valid {
     return customerName.trim().isNotEmpty && customerPhone.trim().isNotEmpty;
   }
 
-  /// هل الخطوة 2 صالحة؟ (الجهاز + عطل واحد على الأقل)
   bool get isStep2Valid {
     return (deviceType?.trim().isNotEmpty ?? false) && issues.isNotEmpty;
   }
 
-  /// هل كل شيء صالح؟
   bool get isComplete => isStep1Valid && isStep2Valid;
 
   ReceivingFormState copyWith({
@@ -113,6 +135,7 @@ class ReceivingFormState {
     bool clearConditionNotes = false,
     List<ReceiptIssue>? issues,
     List<ReceiptAccessory>? accessories,
+    List<UsedInventoryItem>? usedItems, // ✅ جديد
     ReceiptPriority? priority,
     double? estimatedCost,
     double? deposit,
@@ -143,6 +166,7 @@ class ReceivingFormState {
           clearConditionNotes ? null : (conditionNotes ?? this.conditionNotes),
       issues: issues ?? this.issues,
       accessories: accessories ?? this.accessories,
+      usedItems: usedItems ?? this.usedItems, // ✅ جديد
       priority: priority ?? this.priority,
       estimatedCost: estimatedCost ?? this.estimatedCost,
       deposit: deposit ?? this.deposit,
@@ -156,16 +180,13 @@ class ReceivingFormState {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// ReceivingFormNotifier — إدارة النموذج
-/// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  ReceivingFormNotifier — إدارة النموذج
+// ═══════════════════════════════════════════════════════════
 class ReceivingFormNotifier extends StateNotifier<ReceivingFormState> {
   ReceivingFormNotifier() : super(const ReceivingFormState());
 
-  // ─── Customer ───
-
   void setCustomerName(String v) => state = state.copyWith(customerName: v);
-
   void setCustomerPhone(String v) => state = state.copyWith(customerPhone: v);
 
   void setCustomerEmail(String? v) {
@@ -179,8 +200,6 @@ class ReceivingFormNotifier extends StateNotifier<ReceivingFormState> {
         ? state.copyWith(clearCustomerNotes: true)
         : state.copyWith(customerNotes: v);
   }
-
-  // ─── Device ───
 
   void setDeviceType(String? v) {
     state = v == null
@@ -230,8 +249,6 @@ class ReceivingFormNotifier extends StateNotifier<ReceivingFormState> {
         : state.copyWith(conditionNotes: v);
   }
 
-  // ─── Issues ───
-
   void addIssue(ReceiptIssue issue) {
     state = state.copyWith(issues: [...state.issues, issue]);
   }
@@ -248,8 +265,6 @@ class ReceivingFormNotifier extends StateNotifier<ReceivingFormState> {
     copy[index] = issue;
     state = state.copyWith(issues: copy);
   }
-
-  // ─── Accessories ───
 
   void addAccessory(ReceiptAccessory acc) {
     state = state.copyWith(accessories: [...state.accessories, acc]);
@@ -273,16 +288,28 @@ class ReceivingFormNotifier extends StateNotifier<ReceivingFormState> {
     state = state.copyWith(accessories: copy);
   }
 
-  // ─── Pricing + Priority ───
+  // ✅ قطع الغيار المستخدمة
+  void addUsedItem(UsedInventoryItem item) {
+    state = state.copyWith(usedItems: [...state.usedItems, item]);
+  }
+
+  void removeUsedItem(int index) {
+    if (index < 0 || index >= state.usedItems.length) return;
+    final copy = [...state.usedItems]..removeAt(index);
+    state = state.copyWith(usedItems: copy);
+  }
+
+  void updateUsedItemQuantity(int index, int newQuantity) {
+    if (index < 0 || index >= state.usedItems.length) return;
+    final copy = [...state.usedItems];
+    copy[index] = copy[index].copyWith(quantity: newQuantity);
+    state = state.copyWith(usedItems: copy);
+  }
 
   void setPriority(ReceiptPriority p) => state = state.copyWith(priority: p);
-
   void setEstimatedCost(double v) => state = state.copyWith(estimatedCost: v);
-
   void setDeposit(double v) => state = state.copyWith(deposit: v);
-
   void setDiscount(double v) => state = state.copyWith(discount: v);
-
   void setWarrantyDays(int v) => state = state.copyWith(warrantyDays: v);
 
   void setNotes(String? v) {
@@ -296,20 +323,15 @@ class ReceivingFormNotifier extends StateNotifier<ReceivingFormState> {
         : state.copyWith(expectedDeliveryDate: d);
   }
 
-  // ─── Reset ───
-
   void reset() {
     state = const ReceivingFormState();
   }
 
-  // ─── Build Receipt ───
-
-  /// تحويل النموذج لـ `Receipt` (draft) جاهز للإرسال لـ service
   Receipt toReceiptDraft() {
     return Receipt(
       id: '',
       tenantId: '',
-      receiptNumber: '', // هيتم توليده في ReceiptService
+      receiptNumber: '',
       customerName: state.customerName.trim(),
       customerPhone: state.customerPhone.trim().isEmpty
           ? null
@@ -358,11 +380,6 @@ class ReceivingFormNotifier extends StateNotifier<ReceivingFormState> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// PROVIDERS
-// ═══════════════════════════════════════════════════════════
-
-/// الـ form state
 final receivingFormProvider =
     StateNotifierProvider<ReceivingFormNotifier, ReceivingFormState>((ref) {
   return ReceivingFormNotifier();

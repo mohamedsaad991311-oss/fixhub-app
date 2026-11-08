@@ -4,13 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/services/inventory_service.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../inventory/data/models/inventory_item.dart';
 import '../../../receipts/data/models/receipt.dart';
 import '../providers/receiving_form_provider.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// Step2Device — الخطوة 2: بيانات الجهاز + الأعطال
-/// ═══════════════════════════════════════════════════════════
 class Step2Device extends ConsumerStatefulWidget {
   const Step2Device({super.key});
 
@@ -27,9 +26,8 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
   late final TextEditingController _passwordController;
   late final TextEditingController _conditionController;
 
-  String? _deviceType; // نوع الجهاز المختار
+  String? _deviceType;
 
-  /// أنواع الأجهزة الشائعة
   static const List<_DeviceType> _deviceTypes = [
     _DeviceType(id: 'smartphone', label: 'موبايل', icon: Icons.smartphone),
     _DeviceType(id: 'tablet', label: 'تابلت', icon: Icons.tablet_mac),
@@ -118,10 +116,8 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
                   icon: Icons.branding_watermark_outlined,
                   scheme: scheme,
                   isDark: isDark,
-                  onChanged: (v) => _setNullable(
-                    v,
-                    ref.read(receivingFormProvider.notifier).setDeviceBrand,
-                  ),
+                  onChanged: (v) => _setNullable(v,
+                      ref.read(receivingFormProvider.notifier).setDeviceBrand),
                 ),
               ),
               const SizedBox(width: AppSizes.spaceSmMd),
@@ -133,10 +129,8 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
                   icon: Icons.phone_iphone_outlined,
                   scheme: scheme,
                   isDark: isDark,
-                  onChanged: (v) => _setNullable(
-                    v,
-                    ref.read(receivingFormProvider.notifier).setDeviceModel,
-                  ),
+                  onChanged: (v) => _setNullable(v,
+                      ref.read(receivingFormProvider.notifier).setDeviceModel),
                 ),
               ),
             ],
@@ -152,9 +146,7 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
             isDark: isDark,
             keyboardType: TextInputType.number,
             onChanged: (v) => _setNullable(
-              v,
-              ref.read(receivingFormProvider.notifier).setDeviceImei,
-            ),
+                v, ref.read(receivingFormProvider.notifier).setDeviceImei),
           ),
           const SizedBox(height: AppSizes.spaceMd),
 
@@ -168,10 +160,8 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
                   icon: Icons.confirmation_number_outlined,
                   scheme: scheme,
                   isDark: isDark,
-                  onChanged: (v) => _setNullable(
-                    v,
-                    ref.read(receivingFormProvider.notifier).setDeviceSerial,
-                  ),
+                  onChanged: (v) => _setNullable(v,
+                      ref.read(receivingFormProvider.notifier).setDeviceSerial),
                 ),
               ),
               const SizedBox(width: AppSizes.spaceSmMd),
@@ -183,10 +173,8 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
                   icon: Icons.palette_outlined,
                   scheme: scheme,
                   isDark: isDark,
-                  onChanged: (v) => _setNullable(
-                    v,
-                    ref.read(receivingFormProvider.notifier).setDeviceColor,
-                  ),
+                  onChanged: (v) => _setNullable(v,
+                      ref.read(receivingFormProvider.notifier).setDeviceColor),
                 ),
               ),
             ],
@@ -201,9 +189,7 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
             scheme: scheme,
             isDark: isDark,
             onChanged: (v) => _setNullable(
-              v,
-              ref.read(receivingFormProvider.notifier).setDevicePassword,
-            ),
+                v, ref.read(receivingFormProvider.notifier).setDevicePassword),
           ),
           const SizedBox(height: AppSizes.spaceMd),
 
@@ -216,9 +202,7 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
             isDark: isDark,
             maxLines: 2,
             onChanged: (v) => _setNullable(
-              v,
-              ref.read(receivingFormProvider.notifier).setConditionNotes,
-            ),
+                v, ref.read(receivingFormProvider.notifier).setConditionNotes),
           ),
 
           const SizedBox(height: AppSizes.spaceLg),
@@ -287,6 +271,40 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
                       .removeAccessory(i),
                   scheme: scheme,
                 ),
+              ),
+            ),
+
+          const SizedBox(height: AppSizes.spaceLg),
+
+          // ═══ 5) قطع الغيار المستخدمة ═══
+          _SectionHeader(
+            icon: Icons.settings_outlined,
+            title: 'قطع الغيار المستخدمة',
+            subtitle: 'القطع اللي هتستخدمها من المخزن (اختياري)',
+            scheme: scheme,
+            trailing: _AddButton(
+              label: 'إضافة قطعة',
+              onTap: () => _openInventoryPicker(context),
+              scheme: scheme,
+            ),
+          ),
+          const SizedBox(height: AppSizes.spaceSmMd),
+
+          if (form.usedItems.isEmpty)
+            _EmptyUsedItems(scheme: scheme)
+          else
+            ...List.generate(
+              form.usedItems.length,
+              (i) => _UsedItemTile(
+                item: form.usedItems[i],
+                index: i,
+                onDelete: () =>
+                    ref.read(receivingFormProvider.notifier).removeUsedItem(i),
+                onQuantityChanged: (qty) => ref
+                    .read(receivingFormProvider.notifier)
+                    .updateUsedItemQuantity(i, qty),
+                scheme: scheme,
+                isDark: isDark,
               ),
             ),
         ],
@@ -374,12 +392,10 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
     final existing = editIndex != null
         ? ref.read(receivingFormProvider).issues[editIndex]
         : null;
-
     final titleCtrl = TextEditingController(text: existing?.title ?? '');
     final descCtrl = TextEditingController(text: existing?.description ?? '');
     final costCtrl = TextEditingController(
-      text: existing?.cost != null ? existing!.cost!.toStringAsFixed(0) : '',
-    );
+        text: existing?.cost != null ? existing!.cost!.toStringAsFixed(0) : '');
 
     final result = await showDialog<ReceiptIssue>(
       context: context,
@@ -390,49 +406,39 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: titleCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'وصف العطل',
-                  hintText: 'مثال: شاشة مكسورة',
-                ),
-              ),
+                  controller: titleCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                      labelText: 'وصف العطل', hintText: 'مثال: شاشة مكسورة')),
               const SizedBox(height: 12),
               TextField(
-                controller: descCtrl,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'تفاصيل (اختياري)',
-                ),
-              ),
+                  controller: descCtrl,
+                  maxLines: 2,
+                  decoration:
+                      const InputDecoration(labelText: 'تفاصيل (اختياري)')),
               const SizedBox(height: 12),
               TextField(
-                controller: costCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'التكلفة التقديرية (اختياري)',
-                  hintText: '0',
-                ),
-              ),
+                  controller: costCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                      labelText: 'التكلفة التقديرية (اختياري)', hintText: '0')),
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
-          ),
+              onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
           FilledButton(
             onPressed: () {
               final title = titleCtrl.text.trim();
               if (title.isEmpty) return;
               final cost = double.tryParse(costCtrl.text.trim());
               final issue = ReceiptIssue(
-                title: title,
-                description:
-                    descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
-                cost: cost,
-              );
+                  title: title,
+                  description: descCtrl.text.trim().isEmpty
+                      ? null
+                      : descCtrl.text.trim(),
+                  cost: cost);
               Navigator.pop(ctx, issue);
             },
             child: const Text('حفظ'),
@@ -459,18 +465,13 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
       builder: (ctx) => AlertDialog(
         title: const Text('إضافة ملحق'),
         content: TextField(
-          controller: nameCtrl,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'اسم الملحق',
-            hintText: 'مثال: شاحن، سماعة، جراب',
-          ),
-        ),
+            controller: nameCtrl,
+            autofocus: true,
+            decoration: const InputDecoration(
+                labelText: 'اسم الملحق', hintText: 'مثال: شاحن، سماعة، جراب')),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
-          ),
+              onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
           FilledButton(
             onPressed: () {
               final name = nameCtrl.text.trim();
@@ -484,9 +485,23 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
     );
 
     if (result == null) return;
-    ref.read(receivingFormProvider.notifier).addAccessory(
-          ReceiptAccessory(name: result),
-        );
+    ref
+        .read(receivingFormProvider.notifier)
+        .addAccessory(ReceiptAccessory(name: result));
+  }
+
+  // ─── Inventory Picker ───
+  Future<void> _openInventoryPicker(BuildContext context) async {
+    final result = await showModalBottomSheet<UsedInventoryItem>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => const _InventoryPickerSheet(),
+    );
+
+    if (result != null) {
+      ref.read(receivingFormProvider.notifier).addUsedItem(result);
+    }
   }
 }
 
@@ -495,24 +510,20 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
 // ═══════════════════════════════════════════════════════════
 
 class _DeviceType {
-  const _DeviceType({
-    required this.id,
-    required this.label,
-    required this.icon,
-  });
+  const _DeviceType(
+      {required this.id, required this.label, required this.icon});
   final String id;
   final String label;
   final IconData icon;
 }
 
 class _DeviceTypeGrid extends StatelessWidget {
-  const _DeviceTypeGrid({
-    required this.types,
-    required this.selectedId,
-    required this.onSelect,
-    required this.scheme,
-    required this.isDark,
-  });
+  const _DeviceTypeGrid(
+      {required this.types,
+      required this.selectedId,
+      required this.onSelect,
+      required this.scheme,
+      required this.isDark});
 
   final List<_DeviceType> types;
   final String? selectedId;
@@ -557,22 +568,20 @@ class _DeviceTypeGrid extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        t.icon,
-                        size: 26,
-                        color:
-                            selected ? scheme.primary : scheme.onSurfaceVariant,
-                      ),
+                      Icon(t.icon,
+                          size: 26,
+                          color: selected
+                              ? scheme.primary
+                              : scheme.onSurfaceVariant),
                       const SizedBox(height: 4),
-                      Text(
-                        t.label,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight:
-                              selected ? FontWeight.w700 : FontWeight.w500,
-                          color: selected ? scheme.primary : scheme.onSurface,
-                        ),
-                      ),
+                      Text(t.label,
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight:
+                                  selected ? FontWeight.w700 : FontWeight.w500,
+                              color: selected
+                                  ? scheme.primary
+                                  : scheme.onSurface)),
                     ],
                   ),
                 ),
@@ -590,13 +599,12 @@ class _DeviceTypeGrid extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    required this.scheme,
-    this.trailing,
-  });
+  const _SectionHeader(
+      {required this.icon,
+      required this.title,
+      this.subtitle,
+      required this.scheme,
+      this.trailing});
 
   final IconData icon;
   final String title;
@@ -612,9 +620,8 @@ class _SectionHeader extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: scheme.primary.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-          ),
+              color: scheme.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
           child: Icon(icon, color: scheme.primary, size: 22),
         ),
         const SizedBox(width: AppSizes.spaceSmMd),
@@ -623,23 +630,16 @@ class _SectionHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: scheme.onSurface,
-                ),
-              ),
+              Text(title,
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface)),
               if (subtitle != null) ...[
                 const SizedBox(height: 2),
-                Text(
-                  subtitle!,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
+                Text(subtitle!,
+                    style: TextStyle(
+                        fontSize: 12, color: scheme.onSurfaceVariant)),
               ],
             ],
           ),
@@ -655,12 +655,8 @@ class _SectionHeader extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════
 
 class _AddButton extends StatelessWidget {
-  const _AddButton({
-    required this.label,
-    required this.onTap,
-    required this.scheme,
-  });
-
+  const _AddButton(
+      {required this.label, required this.onTap, required this.scheme});
   final String label;
   final VoidCallback onTap;
   final ColorScheme scheme;
@@ -670,15 +666,11 @@ class _AddButton extends StatelessWidget {
     return TextButton.icon(
       onPressed: onTap,
       icon: Icon(Icons.add, size: 18, color: scheme.primary),
-      label: Text(
-        label,
-        style: TextStyle(fontSize: 13, color: scheme.primary),
-      ),
+      label: Text(label, style: TextStyle(fontSize: 13, color: scheme.primary)),
       style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        minimumSize: const Size(0, 32),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          minimumSize: const Size(0, 32),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap),
     );
   }
 }
@@ -688,14 +680,13 @@ class _AddButton extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════
 
 class _IssueTile extends StatelessWidget {
-  const _IssueTile({
-    required this.issue,
-    required this.index,
-    required this.onDelete,
-    required this.onEdit,
-    required this.scheme,
-    required this.isDark,
-  });
+  const _IssueTile(
+      {required this.issue,
+      required this.index,
+      required this.onDelete,
+      required this.onEdit,
+      required this.scheme,
+      required this.isDark});
 
   final ReceiptIssue issue;
   final int index;
@@ -713,9 +704,7 @@ class _IssueTile extends StatelessWidget {
         color:
             isDark ? scheme.surfaceContainerHigh : scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
@@ -723,18 +712,14 @@ class _IssueTile extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-            ),
+                color: scheme.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppSizes.radiusSm)),
             alignment: Alignment.center,
-            child: Text(
-              '${index + 1}',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: scheme.primary,
-              ),
-            ),
+            child: Text('${index + 1}',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: scheme.primary)),
           ),
           const SizedBox(width: AppSizes.spaceSm),
           Expanded(
@@ -742,53 +727,41 @@ class _IssueTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  issue.title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface,
-                  ),
-                ),
+                Text(issue.title,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurface)),
                 if (issue.description != null &&
                     issue.description!.isNotEmpty) ...[
                   const SizedBox(height: 2),
-                  Text(
-                    issue.description!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
+                  Text(issue.description!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 12, color: scheme.onSurfaceVariant)),
                 ],
                 if (issue.cost != null && issue.cost! > 0) ...[
                   const SizedBox(height: 4),
-                  Text(
-                    CurrencyFormatter.format(issue.cost),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: scheme.primary,
-                    ),
-                  ),
+                  Text(CurrencyFormatter.format(issue.cost),
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.primary)),
                 ],
               ],
             ),
           ),
           IconButton(
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined, size: 18),
-            color: scheme.onSurfaceVariant,
-            visualDensity: VisualDensity.compact,
-          ),
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              color: scheme.onSurfaceVariant,
+              visualDensity: VisualDensity.compact),
           IconButton(
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline, size: 18),
-            color: scheme.error,
-            visualDensity: VisualDensity.compact,
-          ),
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline, size: 18),
+              color: scheme.error,
+              visualDensity: VisualDensity.compact),
         ],
       ),
     );
@@ -801,7 +774,6 @@ class _IssueTile extends StatelessWidget {
 
 class _EmptyIssues extends StatelessWidget {
   const _EmptyIssues({required this.scheme});
-
   final ColorScheme scheme;
 
   @override
@@ -811,26 +783,15 @@ class _EmptyIssues extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.5),
-          style: BorderStyle.solid,
-        ),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.build_outlined,
-            size: 32,
-            color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
-          ),
+          Icon(Icons.build_outlined,
+              size: 32, color: scheme.onSurfaceVariant.withValues(alpha: 0.4)),
           const SizedBox(height: 8),
-          Text(
-            'لم تُضف أي أعطال بعد',
-            style: TextStyle(
-              fontSize: 13,
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
+          Text('لم تُضف أي أعطال بعد',
+              style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -839,7 +800,6 @@ class _EmptyIssues extends StatelessWidget {
 
 class _EmptyAccessories extends StatelessWidget {
   const _EmptyAccessories({required this.scheme});
-
   final ColorScheme scheme;
 
   @override
@@ -849,27 +809,45 @@ class _EmptyAccessories extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.inventory_2_outlined,
-            size: 24,
-            color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
-          ),
+          Icon(Icons.inventory_2_outlined,
+              size: 24, color: scheme.onSurfaceVariant.withValues(alpha: 0.5)),
           const SizedBox(width: AppSizes.spaceSm),
           Expanded(
-            child: Text(
-              'لا توجد ملحقات مسجّلة',
-              style: TextStyle(
-                fontSize: 12,
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-          ),
+              child: Text('لا توجد ملحقات مسجّلة',
+                  style:
+                      TextStyle(fontSize: 12, color: scheme.onSurfaceVariant))),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyUsedItems extends StatelessWidget {
+  const _EmptyUsedItems({required this.scheme});
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.spaceMd),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.settings_outlined,
+              size: 24, color: scheme.onSurfaceVariant.withValues(alpha: 0.5)),
+          const SizedBox(width: AppSizes.spaceSm),
+          Expanded(
+              child: Text('لا توجد قطع غيار مستخدمة',
+                  style:
+                      TextStyle(fontSize: 12, color: scheme.onSurfaceVariant))),
         ],
       ),
     );
@@ -881,13 +859,11 @@ class _EmptyAccessories extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════
 
 class _AccessoryChip extends StatelessWidget {
-  const _AccessoryChip({
-    required this.accessory,
-    required this.onToggle,
-    required this.onDelete,
-    required this.scheme,
-  });
-
+  const _AccessoryChip(
+      {required this.accessory,
+      required this.onToggle,
+      required this.onDelete,
+      required this.scheme});
   final ReceiptAccessory accessory;
   final VoidCallback onToggle;
   final VoidCallback onDelete;
@@ -898,51 +874,219 @@ class _AccessoryChip extends StatelessWidget {
     final included = accessory.isIncluded;
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.spaceSmMd,
-        vertical: AppSizes.spaceSm,
-      ),
+          horizontal: AppSizes.spaceSmMd, vertical: AppSizes.spaceSm),
       decoration: BoxDecoration(
         color: included
             ? scheme.primary.withValues(alpha: 0.12)
             : scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppSizes.radiusPill),
         border: Border.all(
-          color: included
-              ? scheme.primary.withValues(alpha: 0.4)
-              : scheme.outlineVariant,
-        ),
+            color: included
+                ? scheme.primary.withValues(alpha: 0.4)
+                : scheme.outlineVariant),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           InkWell(
-            onTap: onToggle,
-            child: Icon(
-              included ? Icons.check_circle : Icons.radio_button_unchecked,
-              size: 18,
-              color: included ? scheme.primary : scheme.onSurfaceVariant,
-            ),
-          ),
+              onTap: onToggle,
+              child: Icon(
+                  included ? Icons.check_circle : Icons.radio_button_unchecked,
+                  size: 18,
+                  color: included ? scheme.primary : scheme.onSurfaceVariant)),
           const SizedBox(width: 6),
-          Text(
-            accessory.name,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: included ? scheme.primary : scheme.onSurfaceVariant,
-            ),
-          ),
+          Text(accessory.name,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: included ? scheme.primary : scheme.onSurfaceVariant)),
           const SizedBox(width: 6),
           InkWell(
-            onTap: onDelete,
-            child: Icon(
-              Icons.close,
-              size: 16,
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
+              onTap: onDelete,
+              child:
+                  Icon(Icons.close, size: 16, color: scheme.onSurfaceVariant)),
         ],
       ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  USED ITEM TILE
+// ═══════════════════════════════════════════════════════════
+
+class _UsedItemTile extends StatelessWidget {
+  const _UsedItemTile(
+      {required this.item,
+      required this.index,
+      required this.onDelete,
+      required this.onQuantityChanged,
+      required this.scheme,
+      required this.isDark});
+
+  final UsedInventoryItem item;
+  final int index;
+  final VoidCallback onDelete;
+  final ValueChanged<int> onQuantityChanged;
+  final ColorScheme scheme;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSizes.spaceSm),
+      padding: const EdgeInsets.all(AppSizes.spaceSmMd),
+      decoration: BoxDecoration(
+        color:
+            isDark ? scheme.surfaceContainerHigh : scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppSizes.radiusSm)),
+            alignment: Alignment.center,
+            child: Text('${index + 1}',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: scheme.primary)),
+          ),
+          const SizedBox(width: AppSizes.spaceSm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(item.itemName,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurface)),
+                const SizedBox(height: 2),
+                Text('التكلفة: ${item.unitCost}',
+                    style: TextStyle(
+                        fontSize: 12, color: scheme.onSurfaceVariant)),
+              ],
+            ),
+          ),
+          Row(
+            children: [
+              IconButton(
+                  icon: const Icon(Icons.remove_circle_outline, size: 20),
+                  onPressed: item.quantity > 1
+                      ? () => onQuantityChanged(item.quantity - 1)
+                      : null),
+              Text('${item.quantity}',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: scheme.primary)),
+              IconButton(
+                  icon: const Icon(Icons.add_circle_outline, size: 20),
+                  onPressed: () => onQuantityChanged(item.quantity + 1)),
+            ],
+          ),
+          IconButton(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline, size: 18),
+              color: scheme.error,
+              visualDensity: VisualDensity.compact),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INVENTORY PICKER SHEET
+// ═══════════════════════════════════════════════════════════
+
+class _InventoryPickerSheet extends ConsumerStatefulWidget {
+  const _InventoryPickerSheet();
+
+  @override
+  ConsumerState<_InventoryPickerSheet> createState() =>
+      _InventoryPickerSheetState();
+}
+
+class _InventoryPickerSheetState extends ConsumerState<_InventoryPickerSheet> {
+  String _search = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final inventoryAsync =
+        ref.watch(inventoryStreamProvider(const InventoryFilter()));
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppSizes.spaceMd),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'ابحث في المخزون...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppSizes.radiusLg)),
+                ),
+                onChanged: (v) => setState(() => _search = v),
+              ),
+            ),
+            Expanded(
+              child: inventoryAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => Center(child: Text('خطأ: $err')),
+                data: (items) {
+                  final filtered = items
+                      .where((i) =>
+                          i.displayName().contains(_search) && i.quantity > 0)
+                      .toList();
+                  if (filtered.isEmpty)
+                    return const Center(child: Text('لا توجد قطع متاحة'));
+
+                  return ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.all(AppSizes.spaceMd),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final item = filtered[index];
+                      return ListTile(
+                        title: Text(item.displayName()),
+                        subtitle: Text(
+                            'المتاح: ${item.quantity} | التكلفة: ${CurrencyFormatter.format(item.costPrice)}'),
+                        trailing: const Icon(Icons.add_circle_outline),
+                        onTap: () {
+                          Navigator.pop(
+                            context,
+                            UsedInventoryItem(
+                              inventoryId: item.id,
+                              itemName: item.displayName(),
+                              quantity: 1,
+                              unitCost: item.costPrice,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
