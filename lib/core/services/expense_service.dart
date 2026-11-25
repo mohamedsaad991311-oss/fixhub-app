@@ -267,30 +267,43 @@ class ExpenseService {
     }
   }
 
-  Future<bool> delete(String id) async {
+   Future<bool> delete(String id, {String? reason}) async {
     try {
-      await _client.from(_table).delete().eq('id', id);
-      return true;
+      final result = await _client.rpc(
+        'soft_delete_row',
+        params: {
+          'p_table': _table,
+          'p_id': id,
+          'p_reason': reason ?? 'تم حذف المصروف من التطبيق',
+        },
+      );
+      return result == true;
     } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('ExpenseService.delete error: $e');
-      }
+      if (kDebugMode) print('ExpenseService.delete error: $e');
       return false;
     }
   }
-
   /// حذف مجموعة (bulk)
-  Future<int> deleteMany(List<String> ids) async {
-    if (ids.isEmpty) return 0;
+   Future<int> deleteMany(List<String> ids, {String? reason}) async {
     try {
-      await _client.from(_table).delete().inFilter('id', ids);
-      return ids.length;
-    } catch (_) {
+      int successCount = 0;
+      for (final id in ids) {
+        final result = await _client.rpc(
+          'soft_delete_row',
+          params: {
+            'p_table': _table,
+            'p_id': id,
+            'p_reason': reason ?? 'حذف جماعي من التطبيق',
+          },
+        );
+        if (result == true) successCount++;
+      }
+      return successCount;
+    } catch (e) {
+      if (kDebugMode) print('ExpenseService.deleteMany error: $e');
       return 0;
     }
   }
-
   // ─────────────────────────────────────────────────────────────
   //  SUMMARIES (التقارير)
   // ─────────────────────────────────────────────────────────────
@@ -441,8 +454,7 @@ class ExpenseService {
     int limit = 10,
   }) async {
     try {
-      var query = _client.from(_table).select();
-
+     var query = _client.from(_table).select().isFilter('deleted_at', null);
       if (fromDate != null) {
         query = query.gte('expense_date', _dateOnly(fromDate));
       }

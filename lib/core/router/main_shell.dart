@@ -9,11 +9,7 @@ import '../constants/app_breakpoints.dart';
 import '../localization/locale_provider.dart';
 import '../../shared/widgets/adaptive_nav_bar.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// MainShell — الهيكل العام للتطبيق (Navigation + Content)
-/// ═══════════════════════════════════════════════════════════
 class MainShell extends ConsumerWidget {
-  /// الـ navigation shell اللي جاي من GoRouter
   final StatefulNavigationShell navigationShell;
 
   const MainShell({
@@ -53,9 +49,6 @@ class MainShell extends ConsumerWidget {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// MainShellRailWrapper — wrapper للـ Tablet/Desktop
-/// ═══════════════════════════════════════════════════════════
 class MainShellRailWrapper extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -99,9 +92,7 @@ class MainShellRailWrapper extends ConsumerWidget {
           Expanded(
             child: Column(
               children: [
-                // ─── AppBar موحّد ───
                 _buildAppBar(context, ref),
-                // ─── المحتوى ───
                 Expanded(child: navigationShell),
               ],
             ),
@@ -111,32 +102,29 @@ class MainShellRailWrapper extends ConsumerWidget {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // AppBar موحّد مع أزرار الثيم واللغة
-  // ═══════════════════════════════════════════════════════════
   PreferredSizeWidget _buildAppBar(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final currentIndex = navigationShell.currentIndex;
 
-    // ✅ الترتيب الجديد للتابات (7 تابات)
+    // ✅ الترتيب الجديد (8 تابات): أضفنا "المحل" في المركز الثاني
     final titles = [
-      'الرئيسية',    // 0
-      'الإيصالات',   // 1
-      'المخزون',     // 2
-      'المصاريف',    // 3
-      'التسليم',     // 4 (جديد)
-      'التقارير',    // 5
-      'الإعدادات',   // 6
+      'الرئيسية', // 0
+      'المحل', // 1  <- القسم الجديد
+      'الإيصالات', // 2
+      'المخزون', // 3
+      'المصاريف', // 4
+      'التسليم', // 5
+      'التقارير', // 6
+      'الإعدادات', // 7
     ];
 
-    // حماية بسيطة لو الـ index خرج عن النطاق
-    final title = currentIndex < titles.length ? titles[currentIndex] : 'FixHub';
+    final title =
+        currentIndex < titles.length ? titles[currentIndex] : 'FixHub';
 
     return AppBar(
       title: Text(title),
       backgroundColor: scheme.surfaceContainer,
       actions: [
-        // ─── زر الثيم 🎨 ───
         IconButton(
           icon: const Icon(Icons.palette_outlined),
           tooltip: 'إعدادات المظهر',
@@ -149,7 +137,6 @@ class MainShellRailWrapper extends ConsumerWidget {
             );
           },
         ),
-        // ─── زر اللغة 🌍 ───
         IconButton(
           icon: const Icon(Icons.language),
           tooltip: 'تغيير اللغة',
@@ -162,13 +149,9 @@ class MainShellRailWrapper extends ConsumerWidget {
   }
 }
 
-/// ═══════════════════════════════════════════════════════════
-/// AppBarBuilder — بناء AppBar ديناميكي حسب المسار
-/// ═══════════════════════════════════════════════════════════
 class AppBarBuilder {
   AppBarBuilder._();
 
-  /// إرجاع AppBar حسب المسار
   static PreferredSizeWidget? build(
     BuildContext context, {
     required String location,
@@ -187,10 +170,11 @@ class AppBarBuilder {
   }
 
   static String _titleForLocation(String location) {
+    if (location.contains('/shop')) return 'المحل';
     if (location.contains('/receipts')) return 'الإيصالات';
     if (location.contains('/inventory')) return 'المخزون';
     if (location.contains('/expenses')) return 'المصاريف';
-    if (location.contains('/delivery')) return 'التسليم'; // ✅ جديد
+    if (location.contains('/delivery')) return 'التسليم';
     if (location.contains('/reports')) return 'التقارير';
     if (location.contains('/settings')) return 'الإعدادات';
     return 'FixHub';

@@ -381,7 +381,9 @@ class Receipt {
   final String? deviceImei;
   final String? deviceSerial;
   final String? deviceColor;
-  final String? devicePassword;
+    final String? devicePassword;
+  final String? lockType;              // ✅ نوع القفل
+  final String? lockPatternImage;      // ✅ صورة النمط
   final String? conditionNotes;
 
   final List<ReceiptIssue> issues;
@@ -426,7 +428,9 @@ class Receipt {
     this.deviceImei,
     this.deviceSerial,
     this.deviceColor,
-    this.devicePassword,
+        this.devicePassword,
+    this.lockType,
+    this.lockPatternImage,
     this.conditionNotes,
     this.issues = const [],
     this.accessories = const [],
@@ -473,7 +477,9 @@ class Receipt {
     String? deviceImei,
     String? deviceSerial,
     String? deviceColor,
-    String? devicePassword,
+        String? devicePassword,
+    String? lockType,
+    String? lockPatternImage,
     String? conditionNotes,
     List<ReceiptIssue>? issues,
     List<ReceiptAccessory>? accessories,
@@ -512,7 +518,9 @@ class Receipt {
       deviceImei: deviceImei ?? this.deviceImei,
       deviceSerial: deviceSerial ?? this.deviceSerial,
       deviceColor: deviceColor ?? this.deviceColor,
-      devicePassword: devicePassword ?? this.devicePassword,
+            devicePassword: devicePassword ?? this.devicePassword,
+      lockType: lockType ?? this.lockType,
+      lockPatternImage: lockPatternImage ?? this.lockPatternImage,
       conditionNotes: conditionNotes ?? this.conditionNotes,
       issues: issues ?? this.issues,
       accessories: accessories ?? this.accessories,
@@ -554,7 +562,9 @@ class Receipt {
       deviceImei: json['device_imei'] as String?,
       deviceSerial: json['device_serial'] as String?,
       deviceColor: json['device_color'] as String?,
-      devicePassword: json['device_password'] as String?,
+            devicePassword: json['device_password'] as String?,
+      lockType: json['lock_type'] as String?,
+      lockPatternImage: json['lock_pattern_image'] as String?,
       conditionNotes: json['condition_notes'] as String?,
       issues: _parseList(json['issues'], ReceiptIssue.fromJson),
       accessories: _parseList(json['accessories'], ReceiptAccessory.fromJson),
@@ -596,9 +606,11 @@ class Receipt {
       'device_imei': deviceImei,
       'device_serial': deviceSerial,
       'device_color': deviceColor,
-      'device_password': devicePassword,
+            'device_password': devicePassword,
+      'lock_type': lockType,
+      'lock_pattern_image': lockPatternImage,
       'condition_notes': conditionNotes,
-      'issues': issues.map((e) => e.toJson()).toList(),
+'issues': issues.map((e) => e.toJson()).toList(),
       'accessories': accessories.map((e) => e.toJson()).toList(),
       'images': images,
       'status': status.name,

@@ -14,7 +14,7 @@ class InventoryFilter {
   const InventoryFilter({
     this.category,
     this.supplierId,
-    this.brandName, // ✅ جديد
+    this.brandName,
     this.search,
     this.onlyLowStock = false,
     this.onlyOutOfStock = false,
@@ -27,7 +27,7 @@ class InventoryFilter {
 
   final InventoryCategory? category;
   final String? supplierId;
-  final String? brandName; // ✅ جديد
+  final String? brandName;
   final String? search;
   final bool onlyLowStock;
   final bool onlyOutOfStock;
@@ -42,8 +42,8 @@ class InventoryFilter {
     bool clearCategory = false,
     String? supplierId,
     bool clearSupplier = false,
-    String? brandName, // ✅ جديد
-    bool clearBrand = false, // ✅ جديد
+    String? brandName,
+    bool clearBrand = false,
     String? search,
     bool? onlyLowStock,
     bool? onlyOutOfStock,
@@ -56,7 +56,7 @@ class InventoryFilter {
     return InventoryFilter(
       category: clearCategory ? null : (category ?? this.category),
       supplierId: clearSupplier ? null : (supplierId ?? this.supplierId),
-      brandName: clearBrand ? null : (brandName ?? this.brandName), // ✅ جديد
+      brandName: clearBrand ? null : (brandName ?? this.brandName),
       search: search ?? this.search,
       onlyLowStock: onlyLowStock ?? this.onlyLowStock,
       onlyOutOfStock: onlyOutOfStock ?? this.onlyOutOfStock,
@@ -129,8 +129,7 @@ class InventoryService {
     InventoryFilter filter = const InventoryFilter(),
   ]) async {
     try {
-      var query = _client.from(_table).select();
-
+      var query = _client.from(_table).select().isFilter('deleted_at', null);
       if (filter.onlyActive) {
         query = query.eq('is_active', true);
       }
@@ -143,7 +142,6 @@ class InventoryService {
         query = query.eq('supplier_id', filter.supplierId!);
       }
 
-      // ✅ فلتر الماركة (يدور في الاسم الإنجليزي أو العربي)
       if (filter.brandName != null && filter.brandName!.isNotEmpty) {
         final brand = filter.brandName!;
         query = query.or('name.ilike.%$brand%,name_ar.ilike.%$brand%');
@@ -181,7 +179,6 @@ class InventoryService {
       return items;
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
         print('InventoryService.list error: $e');
       }
       return const [];
@@ -320,10 +317,17 @@ class InventoryService {
     }
   }
 
-  Future<bool> delete(String id) async {
+  Future<bool> delete(String id, {String? reason}) async {
     try {
-      await _client.from(_table).delete().eq('id', id);
-      return true;
+      final result = await _client.rpc(
+        'soft_delete_row',
+        params: {
+          'p_table': _table,
+          'p_id': id,
+          'p_reason': reason ?? 'تم حذف القطعة من التطبيق',
+        },
+      );
+      return result == true;
     } catch (e) {
       if (kDebugMode) print('InventoryService.delete error: $e');
       return false;
@@ -353,8 +357,9 @@ class InventoryService {
     String? notes,
   }) async {
     if (quantity <= 0) throw Exception('الكمية يجب أن تكون أكبر من صفر');
-    if (!type.isIncrease)
+    if (!type.isIncrease) {
       throw Exception('نوع الحركة (${type.labelAr}) لا يصلح للإدخال');
+    }
     return await _applyMovement(
       inventoryId: inventoryId,
       type: type,
@@ -375,12 +380,13 @@ class InventoryService {
     String? notes,
   }) async {
     if (quantity <= 0) throw Exception('الكمية يجب أن تكون أكبر من صفر');
-    if (!type.isDecrease)
+    if (!type.isDecrease) {
       throw Exception('نوع الحركة (${type.labelAr}) لا يصلح للإخراج');
+    }
     return await _applyMovement(
       inventoryId: inventoryId,
       type: type,
-      quantity: -quantity,
+      quantity: quantity,
       referenceId: referenceId,
       referenceType: referenceType,
       notes: notes,
@@ -411,6 +417,12 @@ class InventoryService {
     }
   }
 
+  /// ═══════════════════════════════════════════════════════════════
+  /// تطبيق حركة مخزون (Atomic Transaction)
+  /// ═══════════════════════════════════════════════════════════════
+  /// كل عملية (تسجيل الحركة + تحديث الكمية + تسجيل النشاط) بتتم
+  /// في RPC واحد على Supabase، فإما تنجح كلها أو تفشل كلها.
+  /// ═══════════════════════════════════════════════════════════════
   Future<InventoryItem?> _applyMovement({
     required String inventoryId,
     required MovementType type,
@@ -420,47 +432,30 @@ class InventoryService {
     String? referenceType,
     String? notes,
   }) async {
-    final tenantId = await _authService.getUserTenantId();
-    final userId = _authService.currentUser?.id;
-    if (tenantId == null)
-      throw Exception('لا يوجد مستأجر (Tenant) مرتبط بالمستخدم');
-
-    final current = await getById(inventoryId);
-    if (current == null) throw Exception('الصنف غير موجود في قاعدة البيانات');
-
-    final newQuantity = current.quantity + quantity;
-    if (newQuantity < 0)
-      throw Exception('الكمية غير كافية (المتاح: ${current.quantity})');
-
     try {
-      await _client.from(_movementsTable).insert({
-        'tenant_id': tenantId,
-        'inventory_id': inventoryId,
-        'movement_type': type.name,
-        'quantity': quantity.abs(),
-        'previous_quantity': current.quantity,
-        'new_quantity': newQuantity,
-        'unit_cost': unitCost,
-        'reference_id': referenceId,
-        'reference_type': referenceType,
-        'notes': notes,
-        'created_by': userId,
-      });
-    } catch (e) {
-      throw Exception('فشل تسجيل حركة المخزون: $e');
-    }
+      final result = await _client.rpc(
+        'process_stock_movement',
+        params: {
+          'p_inventory_id': inventoryId,
+          'p_movement_type': type.name,
+          'p_quantity': type == MovementType.adjustment
+              ? quantity // adjustment: احترم الإشارة (موجب أو سالب)
+              : quantity.abs(), // باقي الأنواع: دايماً موجب
+          'p_unit_cost': unitCost,
+          'p_reference_id': referenceId,
+          'p_reference_type': referenceType,
+          'p_notes': notes,
+        },
+      );
 
-    try {
-      final updated = await _client
-          .from(_table)
-          .update({'quantity': newQuantity})
-          .eq('id', inventoryId)
-          .select()
-          .single();
+      if (result == null || result['success'] != true) {
+        throw Exception('فشل تسجيل حركة المخزون');
+      }
 
-      return InventoryItem.fromJson(Map<String, dynamic>.from(updated));
+      return await getById(inventoryId);
     } catch (e) {
-      throw Exception('فشل تحديث كمية الصنف: $e');
+      if (kDebugMode) print('_applyMovement error: $e');
+      rethrow;
     }
   }
 
@@ -476,10 +471,12 @@ class InventoryService {
 
       if (inventoryId != null) query = query.eq('inventory_id', inventoryId);
       if (type != null) query = query.eq('movement_type', type.name);
-      if (fromDate != null)
+      if (fromDate != null) {
         query = query.gte('created_at', fromDate.toIso8601String());
-      if (toDate != null)
+      }
+      if (toDate != null) {
         query = query.lte('created_at', toDate.toIso8601String());
+      }
 
       final data =
           await query.order('created_at', ascending: false).limit(limit);
@@ -514,7 +511,7 @@ class InventoryService {
 
       for (final r in rows) {
         final qty = _toInt(r['quantity']);
-        final minQty = _toInt(r['min_quantity'], fallback: 1); // ✅ 1
+        final minQty = _toInt(r['min_quantity'], fallback: 1);
         final cost = _toDouble(r['cost_price']);
         final cat = InventoryCategoryX.fromString(r['category'] as String?);
 

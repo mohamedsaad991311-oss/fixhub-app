@@ -43,7 +43,7 @@ class NavTabs {
   NavTabs._();
 
   static const List<NavTab> main = [
-    // ─── 1. الرئيسية ───
+    // ─── 0. الرئيسية ───
     NavTab(
       key: 'home',
       labelAr: 'الرئيسية',
@@ -51,6 +51,15 @@ class NavTabs {
       icon: Icons.home_outlined,
       activeIcon: Icons.home,
       route: RouteNames.home,
+    ),
+    // ─── 1. المحل (قسم المبيعات والإكسسوارات الجديد) ───
+    NavTab(
+      key: 'shop',
+      labelAr: 'المحل',
+      labelEn: 'Shop',
+      icon: Icons.storefront_outlined,
+      activeIcon: Icons.storefront,
+      route: '/shop',
     ),
     // ─── 2. الإيصالات ───
     NavTab(
@@ -79,7 +88,7 @@ class NavTabs {
       activeIcon: Icons.account_balance_wallet,
       route: RouteNames.expenses,
     ),
-    // ─── 5. التسليم (جديد) ───
+    // ─── 5. التسليم ───
     NavTab(
       key: 'delivery',
       labelAr: 'التسليم',

@@ -1,9 +1,9 @@
-// lib/features/home/presentation/pages/home_dashboard_page.dart
+﻿// lib/features/home/presentation/pages/home_dashboard_page.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../../inventory/presentation/pages/inventory_list_v2_page.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -15,18 +15,6 @@ import '../widgets/recent_receipts_card.dart';
 import '../widgets/revenue_chart_card.dart';
 import '../widgets/stats_grid.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// HomeDashboardPage — الشاشة الرئيسية
-/// ═══════════════════════════════════════════════════════════
-///
-/// مكونات:
-/// - Welcome header (اسم المستخدم + الورشة)
-/// - Stats Grid (4 كروت)
-/// - Quick Actions (4 أزرار)
-/// - Revenue Chart (7 أيام)
-/// - Low Stock Alert Card
-/// - Recent Receipts Card
-///
 class HomeDashboardPage extends ConsumerWidget {
   const HomeDashboardPage({super.key});
 
@@ -42,7 +30,7 @@ class HomeDashboardPage extends ConsumerWidget {
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-          // ─── Header ───
+          // Header
           SliverToBoxAdapter(
             child: _WelcomeHeader(
               fullName: authState?.user?.fullName ?? 'مرحباً',
@@ -50,7 +38,7 @@ class HomeDashboardPage extends ConsumerWidget {
             ),
           ),
 
-          // ─── Content ───
+          // Content
           SliverPadding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSizes.spaceMd,
@@ -63,10 +51,7 @@ class HomeDashboardPage extends ConsumerWidget {
                 StatsGrid(
                   stats: stats,
                   onTapActive: () => _goToReceipts(context, onlyActive: true),
-                  onTapReady: () => _goToReceipts(
-                    context,
-                    status: 'ready',
-                  ),
+                  onTapReady: () => _goToReceipts(context, status: 'ready'),
                 ),
 
                 const SizedBox(height: AppSizes.spaceMd),
@@ -76,7 +61,11 @@ class HomeDashboardPage extends ConsumerWidget {
                 const SizedBox(height: AppSizes.spaceSm),
                 QuickActionsBar(
                   onNewReceipt: () => _goToNewReceipt(context),
-                  onAddInventory: () => context.push(RouteNames.inventory),
+                  onPos: () => context.push(RouteNames.pos),
+                  onAddInventory: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const InventoryListV2Page())),
                   onAddExpense: () => context.push(RouteNames.expenses),
                   onSupplierInvoice: () => context.push(RouteNames.suppliers),
                 ),
@@ -111,7 +100,6 @@ class HomeDashboardPage extends ConsumerWidget {
 
                 const SizedBox(height: AppSizes.spaceXl),
 
-                // Loading indicator في الأسفل لو بيحدث
                 if (isLoading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
@@ -133,9 +121,7 @@ class HomeDashboardPage extends ConsumerWidget {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  //  ACTIONS
-  // ═══════════════════════════════════════════════════════════
+  // ACTIONS
 
   void _goToNewReceipt(BuildContext context) {
     context.push(RouteNames.receivingWizard);
@@ -146,20 +132,13 @@ class HomeDashboardPage extends ConsumerWidget {
     String? status,
     bool onlyActive = false,
   }) {
-    // TODO: عدّل الـ route params
     context.push(RouteNames.receipts);
   }
 
-  // ═══════════════════════════════════════════════════════════
-  //  MOCK DATA (مؤقت لحد ما نضيف إيرادات حقيقية يومية)
-  // ═══════════════════════════════════════════════════════════
-
-  /// توليد 7 قيم إيرادات من total الشهري (توزيع عشوائي موزون)
+  // MOCK DATA
   List<double> _mockDailyRevenue(double monthRevenue) {
     if (monthRevenue <= 0) return List.filled(7, 0);
-
     final avg = monthRevenue / 30;
-    // توزيع بسيط: قيم حول المتوسط مع تباين بسيط
     return [
       avg * 0.7,
       avg * 1.1,
@@ -172,9 +151,7 @@ class HomeDashboardPage extends ConsumerWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  WELCOME HEADER
-// ═══════════════════════════════════════════════════════════════
+// WELCOME HEADER
 
 class _WelcomeHeader extends StatelessWidget {
   const _WelcomeHeader({
@@ -266,9 +243,7 @@ class _WelcomeHeader extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  SECTION TITLE
-// ═══════════════════════════════════════════════════════════════
+// SECTION TITLE
 
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({required this.title});

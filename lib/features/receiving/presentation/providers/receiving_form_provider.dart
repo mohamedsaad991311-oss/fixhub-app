@@ -12,25 +12,34 @@ class UsedInventoryItem {
   final String itemName;
   final int quantity;
   final double unitCost;
+  final double sellingPrice; // ✅ جديد: سعر البيع للعميل
 
   const UsedInventoryItem({
     required this.inventoryId,
     required this.itemName,
     required this.quantity,
     this.unitCost = 0,
+    this.sellingPrice = 0, // ✅ جديد
   });
+
+  // حسابات جاهزة
+  double get itemProfit => (sellingPrice - unitCost) * quantity;
+  double get customerPartTotal => sellingPrice * quantity;
+  double get totalUnitCost => unitCost * quantity;
 
   UsedInventoryItem copyWith({
     String? inventoryId,
     String? itemName,
     int? quantity,
     double? unitCost,
+    double? sellingPrice, // ✅ جديد
   }) {
     return UsedInventoryItem(
       inventoryId: inventoryId ?? this.inventoryId,
       itemName: itemName ?? this.itemName,
       quantity: quantity ?? this.quantity,
       unitCost: unitCost ?? this.unitCost,
+      sellingPrice: sellingPrice ?? this.sellingPrice, // ✅ جديد
     );
   }
 }
@@ -51,11 +60,16 @@ class ReceivingFormState {
   final String? deviceSerial;
   final String? deviceColor;
   final String? devicePassword;
+  
+  // ✅ الحقول الجديدة
+  final String? lockType;              
+  final String? lockPatternImage;      
   final String? conditionNotes;
+  final List<String> conditionPhotos;  
 
   final List<ReceiptIssue> issues;
   final List<ReceiptAccessory> accessories;
-  final List<UsedInventoryItem> usedItems; // ✅ جديد
+  final List<UsedInventoryItem> usedItems;
 
   final ReceiptPriority priority;
   final double estimatedCost;
@@ -77,10 +91,13 @@ class ReceivingFormState {
     this.deviceSerial,
     this.deviceColor,
     this.devicePassword,
+    this.lockType,
+    this.lockPatternImage,
     this.conditionNotes,
+    this.conditionPhotos = const [],
     this.issues = const [],
     this.accessories = const [],
-    this.usedItems = const [], // ✅ جديد
+    this.usedItems = const [],
     this.priority = ReceiptPriority.normal,
     this.estimatedCost = 0,
     this.deposit = 0,
@@ -90,7 +107,18 @@ class ReceivingFormState {
     this.expectedDeliveryDate,
   });
 
-  double get total => estimatedCost - discount;
+  // ✅ الحسابات الجديدة
+  double get customerPartsTotal =>
+      usedItems.fold(0.0, (sum, item) => sum + item.customerPartTotal);
+
+  double get totalPartsCost =>
+      usedItems.fold(0.0, (sum, item) => sum + item.totalUnitCost);
+
+  double get total => estimatedCost + customerPartsTotal - discount;
+
+  double get totalProfit => estimatedCost - discount +
+      usedItems.fold(0.0, (sum, item) => sum + item.itemProfit);
+
   double get remainingAmount => total - deposit;
 
   String get deviceFullName {
@@ -131,11 +159,16 @@ class ReceivingFormState {
     bool clearDeviceColor = false,
     String? devicePassword,
     bool clearDevicePassword = false,
+    String? lockType,
+    bool clearLockType = false,
+    String? lockPatternImage,
+    bool clearLockPatternImage = false,
     String? conditionNotes,
     bool clearConditionNotes = false,
+    List<String>? conditionPhotos,
     List<ReceiptIssue>? issues,
     List<ReceiptAccessory>? accessories,
-    List<UsedInventoryItem>? usedItems, // ✅ جديد
+    List<UsedInventoryItem>? usedItems,
     ReceiptPriority? priority,
     double? estimatedCost,
     double? deposit,
@@ -162,11 +195,14 @@ class ReceivingFormState {
       deviceColor: clearDeviceColor ? null : (deviceColor ?? this.deviceColor),
       devicePassword:
           clearDevicePassword ? null : (devicePassword ?? this.devicePassword),
+      lockType: clearLockType ? null : (lockType ?? this.lockType),
+      lockPatternImage: clearLockPatternImage ? null : (lockPatternImage ?? this.lockPatternImage),
       conditionNotes:
           clearConditionNotes ? null : (conditionNotes ?? this.conditionNotes),
+      conditionPhotos: conditionPhotos ?? this.conditionPhotos,
       issues: issues ?? this.issues,
       accessories: accessories ?? this.accessories,
-      usedItems: usedItems ?? this.usedItems, // ✅ جديد
+      usedItems: usedItems ?? this.usedItems,
       priority: priority ?? this.priority,
       estimatedCost: estimatedCost ?? this.estimatedCost,
       deposit: deposit ?? this.deposit,
@@ -243,10 +279,33 @@ class ReceivingFormNotifier extends StateNotifier<ReceivingFormState> {
         : state.copyWith(devicePassword: v);
   }
 
+  // ✅ دوال الحقول الجديدة
+  void setLockType(String? v) {
+    state = v == null
+        ? state.copyWith(clearLockType: true)
+        : state.copyWith(lockType: v);
+  }
+
+  void setLockPatternImage(String? v) {
+    state = v == null
+        ? state.copyWith(clearLockPatternImage: true)
+        : state.copyWith(lockPatternImage: v);
+  }
+
   void setConditionNotes(String? v) {
     state = v == null
         ? state.copyWith(clearConditionNotes: true)
         : state.copyWith(conditionNotes: v);
+  }
+
+  void addConditionPhoto(String path) {
+    state = state.copyWith(conditionPhotos: [...state.conditionPhotos, path]);
+  }
+
+  void removeConditionPhoto(int index) {
+    if (index < 0 || index >= state.conditionPhotos.length) return;
+    final copy = [...state.conditionPhotos]..removeAt(index);
+    state = state.copyWith(conditionPhotos: copy);
   }
 
   void addIssue(ReceiptIssue issue) {

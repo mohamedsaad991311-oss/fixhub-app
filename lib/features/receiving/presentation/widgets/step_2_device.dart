@@ -24,9 +24,11 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
   late final TextEditingController _serialController;
   late final TextEditingController _colorController;
   late final TextEditingController _passwordController;
+  late final TextEditingController _patternController;
   late final TextEditingController _conditionController;
 
   String? _deviceType;
+  String _lockType = 'password'; // 'pin' | 'pattern' | 'password'
 
   static const List<_DeviceType> _deviceTypes = [
     _DeviceType(id: 'smartphone', label: 'موبايل', icon: Icons.smartphone),
@@ -42,15 +44,15 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
     super.initState();
     final form = ref.read(receivingFormProvider);
     _deviceType = form.deviceType;
+    _lockType = form.lockType ?? 'password';
     _brandController = TextEditingController(text: form.deviceBrand ?? '');
     _modelController = TextEditingController(text: form.deviceModel ?? '');
     _imeiController = TextEditingController(text: form.deviceImei ?? '');
     _serialController = TextEditingController(text: form.deviceSerial ?? '');
     _colorController = TextEditingController(text: form.deviceColor ?? '');
-    _passwordController =
-        TextEditingController(text: form.devicePassword ?? '');
-    _conditionController =
-        TextEditingController(text: form.conditionNotes ?? '');
+    _passwordController = TextEditingController(text: form.devicePassword ?? '');
+    _patternController = TextEditingController(text: form.lockPatternImage ?? '');
+    _conditionController = TextEditingController(text: form.conditionNotes ?? '');
   }
 
   @override
@@ -61,6 +63,7 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
     _serialController.dispose();
     _colorController.dispose();
     _passwordController.dispose();
+    _patternController.dispose();
     _conditionController.dispose();
     super.dispose();
   }
@@ -179,35 +182,77 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
               ),
             ],
           ),
-          const SizedBox(height: AppSizes.spaceMd),
+          const SizedBox(height: AppSizes.spaceLg),
 
-          _textField(
-            controller: _passwordController,
-            label: 'كلمة سر الجهاز (اختياري)',
-            hint: 'PIN / Pattern / Password',
+          // ═══ 3) قفل الجهاز (جديد) ═══
+          _SectionHeader(
             icon: Icons.lock_outline,
+            title: 'قفل الجهاز',
+            subtitle: 'نوع القفل المطلوب لفتح الجهاز',
+            scheme: scheme,
+          ),
+          const SizedBox(height: AppSizes.spaceSmMd),
+          _LockSelector(
+            selectedType: _lockType,
+            onChanged: (val) {
+              setState(() => _lockType = val);
+              ref.read(receivingFormProvider.notifier).setLockType(val);
+            },
             scheme: scheme,
             isDark: isDark,
-            onChanged: (v) => _setNullable(
-                v, ref.read(receivingFormProvider.notifier).setDevicePassword),
           ),
-          const SizedBox(height: AppSizes.spaceMd),
+          const SizedBox(height: AppSizes.spaceSmMd),
+          
+          if (_lockType == 'pattern')
+            _textField(
+              controller: _patternController,
+              label: 'صورة النمط (اسم الملف أو الرابط)',
+              hint: 'pattern_image.png',
+              icon: Icons.gesture,
+              scheme: scheme,
+              isDark: isDark,
+              onChanged: (v) => _setNullable(v,
+                  ref.read(receivingFormProvider.notifier).setLockPatternImage),
+            )
+          else
+            _textField(
+              controller: _passwordController,
+              label: _lockType == 'pin' ? 'رمز PIN (أرقام فقط)' : 'كلمة السر (حروف وأرقام)',
+              hint: '****',
+              icon: Icons.password,
+              scheme: scheme,
+              isDark: isDark,
+              keyboardType: _lockType == 'pin' ? TextInputType.number : TextInputType.text,
+              onChanged: (v) => _setNullable(v,
+                  ref.read(receivingFormProvider.notifier).setDevicePassword),
+            ),
+          
+          const SizedBox(height: AppSizes.spaceLg),
 
+          // ═══ 4) حالة الجهاز الظاهرية ═══
+          _SectionHeader(
+            icon: Icons.visibility_outlined,
+            title: 'حالة الجهاز الظاهرية',
+            subtitle: 'الخدوش أو الكسور (اختياري)',
+            scheme: scheme,
+          ),
+          const SizedBox(height: AppSizes.spaceSmMd),
           _textField(
             controller: _conditionController,
-            label: 'حالة الجهاز الظاهرية (اختياري)',
+            label: 'وصف الحالة',
             hint: 'خدوش، كسر شاشة، انبعاج...',
-            icon: Icons.visibility_outlined,
+            icon: Icons.edit_note,
             scheme: scheme,
             isDark: isDark,
             maxLines: 2,
             onChanged: (v) => _setNullable(
                 v, ref.read(receivingFormProvider.notifier).setConditionNotes),
           ),
+          // ملاحظة: رفع صور الحالة هنعمله في خطوة منفصلة (محتاجين نضيف حزمة image_picker)
 
           const SizedBox(height: AppSizes.spaceLg),
 
-          // ═══ 3) الأعطال ═══
+          // ═══ 5) الأعطال ═══
           _SectionHeader(
             icon: Icons.build_outlined,
             title: 'الأعطال',
@@ -239,7 +284,7 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
 
           const SizedBox(height: AppSizes.spaceLg),
 
-          // ═══ 4) الملحقات ═══
+          // ═══ 6) الملحقات ═══
           _SectionHeader(
             icon: Icons.inventory_2_outlined,
             title: 'الملحقات',
@@ -276,7 +321,7 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
 
           const SizedBox(height: AppSizes.spaceLg),
 
-          // ═══ 5) قطع الغيار المستخدمة ═══
+          // ═══ 7) قطع الغيار المستخدمة ═══
           _SectionHeader(
             icon: Icons.settings_outlined,
             title: 'قطع الغيار المستخدمة',
@@ -502,6 +547,47 @@ class _Step2DeviceState extends ConsumerState<Step2Device> {
     if (result != null) {
       ref.read(receivingFormProvider.notifier).addUsedItem(result);
     }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LOCK SELECTOR (جديد)
+// ═══════════════════════════════════════════════════════════
+
+class _LockSelector extends StatelessWidget {
+  const _LockSelector({
+    required this.selectedType,
+    required this.onChanged,
+    required this.scheme,
+    required this.isDark,
+  });
+
+  final String selectedType;
+  final ValueChanged<String> onChanged;
+  final ColorScheme scheme;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<String>(
+      segments: const [
+        ButtonSegment(value: 'pin', label: Text('PIN'), icon: Icon(Icons.pin)),
+        ButtonSegment(value: 'pattern', label: Text('نمط'), icon: Icon(Icons.gesture)),
+        ButtonSegment(value: 'password', label: Text('باسورد'), icon: Icon(Icons.key)),
+      ],
+      selected: {selectedType},
+      onSelectionChanged: (Set<String> newSelection) {
+        onChanged(newSelection.first);
+      },
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return scheme.primary.withValues(alpha: 0.2);
+          }
+          return isDark ? scheme.surfaceContainerHigh : scheme.surfaceContainerLow;
+        }),
+      ),
+    );
   }
 }
 
@@ -969,7 +1055,7 @@ class _UsedItemTile extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: scheme.onSurface)),
                 const SizedBox(height: 2),
-                Text('التكلفة: ${item.unitCost}',
+                Text('سعر البيع للعميل: ${CurrencyFormatter.format(item.sellingPrice)}',
                     style: TextStyle(
                         fontSize: 12, color: scheme.onSurfaceVariant)),
               ],
@@ -1065,7 +1151,7 @@ class _InventoryPickerSheetState extends ConsumerState<_InventoryPickerSheet> {
                       return ListTile(
                         title: Text(item.displayName()),
                         subtitle: Text(
-                            'المتاح: ${item.quantity} | التكلفة: ${CurrencyFormatter.format(item.costPrice)}'),
+                            'المتاح: ${item.quantity} | سعر البيع: ${CurrencyFormatter.format(item.sellingPrice)}'),
                         trailing: const Icon(Icons.add_circle_outline),
                         onTap: () {
                           Navigator.pop(
@@ -1075,6 +1161,7 @@ class _InventoryPickerSheetState extends ConsumerState<_InventoryPickerSheet> {
                               itemName: item.displayName(),
                               quantity: 1,
                               unitCost: item.costPrice,
+                              sellingPrice: item.sellingPrice, // ✅ إضافة سعر البيع
                             ),
                           );
                         },

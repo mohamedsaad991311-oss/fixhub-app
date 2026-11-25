@@ -14,7 +14,7 @@ dependencies:
   cupertino_icons: any
   flutter_riverpod: any
   go_router: any
-  supabase_flutter: any
+  supabase_flutter: ^2.18.3
   hive: any
   hive_flutter: any
   shared_preferences: any
@@ -30,8 +30,8 @@ dependencies:
   intl: any
   reactive_forms: any
   image_picker: any
-  printing: any
-  pdf: any
+  printing: ^5.15.1
+  pdf: ^3.13.1
   flutter_local_notifications: any
   local_auth: any
   crypto: any
@@ -52,9 +52,10 @@ dev_dependencies:
   flutter_lints: any
 
 flutter:
-  uses-material-design: true
   generate: true
+  uses-material-design: true
   assets:
+    - assets/fonts/cairo.ttf
     - assets/images/
     - assets/icons/
     - assets/lottie/

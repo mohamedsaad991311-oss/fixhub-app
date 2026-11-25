@@ -1,4 +1,4 @@
-// lib/core/router/app_router.dart
+﻿// lib/core/router/app_router.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +20,8 @@ import '../../features/inventory/presentation/pages/inventory_detail_page.dart';
 import '../../features/inventory/presentation/pages/inventory_form_page.dart';
 import '../../features/inventory/presentation/pages/inventory_list_page.dart';
 import '../../features/suppliers/data/models/supplier.dart';
+import '../../features/pos/presentation/pages/pos_screen.dart';
+import '../../features/pos/presentation/pages/shop_dashboard_page.dart';
 import '../../features/suppliers/presentation/pages/supplier_detail_page.dart';
 import '../../features/suppliers/presentation/pages/supplier_form_page.dart';
 import '../../features/suppliers/presentation/pages/suppliers_list_page.dart';
@@ -27,15 +29,10 @@ import '../../features/staff/data/models/staff_member.dart';
 import '../../features/staff/presentation/pages/staff_detail_page.dart';
 import '../../features/staff/presentation/pages/staff_form_page.dart';
 import '../../features/staff/presentation/pages/staff_list_page.dart';
-
-// ✅ Expenses (Screens جديدة)
 import '../../features/expenses/presentation/screens/expenses_list_screen.dart';
 import '../../features/expenses/presentation/screens/expense_form_screen.dart';
-
-// ✅ Delivery (جديد)
 import '../../features/delivery/presentation/pages/delivery_page.dart';
 import '../../features/delivery/presentation/pages/delivery_detail_page.dart';
-
 import '../../features/reports/presentation/pages/reports_page.dart';
 import '../../features/scanner/presentation/pages/scanner_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
@@ -60,9 +57,6 @@ import 'app_placeholder_pages.dart';
 import 'main_shell.dart';
 import 'route_names.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// AppRouter — الـ Router الرئيسي (GoRouter)
-/// ═══════════════════════════════════════════════════════════
 class AppRouter {
   AppRouter._();
 
@@ -135,21 +129,16 @@ class AppRouter {
   }
 
   static final List<RouteBase> _routes = [
-    // ─── Splash ───
     GoRoute(
       path: RouteNames.splash,
       name: 'splash',
       builder: (context, state) => const SplashPage(),
     ),
-
-    // ─── Onboarding ───
     GoRoute(
       path: RouteNames.onboarding,
       name: 'onboarding',
       builder: (context, state) => const OnboardingPage(),
     ),
-
-    // ─── Auth ───
     GoRoute(
       path: RouteNames.login,
       name: 'login',
@@ -176,15 +165,13 @@ class AppRouter {
       builder: (context, state) => const PinLockPage(),
     ),
 
-    // ═══════════════════════════════════════════════════════
-    // Main Shell (التابات السبعة)
-    // ═══════════════════════════════════════════════════════
+    // Main Shell
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return MainShellRailWrapper(navigationShell: navigationShell);
       },
       branches: [
-        // Branch 0: Home
+        // 0: Home
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -195,7 +182,18 @@ class AppRouter {
           ],
         ),
 
-        // Branch 1: Receipts
+        // 1: Shop (المحل)
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/shop',
+              name: 'shop',
+              builder: (context, state) => const ShopDashboardPage(),
+            ),
+          ],
+        ),
+
+        // 2: Receipts
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -237,9 +235,14 @@ class AppRouter {
           ],
         ),
 
-        // Branch 2: Inventory
+        // 3: Inventory (مخزن الصيانة القديم)
         StatefulShellBranch(
           routes: [
+            GoRoute(
+              path: RouteNames.pos,
+              name: 'pos',
+              builder: (context, state) => const PosScreen(),
+            ),
             GoRoute(
               path: RouteNames.inventory,
               name: 'inventory',
@@ -268,7 +271,7 @@ class AppRouter {
           ],
         ),
 
-        // Branch 3: Expenses
+        // 4: Expenses
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -294,7 +297,7 @@ class AppRouter {
           ],
         ),
 
-        // Branch 4: Delivery (جديد - تم نقله هنا)
+        // 5: Delivery
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -315,7 +318,7 @@ class AppRouter {
           ],
         ),
 
-        // Branch 5: Reports
+        // 6: Reports
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -326,7 +329,7 @@ class AppRouter {
           ],
         ),
 
-        // Branch 6: Settings
+        // 7: Settings
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -367,8 +370,7 @@ class AppRouter {
                 GoRoute(
                   path: 'subscription',
                   name: 'subscriptionSettings',
-                  builder: (context, state) =>
-                      const SubscriptionSettingsPage(),
+                  builder: (context, state) => const SubscriptionSettingsPage(),
                 ),
                 GoRoute(
                   path: 'about',
@@ -382,11 +384,7 @@ class AppRouter {
       ],
     ),
 
-    // ═══════════════════════════════════════════════════════
     // Routes خارج الـ Shell
-    // ═══════════════════════════════════════════════════════
-
-    // ─── Suppliers ───
     GoRoute(
       path: RouteNames.suppliers,
       name: 'suppliers',
@@ -439,7 +437,6 @@ class AppRouter {
       ],
     ),
 
-    // ─── Staff ───
     GoRoute(
       path: RouteNames.staff,
       name: 'staff',
@@ -466,7 +463,6 @@ class AppRouter {
       ],
     ),
 
-    // ─── Scanner ───
     GoRoute(
       path: RouteNames.scanner,
       name: 'scanner',
@@ -476,7 +472,6 @@ class AppRouter {
       },
     ),
 
-    // ─── Tracking ───
     GoRoute(
       path: RouteNames.tracking,
       name: 'tracking',
@@ -493,56 +488,48 @@ class AppRouter {
       ],
     ),
 
-    // ─── Cloud Sync ───
     GoRoute(
       path: RouteNames.cloudSync,
       name: 'cloudSync',
       builder: (context, state) => const CloudSyncPage(),
     ),
 
-    // ─── Backup ───
     GoRoute(
       path: RouteNames.backup,
       name: 'backup',
       builder: (context, state) => const BackupSettingsPage(),
     ),
 
-    // ─── Activity Log ───
     GoRoute(
       path: RouteNames.activityLog,
       name: 'activityLog',
       builder: (context, state) => const ActivityLogPage(),
     ),
 
-    // ─── Subscription ───
     GoRoute(
       path: RouteNames.subscription,
       name: 'subscription',
       builder: (context, state) => const SubscriptionSettingsPage(),
     ),
 
-    // ─── Admin Dashboard ───
     GoRoute(
       path: '/admin',
       name: 'adminDashboard',
       builder: (context, state) => const AdminDashboardPage(),
     ),
 
-    // ─── Device Reset Request ───
     GoRoute(
       path: '/device-reset-request',
       name: 'deviceResetRequest',
       builder: (context, state) => const DeviceResetRequestPage(),
     ),
 
-    // ─── Devices ───
     GoRoute(
       path: '/devices',
       name: 'devices',
       builder: (context, state) => const DevicesPage(),
     ),
 
-    // ─── Invitations ───
     GoRoute(
       path: '/invitations',
       name: 'invitations',
@@ -551,9 +538,6 @@ class AppRouter {
   ];
 }
 
-// ═══════════════════════════════════════════════════════════
-// Router Refresh
-// ═══════════════════════════════════════════════════════════
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
     ref.listen(authProvider, (_, __) => notifyListeners());
@@ -561,9 +545,6 @@ class _RouterRefresh extends ChangeNotifier {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// Router Provider
-// ═══════════════════════════════════════════════════════════
 final routerProvider = Provider<GoRouter>((ref) {
   return AppRouter.create(ref: ref);
 });

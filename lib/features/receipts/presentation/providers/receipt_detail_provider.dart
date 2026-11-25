@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/receipt_service.dart';
 import '../../data/models/receipt.dart';
+import 'receipts_list_provider.dart'; // ✅ جديد: عشان ريفريش القائمة
 
 /// ═══════════════════════════════════════════════════════════
 /// ReceiptDetailState — حالة تفاصيل إيصال واحد
@@ -62,6 +63,15 @@ class ReceiptDetailNotifier extends StateNotifier<ReceiptDetailState> {
   final Ref _ref;
 
   ReceiptService get _service => _ref.read(receiptServiceProvider);
+
+  /// 🔄 ريفريش قايمة الإيصالات تلقائياً بعد أي تعديل
+  void _refreshList() {
+    try {
+      _ref.read(receiptsListProvider.notifier).refresh();
+    } catch (e) {
+      debugPrint('ReceiptDetailNotifier._refreshList warning: $e');
+    }
+  }
 
   // ─────────────────────────────────────────────────────────
   //  LOAD
@@ -137,6 +147,10 @@ class ReceiptDetailNotifier extends StateNotifier<ReceiptDetailState> {
         statusHistory: history,
         isUpdating: false,
       );
+
+      // 🔄 تحديث قايمة الإيصالات عشان التغيير يظهر من غير ريفريش
+      _refreshList();
+
       return true;
     } catch (e) {
       debugPrint('ReceiptDetailNotifier.changeStatus error: $e');
@@ -172,6 +186,10 @@ class ReceiptDetailNotifier extends StateNotifier<ReceiptDetailState> {
         return false;
       }
       state = state.copyWith(receipt: updated, isUpdating: false);
+
+      // 🔄 تحديث القايمة
+      _refreshList();
+
       return true;
     } catch (e) {
       debugPrint('ReceiptDetailNotifier.update error: $e');
@@ -190,6 +208,9 @@ class ReceiptDetailNotifier extends StateNotifier<ReceiptDetailState> {
       if (ok) {
         await refresh();
         state = state.copyWith(isUpdating: false);
+
+        // 🔄 تحديث القايمة
+        _refreshList();
       } else {
         state = state.copyWith(
           isUpdating: false,

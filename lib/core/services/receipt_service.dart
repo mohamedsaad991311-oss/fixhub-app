@@ -139,7 +139,8 @@ class ReceiptService {
     ReceiptFilter filter = const ReceiptFilter(),
   ]) async {
     try {
-      var query = _client.from(_table).select();
+      // ✅ استبعاد المحذوف (Soft Delete)
+      var query = _client.from(_table).select().isFilter('deleted_at', null);
 
       // status
       if (filter.status != null) {
@@ -178,7 +179,7 @@ class ReceiptService {
         query = query.lte('created_at', filter.toDate!.toIso8601String());
       }
 
-      // sort + pagination (معاً بدون reassign)
+      // sort + pagination
       final column = _sortColumn(filter.sortBy);
       final data = await query
           .order(column, ascending: filter.sortAscending)
@@ -188,7 +189,7 @@ class ReceiptService {
           .map((e) => Receipt.fromJson(Map<String, dynamic>.from(e)))
           .toList();
 
-      // فلتر متأخر (client-side لأن بيحتاج حساب تواريخ)
+      // فلتر متأخر (client-side)
       if (filter.onlyDelayed) {
         list = list.where((r) => r.isDelayed).toList();
       }
@@ -206,8 +207,12 @@ class ReceiptService {
   /// جلب إيصال واحد بالـ id
   Future<Receipt?> getById(String id) async {
     try {
-      final data =
-          await _client.from(_table).select().eq('id', id).maybeSingle();
+      final data = await _client
+          .from(_table)
+          .select()
+          .eq('id', id)
+          .isFilter('deleted_at', null)
+          .maybeSingle();
       if (data == null) return null;
       return Receipt.fromJson(Map<String, dynamic>.from(data));
     } catch (e) {
@@ -226,6 +231,7 @@ class ReceiptService {
           .from(_table)
           .select()
           .eq('tracking_token', token)
+          .isFilter('deleted_at', null)
           .maybeSingle();
       if (data == null) return null;
       return Receipt.fromJson(Map<String, dynamic>.from(data));
@@ -245,6 +251,7 @@ class ReceiptService {
           .from(_table)
           .select()
           .eq('receipt_number', receiptNumber)
+          .isFilter('deleted_at', null)
           .maybeSingle();
       if (data == null) return null;
       return Receipt.fromJson(Map<String, dynamic>.from(data));
@@ -324,7 +331,6 @@ class ReceiptService {
         'tax': draft.tax,
         'total': draft.total,
         'tracking_token': trackingToken,
-        // التعديل هنا: تعيين الفني الحالي تلقائياً إن لم يتم اختياره
         'technician_id': draft.technicianId ?? userId,
         'warranty_days': draft.warrantyDays,
         'notes': draft.notes,
@@ -362,6 +368,7 @@ class ReceiptService {
   /// تحديث بيانات إيصال (بدون تغيير الحالة)
   Future<Receipt?> update(Receipt receipt) async {
     try {
+ 
       final payload = receipt.toJson()
         ..remove('id')
         ..remove('created_at')
@@ -387,6 +394,34 @@ class ReceiptService {
     }
   }
 
+
+  /// تعديل حقول الإيصال عبر RPC (Atomic + Activity Log)
+  Future<Map<String, dynamic>?> updateReceiptFields({
+    required String receiptId,
+    required Map<String, dynamic> updates,
+    String? reason,
+  }) async {
+    try {
+      final result = await _client.rpc(
+        'process_receipt_update',
+        params: {
+          'p_receipt_id': receiptId,
+          'p_data': updates,
+          'p_reason': reason ?? 'تعديل بيانات الإيصال من التطبيق',
+        },
+      );
+
+      if (result == null || result['success'] != true) {
+        throw Exception('فشل تعديل الإيصال');
+      }
+
+      return Map<String, dynamic>.from(result);
+    } catch (e) {
+      if (kDebugMode) print('ReceiptService.updateReceiptFields error: $e');
+      return null;
+    }
+  }
+
   /// تحديث جزئي (patch) — للاستخدام السريع
   Future<bool> patch(String id, Map<String, dynamic> data) async {
     try {
@@ -405,63 +440,34 @@ class ReceiptService {
   //  STATUS WORKFLOW
   // ─────────────────────────────────────────────────────────────
 
-  /// تغيير حالة الإيصال + تسجيل في التاريخ
+  /// ═══════════════════════════════════════════════════════════════
+  /// تغيير حالة الإيصال (Atomic Transaction via RPC)
+  /// ═══════════════════════════════════════════════════════════════
+  /// كل العملية (تحديث status + status_history + تسجيل في
+  /// receipt_status_history + activity_log) بتتم في transaction واحد
+  /// على Supabase. إما تنجح كلها أو تفشل كلها.
+  /// ═══════════════════════════════════════════════════════════════
   Future<Receipt?> changeStatus({
     required String receiptId,
     required ReceiptStatus newStatus,
     String? note,
   }) async {
     try {
-      final userId = _authService.currentUser?.id;
-      final now = DateTime.now();
-
-      // 1. اجلب الإيصال الحالي
-      final current = await getById(receiptId);
-      if (current == null) return null;
-
-      // 2. لا تعمل تحديث لو نفس الحالة
-      if (current.status == newStatus) return current;
-
-      // 3. حدّث الـ status + history array
-      final newHistory = [
-        ...current.statusHistory,
-        StatusChange(
-          status: newStatus,
-          changedAt: now,
-          note: note,
-          changedBy: userId,
-        ),
-      ];
-
-      final updates = <String, dynamic>{
-        'status': newStatus.name,
-        'status_history': newHistory.map((e) => e.toJson()).toList(),
-      };
-
-      // لو delivered → سجّل delivered_at
-      if (newStatus == ReceiptStatus.delivered) {
-        updates['delivered_at'] = now.toIso8601String();
-        updates['final_cost'] =
-            current.finalCost > 0 ? current.finalCost : current.estimatedCost;
-        updates['total'] = current.total > 0
-            ? current.total
-            : current.finalCost > 0
-                ? current.finalCost
-                : current.estimatedCost;
-      }
-
-      await _client.from(_table).update(updates).eq('id', receiptId);
-
-      // 4. سجّل في جدول التاريخ المنفصل (للأرشيف)
-      await _logStatusChange(
-        receiptId: receiptId,
-        status: newStatus,
-        fromStatus: current.status,
-        note: note,
-        userId: userId,
+      final result = await _client.rpc(
+        'process_receipt_status_change',
+        params: {
+          'p_receipt_id': receiptId,
+          'p_new_status': newStatus.name,
+          'p_note': note,
+        },
       );
 
-      // 5. رجّع الإيصال المحدّث
+      // الـ RPC بترجع jsonb: {success, no_change, from_status, to_status, final_cost, total}
+      if (result == null || result['success'] != true) {
+        throw Exception('فشل تغيير حالة الإيصال');
+      }
+
+      // نرجع الإيصال المحدّث
       return await getById(receiptId);
     } catch (e) {
       if (kDebugMode) {
@@ -502,13 +508,21 @@ class ReceiptService {
   }
 
   // ─────────────────────────────────────────────────────────────
-  //  DELETE
+  //  DELETE (Soft Delete)
   // ─────────────────────────────────────────────────────────────
 
-  Future<bool> delete(String id) async {
+  /// حذف آمن (Soft Delete) — السجل بيفضل في الداتابيز لكن مخفي
+  Future<bool> delete(String id, {String? reason}) async {
     try {
-      await _client.from(_table).delete().eq('id', id);
-      return true;
+      final result = await _client.rpc(
+        'soft_delete_row',
+        params: {
+          'p_table': _table,
+          'p_id': id,
+          'p_reason': reason ?? 'تم حذف الإيصال من التطبيق',
+        },
+      );
+      return result == true;
     } catch (e) {
       if (kDebugMode) {
         // ignore: avoid_print
@@ -561,8 +575,11 @@ class ReceiptService {
     DateTime? toDate,
   }) async {
     try {
-      var query =
-          _client.from(_table).select('status, total, deposit, final_cost');
+      // ✅ استبعاد المحذوف
+      var query = _client
+          .from(_table)
+          .select('status, total, deposit, final_cost')
+          .isFilter('deleted_at', null);
 
       if (fromDate != null) {
         query = query.gte('created_at', fromDate.toIso8601String());
@@ -612,7 +629,6 @@ class ReceiptService {
   }
 
   /// سلسلة زمنية للإيرادات اليومية (delivered receipts only)
-  /// ترجّع: `Map<DateTime (بداية اليوم), double totalRevenue>`
   Future<Map<DateTime, double>> getRevenueTimeSeries({
     required DateTime fromDate,
     required DateTime toDate,
@@ -622,6 +638,7 @@ class ReceiptService {
           .from(_table)
           .select('delivered_at, total, final_cost')
           .eq('status', ReceiptStatus.delivered.name)
+          .isFilter('deleted_at', null)
           .gte('delivered_at', fromDate.toIso8601String())
           .lte('delivered_at', toDate.toIso8601String())
           .order('delivered_at', ascending: true);
@@ -636,7 +653,6 @@ class ReceiptService {
         final dt = DateTime.tryParse(deliveredAt.toString());
         if (dt == null) continue;
 
-        // بداية اليوم (نطبع الساعات)
         final dayKey = DateTime(dt.year, dt.month, dt.day);
 
         final total = _toDouble(r['total']);
@@ -669,7 +685,6 @@ class ReceiptService {
       final startOfDay =
           DateTime(now.year, now.month, now.day).toIso8601String();
 
-      // 1) اجلب آخر رقم إيصال لليوم
       final lastReceipt = await _client
           .from(_table)
           .select('receipt_number')
@@ -690,7 +705,6 @@ class ReceiptService {
         }
       }
 
-      // 2) تأكد إن الرقم مش مكرر — لو مكرر زوّد
       String candidate;
       int attempts = 0;
       do {
@@ -707,12 +721,12 @@ class ReceiptService {
 
       return candidate;
     } catch (_) {
-      // fallback: timestamp كأمان أخير
       final seq =
           (now.millisecondsSinceEpoch % 100000).toString().padLeft(5, '0');
       return 'RCP-$datePart-$seq';
     }
   }
+
   // ─────────────────────────────────────────────────────────────
   //  INTERNAL HELPERS
   // ─────────────────────────────────────────────────────────────
@@ -785,10 +799,8 @@ final receiptsStreamProvider = StreamProvider.autoDispose
     .family<List<Receipt>, ReceiptFilter>((ref, filter) async* {
   final service = ref.watch(receiptServiceProvider);
 
-  // initial fetch
   yield await service.list(filter);
 
-  // periodic refresh
   await for (final _ in Stream.periodic(const Duration(seconds: 30))) {
     yield await service.list(filter);
   }

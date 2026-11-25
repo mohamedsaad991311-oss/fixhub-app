@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'receipt_edit_sheet.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/services/receipt_service.dart';
 import '../../data/models/receipt.dart';
 import '../providers/receipt_detail_provider.dart';
+import '../providers/receipts_list_provider.dart';
 
 /// ═══════════════════════════════════════════════════════════
 /// ReceiptActionsBar — شريط الأزرار السفلية في تفاصيل الإيصال
@@ -40,12 +43,16 @@ class ReceiptActionsBar extends ConsumerWidget {
           ),
         ),
       ),
-      child: Row(
+      // نستخدم Wrap في حالة ضيق المساحة
+      child: Wrap(
+        spacing: AppSizes.spaceSm,
+        runSpacing: AppSizes.spaceSm,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           // ─── التقدّم للحالة التالية ───
           if (!receipt.status.isFinal)
-            Expanded(
-              flex: 3,
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.45,
               child: FilledButton.icon(
                 onPressed:
                     isUpdating ? null : () => _advanceStatus(context, ref),
@@ -78,9 +85,8 @@ class ReceiptActionsBar extends ConsumerWidget {
 
           // ─── تغيير الحالة + رفض ───
           if (!receipt.status.isFinal) ...[
-            const SizedBox(width: AppSizes.spaceSm),
-            Expanded(
-              flex: 2,
+            SizedBox(
+              width: 100,
               child: OutlinedButton.icon(
                 onPressed:
                     isUpdating ? null : () => _showStatusSheet(context, ref),
@@ -97,12 +103,12 @@ class ReceiptActionsBar extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(width: AppSizes.spaceSm),
 
             // ─── زر الرفض ───
             IconButton.filledTonal(
               tooltip: 'رفض الإيصال',
-              onPressed: isUpdating ? null : () => _confirmReject(context, ref),
+              onPressed:
+                  isUpdating ? null : () => _confirmReject(context, ref),
               icon: const Icon(Icons.cancel_outlined, size: 20),
               style: IconButton.styleFrom(
                 minimumSize: const Size(52, 52),
@@ -113,8 +119,31 @@ class ReceiptActionsBar extends ConsumerWidget {
             ),
           ],
 
-          // ─── زر المشاركة (دائماً) ───
-          const SizedBox(width: AppSizes.spaceSm),
+          // ─── زر التعديل ───
+          IconButton.filledTonal(
+            tooltip: 'تعديل الإيصال',
+            onPressed: isUpdating ? null : () => _editReceipt(context),
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            style: IconButton.styleFrom(
+              minimumSize: const Size(52, 52),
+              backgroundColor: scheme.tertiary.withValues(alpha: 0.15),
+              foregroundColor: scheme.tertiary,
+            ),
+          ),
+
+          // ─── زر الحذف ───
+          IconButton.filledTonal(
+            tooltip: 'حذف الإيصال',
+            onPressed: isUpdating ? null : () => _confirmDelete(context, ref),
+            icon: const Icon(Icons.delete_outline, size: 20),
+            style: IconButton.styleFrom(
+              minimumSize: const Size(52, 52),
+              backgroundColor: scheme.error.withValues(alpha: 0.15),
+              foregroundColor: scheme.error,
+            ),
+          ),
+
+          // ─── زر المشاركة ───
           IconButton.filledTonal(
             tooltip: 'مشاركة رابط التتبع',
             onPressed: () => _shareTracking(context),
@@ -126,10 +155,9 @@ class ReceiptActionsBar extends ConsumerWidget {
             ),
           ),
 
-          // ─── نسخ الرابط (اختياري) ───
+          // ─── نسخ الرابط (لو فيه رقم تليفون) ───
           if (receipt.customerPhone != null &&
-              receipt.customerPhone!.isNotEmpty) ...[
-            const SizedBox(width: AppSizes.spaceXs),
+              receipt.customerPhone!.isNotEmpty)
             IconButton.filledTonal(
               tooltip: 'نسخ الرابط',
               onPressed: () => _copyTracking(context),
@@ -138,13 +166,14 @@ class ReceiptActionsBar extends ConsumerWidget {
                 minimumSize: const Size(52, 52),
               ),
             ),
-          ],
         ],
       ),
     );
   }
 
-  // ─── Helpers ───
+  // ═══════════════════════════════════════════════════════════
+  //  Helpers
+  // ═══════════════════════════════════════════════════════════
 
   String _nextStatusLabel() {
     final next = receipt.status.next;
@@ -162,6 +191,10 @@ class ReceiptActionsBar extends ConsumerWidget {
     }
     return null;
   }
+
+  // ═══════════════════════════════════════════════════════════
+  //  Actions
+  // ═══════════════════════════════════════════════════════════
 
   Future<void> _advanceStatus(BuildContext context, WidgetRef ref) async {
     final notifier = ref.read(receiptDetailProvider(receipt.id).notifier);
@@ -256,6 +289,81 @@ class ReceiptActionsBar extends ConsumerWidget {
     );
   }
 
+  /// زر التعديل — بيعرض رسالة مؤقتة لحد ما نعمل شاشة التعديل
+    /// زر التعديل — بيفتح Bottom Sheet للتعديل
+  Future<void> _editReceipt(BuildContext context) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: false,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => ReceiptEditSheet(receipt: receipt),
+    );
+  }
+  /// زر الحذف — بيطلب تأكيد وبعدها soft delete
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final scheme = Theme.of(context).colorScheme;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.delete_outline, color: scheme.error, size: 22),
+            const SizedBox(width: 8),
+            const Text('حذف الإيصال؟'),
+          ],
+        ),
+        content: Text(
+          'سيتم حذف الإيصال رقم "${receipt.receiptNumber}" من القائمة.\n'
+          'السجل سيبقى محفوظاً في النظام ويمكن استرجاعه لاحقاً.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: scheme.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('حذف'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!context.mounted) return;
+
+    final service = ref.read(receiptServiceProvider);
+    final ok = await service.delete(
+      receipt.id,
+      reason: 'حذف من شاشة تفاصيل الإيصال',
+    );
+
+    if (!context.mounted) return;
+
+    if (ok) {
+      ref.read(receiptsListProvider.notifier).refresh();
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('تم حذف الإيصال بنجاح'),
+          backgroundColor: const Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('فشل حذف الإيصال'),
+          backgroundColor: scheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   Future<void> _copyTracking(BuildContext context) async {
     final url = _buildTrackUrl();
     if (url == null) {
@@ -296,7 +404,6 @@ class ReceiptActionsBar extends ConsumerWidget {
       return;
     }
 
-    // ─── لو فيه رقم تليفون، افتح واتساب مباشرة ───
     final customerPhone = receipt.customerPhone;
     if (customerPhone != null && customerPhone.isNotEmpty) {
       final cleanedPhone = customerPhone.replaceAll(RegExp(r'\D'), '');
@@ -319,7 +426,6 @@ class ReceiptActionsBar extends ConsumerWidget {
       }
     }
 
-    // ─── fallback: نسخ الرابط ───
     await Clipboard.setData(ClipboardData(text: url));
 
     if (!context.mounted) return;

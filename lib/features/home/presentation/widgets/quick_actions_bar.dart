@@ -4,25 +4,17 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_sizes.dart';
 
-/// ═══════════════════════════════════════════════════════════
-/// QuickActionsBar — شريط الإجراءات السريعة
-/// ═══════════════════════════════════════════════════════════
-///
-/// 4 أزرار رئيسية:
-/// - إيصال جديد
-/// - إضافة صنف
-/// - إضافة مصروف
-/// - فاتورة مورد
-///
 class QuickActionsBar extends StatelessWidget {
   const QuickActionsBar({
     super.key,
+    this.onPos,
     this.onNewReceipt,
     this.onAddInventory,
     this.onAddExpense,
     this.onSupplierInvoice,
   });
 
+  final VoidCallback? onPos;
   final VoidCallback? onNewReceipt;
   final VoidCallback? onAddInventory;
   final VoidCallback? onAddExpense;
@@ -36,34 +28,39 @@ class QuickActionsBar extends StatelessWidget {
 
         final actions = <_ActionData>[
           _ActionData(
+            label: 'نقطة البيع',
+            icon: Icons.point_of_sale,
+            color: const Color(0xFF10B981),
+            onTap: onPos,
+            isPrimary: true,
+          ),
+          _ActionData(
             label: 'إيصال جديد',
             icon: Icons.add_circle_outline,
             color: Theme.of(context).colorScheme.primary,
             onTap: onNewReceipt,
-            isPrimary: true,
           ),
           _ActionData(
             label: 'إضافة صنف',
             icon: Icons.inventory_2_outlined,
-            color: const Color(0xFF3B82F6), // أزرق
+            color: const Color(0xFF3B82F6),
             onTap: onAddInventory,
           ),
           _ActionData(
             label: 'إضافة مصروف',
             icon: Icons.trending_down_outlined,
-            color: const Color(0xFFEF4444), // أحمر
+            color: const Color(0xFFEF4444),
             onTap: onAddExpense,
           ),
           _ActionData(
             label: 'فاتورة مورد',
             icon: Icons.receipt_outlined,
-            color: const Color(0xFF8B5CF6), // بنفسجي
+            color: const Color(0xFF8B5CF6),
             onTap: onSupplierInvoice,
           ),
         ];
 
         if (isNarrow) {
-          // موبايل: 2 صف × 2 عمود
           return Column(
             children: [
               Row(
@@ -71,21 +68,22 @@ class QuickActionsBar extends StatelessWidget {
                   Expanded(child: _ActionTile(data: actions[0])),
                   const SizedBox(width: AppSizes.spaceSmMd),
                   Expanded(child: _ActionTile(data: actions[1])),
+                  const SizedBox(width: AppSizes.spaceSmMd),
+                  Expanded(child: _ActionTile(data: actions[2])),
                 ],
               ),
               const SizedBox(height: AppSizes.spaceSmMd),
               Row(
                 children: [
-                  Expanded(child: _ActionTile(data: actions[2])),
-                  const SizedBox(width: AppSizes.spaceSmMd),
                   Expanded(child: _ActionTile(data: actions[3])),
+                  const SizedBox(width: AppSizes.spaceSmMd),
+                  Expanded(child: _ActionTile(data: actions[4])),
                 ],
               ),
             ],
           );
         }
 
-        // تابلت + ديسكتوب: صف واحد × 4
         return Row(
           children: [
             for (int i = 0; i < actions.length; i++) ...[
@@ -98,10 +96,6 @@ class QuickActionsBar extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  DATA
-// ═══════════════════════════════════════════════════════════════
 
 class _ActionData {
   const _ActionData({
@@ -119,10 +113,6 @@ class _ActionData {
   final bool isPrimary;
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  ACTION TILE
-// ═══════════════════════════════════════════════════════════════
-
 class _ActionTile extends StatelessWidget {
   const _ActionTile({required this.data});
 
@@ -134,13 +124,11 @@ class _ActionTile extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isDisabled = data.onTap == null;
 
-    // لو primary → خلفية ملونة كاملة
     final bgColor = data.isPrimary
         ? data.color
         : (isDark ? scheme.surfaceContainerHigh : scheme.surfaceContainerLow);
 
     final fgColor = data.isPrimary ? scheme.onPrimary : data.color;
-
     final labelColor = data.isPrimary ? scheme.onPrimary : scheme.onSurface;
 
     return Opacity(

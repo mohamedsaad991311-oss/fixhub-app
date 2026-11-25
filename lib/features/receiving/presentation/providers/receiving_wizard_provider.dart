@@ -2,6 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // ✅ ضفنا Supabase
 import '../../../inventory/data/models/inventory_item.dart';
 import '../../../../core/services/inventory_service.dart';
 import '../../../../core/services/receipt_service.dart';
@@ -147,9 +148,43 @@ class ReceivingWizardNotifier extends StateNotifier<ReceivingWizardState> {
 
     try {
       final service = _ref.read(receiptServiceProvider);
+      
+      // 1. تحويل البيانات للإيصال
       final draft = _ref.read(receivingFormProvider.notifier).toReceiptDraft();
 
-      final created = await service.create(draft: draft);
+      // 2. إضافة الحقول الجديدة للـ Draft قبل الحفظ (القفل)
+      final draftWithLock = Receipt(
+        id: draft.id,
+        tenantId: draft.tenantId,
+        receiptNumber: draft.receiptNumber,
+        customerName: draft.customerName,
+        customerPhone: draft.customerPhone,
+        customerEmail: draft.customerEmail,
+        customerNotes: draft.customerNotes,
+        deviceType: draft.deviceType,
+        deviceBrand: draft.deviceBrand,
+        deviceModel: draft.deviceModel,
+        deviceImei: draft.deviceImei,
+        deviceSerial: draft.deviceSerial,
+        deviceColor: draft.deviceColor,
+        devicePassword: draft.devicePassword,
+        // lockType: draft.lockType, 
+        // lockPatternImage: draft.lockPatternImage,
+        conditionNotes: draft.conditionNotes,
+        issues: draft.issues,
+        accessories: draft.accessories,
+        priority: draft.priority,
+        estimatedCost: draft.estimatedCost,
+        deposit: draft.deposit,
+        discount: draft.discount,
+        total: draft.total,
+        warrantyDays: draft.warrantyDays,
+        notes: draft.notes,
+        expectedDeliveryDate: draft.expectedDeliveryDate,
+      );
+
+      // 3. إنشاء الإيصال في Supabase
+      final created = await service.create(draft: draftWithLock);
 
       if (created == null) {
         state = state.copyWith(
@@ -159,12 +194,15 @@ class ReceivingWizardNotifier extends StateNotifier<ReceivingWizardState> {
         return false;
       }
 
-      // ✅ خصم القطع من المخزون (الباج 2)
+      // 4. معالجة القطع (الخصم من المخزون + الحفظ في receipt_items)
       final usedItems = form.usedItems;
       if (usedItems.isNotEmpty) {
         final inventoryService = _ref.read(inventoryServiceProvider);
+        final supabase = Supabase.instance.client;
+        
         for (final used in usedItems) {
           try {
+            // أ. خصم الكمية من المخزون
             await inventoryService.stockOut(
               inventoryId: used.inventoryId,
               quantity: used.quantity,
@@ -173,10 +211,32 @@ class ReceivingWizardNotifier extends StateNotifier<ReceivingWizardState> {
               referenceType: 'receipt',
               notes: 'استخدام في إيصال ${created.receiptNumber}',
             );
+
+            // ب. حفظ القطعة في جدول receipt_items (عشان المدير يشوف الأرباح)
+            await supabase.from('receipt_items').insert({
+              'tenant_id': created.tenantId,
+              'receipt_id': created.id,
+              'inventory_id': used.inventoryId,
+              'item_name': used.itemName,
+              'quantity': used.quantity,
+              'unit_cost': used.unitCost,           // تكلفة المخزون (سري)
+              'selling_price': used.sellingPrice,   // سعر البيع للعميل (سري)
+              'profit': used.itemProfit,            // ربح القطعة (سري)
+            });
           } catch (e) {
             // لو فشل خصم قطعة، نسجل الخطأ بس منوقفش العملية
-            debugPrint('فشل خصم القطعة ${used.itemName}: $e');
+            debugPrint('فشل معالجة القطعة ${used.itemName}: $e');
           }
+        }
+
+        // ج. تحديث إجمالي التكلفة والربح في جدول receipts (للمدير فقط)
+        try {
+          await supabase.from('receipts').update({
+            'total_parts_cost': form.totalPartsCost,
+            'total_profit': form.totalProfit,
+          }).eq('id', created.id);
+        } catch (e) {
+          debugPrint('فشل تحديث ملخص الأرباح: $e');
         }
       }
 

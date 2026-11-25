@@ -3,21 +3,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // ✅ ضفنا Supabase
 
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/country_codes.dart';
 import '../../../../core/utils/validators.dart';
 import '../providers/receiving_form_provider.dart';
 
+// ═══════════════════════════════════════════════════════════
+//  Providers للبحث عن العملاء (Autocomplete)
+// ═══════════════════════════════════════════════════════════
+
+final phoneSuggestionsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, query) async {
+  if (query.length < 3) return [];
+  
+  final supabase = Supabase.instance.client;
+  final response = await supabase
+      .from('receipts')
+      .select('customer_name, customer_phone, customer_email, customer_notes')
+      .ilike('customer_phone', '%$query%')
+      .limit(5);
+
+  // إزالة التكرار (لو نفس العميل جه كذا مرة)
+  final unique = <String, Map<String, dynamic>>{};
+  for (var row in response) {
+    final phone = row['customer_phone'] ?? '';
+    if (phone.isNotEmpty && !unique.containsKey(phone)) {
+      unique[phone] = row;
+    }
+  }
+  return unique.values.toList();
+});
+
 /// ═══════════════════════════════════════════════════════════
 /// Step1Customer — الخطوة 1: بيانات العميل
 /// ═══════════════════════════════════════════════════════════
-///
-/// - الاسم (مطلوب)
-/// - رقم التليفون (مطلوب) مع اختيار الدولة
-/// - الإيميل (اختياري)
-/// - ملاحظات العميل (اختياري)
-///
 class Step1Customer extends ConsumerStatefulWidget {
   const Step1Customer({super.key});
 
@@ -32,6 +52,8 @@ class _Step1CustomerState extends ConsumerState<Step1Customer> {
   late final TextEditingController _notesController;
 
   CountryCode _country = countryCodes.first;
+  String _phoneQuery = ''; // للبحث
+  final FocusNode _phoneFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -49,6 +71,7 @@ class _Step1CustomerState extends ConsumerState<Step1Customer> {
     _phoneController.dispose();
     _emailController.dispose();
     _notesController.dispose();
+    _phoneFocusNode.dispose();
     super.dispose();
   }
 
@@ -87,17 +110,94 @@ class _Step1CustomerState extends ConsumerState<Step1Customer> {
           ),
           const SizedBox(height: AppSizes.spaceMd),
 
-          // ─── رقم التليفون مع اختيار الدولة ───
-          _PhoneInput(
-            controller: _phoneController,
-            country: _country,
-            onCountryChanged: (c) {
-              setState(() => _country = c);
-              _updatePhone();
-            },
-            onChanged: (_) => _updatePhone(),
-            scheme: scheme,
-            isDark: isDark,
+          // ─── رقم التليفون مع اختيار الدولة + Autocomplete ───
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _PhoneInput(
+                controller: _phoneController,
+                focusNode: _phoneFocusNode,
+                country: _country,
+                onCountryChanged: (c) {
+                  setState(() => _country = c);
+                  _updatePhone();
+                },
+                onChanged: (val) {
+                  _updatePhone();
+                  // تحديث نص البحث (بس لو الأرقام 3 أو أكتر)
+                  if (val.trim().length >= 3) {
+                    setState(() => _phoneQuery = val.trim());
+                  } else {
+                    setState(() => _phoneQuery = '');
+                  }
+                },
+                scheme: scheme,
+                isDark: isDark,
+              ),
+              // ─── قائمة الاقتراحات ───
+              if (_phoneQuery.isNotEmpty)
+                Consumer(
+                  builder: (context, ref, child) {
+                    final asyncSuggestions = ref.watch(phoneSuggestionsProvider(_phoneQuery));
+                    return asyncSuggestions.when(
+                      data: (list) {
+                        if (list.isEmpty) return const SizedBox.shrink();
+                        return Container(
+                          margin: const EdgeInsets.only(top: 4),
+                          decoration: BoxDecoration(
+                            color: isDark ? scheme.surfaceContainerHigh : scheme.surface,
+                            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                            border: Border.all(color: scheme.outlineVariant),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: list.length,
+                            separatorBuilder: (_, __) => Divider(height: 1, color: scheme.outlineVariant),
+                            itemBuilder: (context, index) {
+                              final item = list[index];
+                              return ListTile(
+                                dense: true,
+                                leading: Icon(Icons.phone, size: 18, color: scheme.primary),
+                                title: Text(item['customer_name'] ?? 'بدون اسم', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: Text(item['customer_phone'] ?? ''),
+                                onTap: () {
+                                  setState(() {
+                                    _nameController.text = item['customer_name'] ?? '';
+                                    _phoneController.text = item['customer_phone'] ?? '';
+                                    _emailController.text = item['customer_email'] ?? '';
+                                    _notesController.text = item['customer_notes'] ?? '';
+                                    _phoneQuery = ''; // إخفاء القائمة
+                                    _phoneFocusNode.unfocus();
+                                  });
+                                  // تحديث الـ Provider
+                                  final notifier = ref.read(receivingFormProvider.notifier);
+                                  notifier.setCustomerName(item['customer_name'] ?? '');
+                                  notifier.setCustomerPhone(item['customer_phone'] ?? '');
+                                  notifier.setCustomerEmail(item['customer_email']);
+                                  notifier.setCustomerNotes(item['customer_notes']);
+                                },
+                              );
+                            },
+                          ),
+                        );
+                      },
+                      loading: () => const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+                      ),
+                      error: (e, _) => const SizedBox.shrink(),
+                    );
+                  },
+                ),
+            ],
           ),
           const SizedBox(height: AppSizes.spaceMd),
 
@@ -195,11 +295,9 @@ class _Step1CustomerState extends ConsumerState<Step1Customer> {
       return;
     }
 
-    // لو المستخدم بدأ بـ + → استخدمه كما هو
     if (text.startsWith('+')) {
       notifier.setCustomerPhone(text);
     } else {
-      // حوّله لـ E.164
       final e164 = Validators.normalizePhone(text, _country);
       notifier.setCustomerPhone(e164);
     }
@@ -316,6 +414,7 @@ class _SectionHeader extends StatelessWidget {
 class _PhoneInput extends StatelessWidget {
   const _PhoneInput({
     required this.controller,
+    required this.focusNode,
     required this.country,
     required this.onCountryChanged,
     required this.onChanged,
@@ -324,6 +423,7 @@ class _PhoneInput extends StatelessWidget {
   });
 
   final TextEditingController controller;
+  final FocusNode focusNode;
   final CountryCode country;
   final ValueChanged<CountryCode> onCountryChanged;
   final ValueChanged<String> onChanged;
@@ -334,6 +434,7 @@ class _PhoneInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       keyboardType: TextInputType.phone,
       textInputAction: TextInputAction.next,
       textDirection: TextDirection.ltr,
